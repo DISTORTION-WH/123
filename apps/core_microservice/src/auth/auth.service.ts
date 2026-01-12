@@ -228,6 +228,33 @@ export class AuthService {
 
   private handleHttpError(error: unknown): never {
     const axiosError = error as AxiosError<{ error: string; message?: string }>;
+
+    // --- НАЧАЛО DEBUG ЛОГОВ ---
+    console.log('\n OSHIBKA AUTH REQUEST ');
+    console.log('URL:', axiosError.config?.url);
+    console.log('Method:', axiosError.config?.method);
+
+    if (axiosError.response) {
+      // Сервис ответил, но с ошибкой (например, 500)
+      console.log(' Response Status:', axiosError.response.status);
+      console.log(
+        ' Response Data:',
+        JSON.stringify(axiosError.response.data, null, 2),
+      );
+    } else {
+      // Сервис не ответил вообще (сетевая ошибка)
+      console.log('No Response (Network Error)');
+      console.log('Error Code:', axiosError.code);
+      console.log('Error Message:', axiosError.message);
+      if (axiosError.code === 'ECONNREFUSED') {
+        console.log(
+          ' ПОДСКАЗКА: Core сервис не может найти Auth сервис по этому адресу/порту.',
+        );
+      }
+    }
+    console.log('END ERROR LOG \n');
+    // --- КОНЕЦ DEBUG ЛОГОВ ---
+
     if (axiosError.response) {
       const { status, data } = axiosError.response;
       const message =
@@ -238,6 +265,8 @@ export class AuthService {
       if (status === 404)
         throw new BadRequestException('Resource not found in Auth Service');
     }
+
+    // Если мы здесь, значит это либо 500 от Auth, либо сеть
     throw new InternalServerErrorException(
       'Authentication Service Unavailable',
     );

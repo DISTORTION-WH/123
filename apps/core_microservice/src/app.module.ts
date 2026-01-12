@@ -1,43 +1,53 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config'; // Важно!
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
+// Контроллеры и сервисы самого приложения
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+
+// Функциональные модули
 import { AuthModule } from './auth/auth.module';
-// Импортируй остальные сущности, если они есть
+import { UsersModule } from './users/users.module';
+import { ProfilesModule } from './profiles/profiles.module';
+import { PostsModule } from './posts/posts.module';
 
 @Module({
   imports: [
-    // 1. Загружаем .env файл глобально
+    // 1. Глобальная конфигурация (.env)
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env', // Ищет файл в корне папки микросервиса
+      envFilePath: '.env',
     }),
 
-    // 2. Асинхронно подключаем базу, используя ConfigService
+    // 2. Подключение к Базе Данных (Async)
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        // Читаем переменные. Если их нет - упадет с понятной ошибкой или возьмет дефолт
-        host: configService.get<string>('POSTGRES_HOST', '127.0.0.1'),
-        port: configService.get<number>('POSTGRES_PORT', 5435),
-        username: configService.get<string>('POSTGRES_USER', 'innogram_user'),
-        password: configService.get<string>(
-          'POSTGRES_PASSWORD',
-          'innogram_password',
-        ),
+        host: configService.get<string>('POSTGRES_HOST', 'localhost'),
+        port: configService.get<number>('POSTGRES_PORT', 5432),
+        username: configService.get<string>('POSTGRES_USER', 'postgres'),
+        password: configService.get<string>('POSTGRES_PASSWORD', 'postgres'),
         database: configService.get<string>('POSTGRES_DB', 'innogram'),
 
+        // Автоматическая загрузка сущностей
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Auto-schema update (dev only)
         autoLoadEntities: true,
+
+        // ВАЖНО: synchronize ставим false, так как мы используем миграции.
+        // Если оставить true, TypeORM будет пытаться менять схему сам при запуске,
+        // что может вызвать конфликты с нашими файлами миграций.
+        synchronize: false,
       }),
     }),
 
+    // 3. Регистрация модулей приложения
     AuthModule,
-    // ... другие модули
+    UsersModule,
+    ProfilesModule,
+    PostsModule, // Наш новый модуль постов
   ],
   controllers: [AppController],
   providers: [AppService],

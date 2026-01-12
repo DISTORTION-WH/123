@@ -1,25 +1,33 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
-import express from 'express'; // Импортируем типы из express
+import {
+  Body,
+  Controller,
+  Post,
+  Res,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import express from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
+// Импортируем новые DTO
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // ... существующие методы signUp, login, logout ...
   @Post('signup')
-  // passthrough: true нужен, чтобы NestJS не перехватывал ответ полностью, а дал нам управлять хедерами
   async signUp(
     @Body() signUpDto: SignUpDto,
     @Res({ passthrough: true }) res: express.Response,
   ) {
-    // 1. Получаем токены и юзера от Auth Service
     const result = await this.authService.handleSignUp(signUpDto);
-    // 2. Устанавливаем куки
     this.setAuthCookies(res, result.accessToken, result.refreshTokenId);
-
-    // 3. Возвращаем только юзера, без токенов в теле
     return result.user;
   }
 
@@ -30,16 +38,36 @@ export class AuthController {
   ) {
     const result = await this.authService.handleLogin(loginDto);
     this.setAuthCookies(res, result.accessToken, result.refreshTokenId);
-
     return result.user;
   }
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: express.Response) {
-    // Чистим куки
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
     return { message: 'Logged out' };
+  }
+
+  // --- НОВЫЕ МЕТОДЫ ---
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset link' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reset link sent (if email exists)',
+  })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return await this.authService.handleForgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password using token' })
+  @ApiResponse({ status: 200, description: 'Password updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid token or weak password' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return await this.authService.handleResetPassword(dto);
   }
 
   private setAuthCookies(
@@ -48,17 +76,17 @@ export class AuthController {
     refreshToken: string,
   ) {
     res.cookie('access_token', accessToken, {
-      httpOnly: true, // Скрипты на фронте не увидят куку (защита от XSS)
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 15 * 60 * 1000, // 15 мин
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
   }
 }

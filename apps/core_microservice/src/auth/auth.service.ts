@@ -11,6 +11,8 @@ import { lastValueFrom } from 'rxjs';
 
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 export interface AuthResponse {
   accessToken: string;
@@ -20,6 +22,14 @@ export interface AuthResponse {
     email: string;
     role: string;
   };
+}
+
+// Интерфейс для ответа валидации
+interface ValidateTokenResponse {
+  isValid: boolean;
+  userId: string;
+  email: string;
+  role: string;
 }
 
 @Injectable()
@@ -99,6 +109,8 @@ export class AuthService {
     }
   }
 
+  // ИСПРАВЛЕНИЕ: Удален ошибочный метод asyncHZhandleRefresh, который содержал опечатку и дублировал код
+
   async handleRefresh(refreshTokenId: string): Promise<AuthResponse> {
     try {
       const { data } = await lastValueFrom(
@@ -125,24 +137,55 @@ export class AuthService {
     }
   }
 
-  async validateToken(accessToken: string): Promise<{
-    isValid: boolean;
-    userId: string;
-    email: string;
-    role: string;
-  }> {
+  async validateToken(accessToken: string): Promise<ValidateTokenResponse> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // ИСПРАВЛЕНИЕ: Добавлен Generic Type <ValidateTokenResponse> для Axios вызова
       const { data } = await lastValueFrom(
-        this.httpService.post(`${this.authServiceUrl}/internal/auth/validate`, {
-          accessToken,
-        }),
+        this.httpService.post<ValidateTokenResponse>(
+          `${this.authServiceUrl}/internal/auth/validate`,
+          {
+            accessToken,
+          },
+        ),
       );
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return data;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      // Если error не используется, можно заменить на _ или оставить (ESLint unused-vars)
+      // Здесь error используется неявно для логики потока (мы просто ловим ошибку и кидаем свою)
       throw new UnauthorizedException('Token validation failed');
+    }
+  }
+
+  async handleForgotPassword(
+    dto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    try {
+      const { data } = await lastValueFrom(
+        this.httpService.post<{ message: string }>(
+          `${this.authServiceUrl}/internal/auth/forgot-password`,
+          dto,
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.handleHttpError(error);
+    }
+  }
+
+  async handleResetPassword(
+    dto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    try {
+      const { data } = await lastValueFrom(
+        this.httpService.post<{ message: string }>(
+          `${this.authServiceUrl}/internal/auth/reset-password`,
+          dto,
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.handleHttpError(error);
     }
   }
 

@@ -1,7 +1,8 @@
-import User from '../models/User'; // Убедись, что модель User создана в src/models/User.ts
+import User from '../models/User';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateAccessToken, generateRefreshTokenId, verifyAccessToken } from '../utils/jwt';
 import { RedisAuthRepository } from '../repositories/redis.repository';
+import { v4 as uuidv4 } from 'uuid'; // <--- ИСПРАВЛЕНИЕ: Добавлен импорт
 
 export class AuthService {
   private redisRepository: RedisAuthRepository;
@@ -109,7 +110,6 @@ export class AuthService {
     }
 
     // 2. Проверяем, не в черном ли списке этот токен (например, после логаута)
-    // payload.jti - уникальный ID токена
     const isBlacklisted = await this.redisRepository.isTokenBlacklisted(payload.jti, 'access');
     if (isBlacklisted) {
       return null;
@@ -157,5 +157,55 @@ export class AuthService {
       accessToken,
       refreshTokenId,
     };
+  }
+
+  // --- НОВЫЕ МЕТОДЫ ---
+
+  /**
+   * Шаг 1: Инициация сброса пароля
+   */
+  async forgotPassword(email: string) {
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      console.log(`[Forgot Password] User with email ${email} not found. Doing nothing.`);
+      return; 
+    }
+
+    const resetToken = uuidv4();
+
+    await this.redisRepository.setResetToken(resetToken, user._id.toString());
+
+    // MOCK EMAIL
+    const frontendUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const resetLink = `${frontendUrl}/auth/reset-password?token=${resetToken}`;
+    
+    console.log(`---------------------------------------------------------`);
+    console.log(`[MOCK EMAIL SERVICE] Sending password reset link to ${email}`);
+    console.log(`LINK: ${resetLink}`);
+    console.log(`---------------------------------------------------------`);
+  }
+
+  /**
+   * Шаг 2: Установка нового пароля
+   */
+  async resetPassword(token: string, newPassword: string) {
+    const userId = await this.redisRepository.getAndDeleteResetToken(token);
+    
+    if (!userId) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    
+    user.passwordHash = passwordHash;
+    await user.save();
+
+    return { message: 'Password successfully updated' };
   }
 }

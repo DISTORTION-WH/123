@@ -21,7 +21,14 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
 
+const resetPasswordSchema = z.object({
+  token: z.string().uuid(),
+  newPassword: z.string().min(6),
+});
 // --- Роуты ---
 
 /**
@@ -125,5 +132,45 @@ router.post('/logout', async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 });
+// --- НОВЫЕ РОУТЫ ---
 
+/**
+ * POST /forgot-password
+ */
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = forgotPasswordSchema.parse(req.body);
+    
+    await authService.forgotPassword(email);
+    
+    // Всегда возвращаем 200 OK, даже если email не найден (Security)
+    return res.status(200).json({ 
+      message: 'If an account with that email exists, we sent you a link to reset your password.' 
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation Error', details: error.errors });
+    }
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /reset-password
+ */
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = resetPasswordSchema.parse(req.body);
+    
+    const result = await authService.resetPassword(token, newPassword);
+    
+    return res.status(200).json(result);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation Error', details: error.errors });
+    }
+    // Если токен невалиден или просрочен
+    return res.status(400).json({ error: error.message });
+  }
+});
 export default router;

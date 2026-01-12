@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
@@ -63,28 +64,39 @@ export class AuthService {
         ),
       );
 
-      // Теперь TypeScript не будет ругаться, так как мы добавили username в User Entity
+      // 1. Создаем пользователя
       const user = this.userRepository.create({
         id: data.user.id,
         email: data.user.email,
         username: data.user.username,
+        role: data.user.role,
       });
 
       await this.userRepository.save(user);
 
+      // 2. Создаем профиль
       const profile = this.profileRepository.create({
         user: user,
-        firstName: signUpDto.username,
+        userId: user.id,
+        username: data.user.username,
+        firstName: signUpDto.displayName || signUpDto.username,
+        bio: signUpDto.bio,
+        // ИСПРАВЛЕНО: null заменен на undefined для совместимости с типами TypeORM
+        birthDate: signUpDto.birthday
+          ? new Date(signUpDto.birthday)
+          : undefined,
       });
 
       await this.profileRepository.save(profile);
 
       return data;
     } catch (error: any) {
-      // Приводим error к any для проверки кода ошибки Postgres
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      // Postgres error code 23505 = Unique violation
+
       if (error && error.code === '23505') {
-        console.warn('User already exists in Core DB, skipping sync');
+        console.warn(
+          'User or Profile already exists in Core DB, skipping sync',
+        );
       }
       this.handleHttpError(error);
     }
@@ -99,20 +111,38 @@ export class AuthService {
         ),
       );
 
-      const exists = await this.userRepository.findOne({
+      // Проверяем, существует ли пользователь в Core базе
+      let user = await this.userRepository.findOne({
         where: { id: data.user.id },
+        relations: ['profile'],
       });
 
-      if (!exists) {
-        const user = this.userRepository.create({
+      // Если нет - создаем (синхронизация при входе)
+      if (!user) {
+        user = this.userRepository.create({
           id: data.user.id,
           email: data.user.email,
           username: data.user.username,
+          role: data.user.role,
         });
         await this.userRepository.save(user);
+      }
 
-        const profile = this.profileRepository.create({ user });
-        await this.profileRepository.save(profile);
+      // Проверяем, есть ли профиль. Если нет - создаем.
+      if (!user.profile) {
+        const existingProfile = await this.profileRepository.findOne({
+          where: { userId: user.id },
+        });
+
+        if (!existingProfile) {
+          const profile = this.profileRepository.create({
+            user: user,
+            userId: user.id,
+            username: data.user.username,
+            firstName: data.user.username, // Fallback для имени
+          });
+          await this.profileRepository.save(profile);
+        }
       }
 
       return data;
@@ -166,11 +196,15 @@ export class AuthService {
     }
   }
 
-  async handleLogout(refreshTokenId: string): Promise<void> {
+  async handleLogout(
+    refreshTokenId: string,
+    accessToken?: string,
+  ): Promise<void> {
     try {
       await lastValueFrom(
         this.httpService.post(`${this.authServiceUrl}/internal/auth/logout`, {
           refreshTokenId,
+          accessToken,
         }),
       );
     } catch (error) {
@@ -180,16 +214,34 @@ export class AuthService {
 
   async validateToken(accessToken: string): Promise<ValidateTokenResponse> {
     try {
+      console.log(
+        `[AuthService Core] Sending validation request to: ${this.authServiceUrl}/internal/auth/validate`,
+      );
+
       const { data } = await lastValueFrom(
         this.httpService.post<ValidateTokenResponse>(
           `${this.authServiceUrl}/internal/auth/validate`,
           { accessToken },
         ),
       );
+
+      console.log('[AuthService Core] Validation response:', data);
       return data;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      // Ошибка используется для потока управления (невалидный токен), можно игнорировать переменную
+    } catch (error: any) {
+      console.log('------------------------------------------------');
+      console.log('[AuthService Core] ERROR validating token:');
+      if (error.response) {
+        console.log('Status:', error.response.status);
+        console.log('Data:', error.response.data);
+      } else if (error.code) {
+        console.log('Error Code:', error.code); // ECONNREFUSED?
+        console.log('Message:', error.message);
+      } else {
+        console.log('Error:', error);
+      }
+      console.log('------------------------------------------------');
+
+      // ВАЖНО: Не скрываем ошибку, а даем Guard-у понять, что валидация не прошла
       throw new UnauthorizedException('Token validation failed');
     }
   }
@@ -242,10 +294,18 @@ export class AuthService {
         JSON.stringify(axiosError.response.data, null, 2),
       );
     } else {
-      // Сервис не ответил вообще (сетевая ошибка)
-      console.log('No Response (Network Error)');
+      // Сервис не ответил вообще (сетевая ошибка) или ошибка БД
+      console.log('No Response (Network Error) or DB Error');
       console.log('Error Code:', axiosError.code);
       console.log('Error Message:', axiosError.message);
+
+      // Проверяем, не является ли это ошибкой TypeORM (базы данных)
+      if (axiosError['code'] && !isNaN(Number(axiosError['code']))) {
+        console.log(' DATABASE ERROR detected inside Auth Service wrapper');
+        // Пробрасываем ошибку дальше, чтобы NestJS обработал её
+        throw error;
+      }
+
       if (axiosError.code === 'ECONNREFUSED') {
         console.log(
           ' ПОДСКАЗКА: Core сервис не может найти Auth сервис по этому адресу/порту.',
@@ -266,7 +326,6 @@ export class AuthService {
         throw new BadRequestException('Resource not found in Auth Service');
     }
 
-    // Если мы здесь, значит это либо 500 от Auth, либо сеть
     throw new InternalServerErrorException(
       'Authentication Service Unavailable',
     );

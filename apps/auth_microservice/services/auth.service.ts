@@ -105,17 +105,43 @@ export class AuthService {
    * Валидация Access токена
    */
   async validateToken(accessToken: string) {
+    console.log('------------------------------------------------');
+    console.log('[Auth Service] Validating token:', accessToken.substring(0, 20) + '...');
+    
+    // 1. Проверяем подпись JWT
     const payload = verifyAccessToken(accessToken);
+    
     if (!payload) {
+      console.log('[Auth Service] FAIL: verifyAccessToken returned null (Signature invalid or expired)');
       return null;
     }
 
-    const isBlacklisted = await this.redisRepository.isTokenBlacklisted(payload.jti, 'access');
-    if (isBlacklisted) {
-      return null;
+    console.log('[Auth Service] JWT Payload:', JSON.stringify(payload));
+
+    // 2. Проверяем Blacklist в Redis
+    try {
+        const isBlacklisted = await this.redisRepository.isTokenBlacklisted(payload.jti, 'access');
+        console.log('[Auth Service] Redis Blacklist Check:', isBlacklisted);
+
+        if (isBlacklisted) {
+          console.log('[Auth Service] FAIL: Token is blacklisted');
+          return null;
+        }
+    } catch (err) {
+        console.error('[Auth Service] REDIS ERROR:', err);
+        // Если Redis упал, можно либо пропустить, либо вернуть ошибку. 
+        // Для безопасности лучше вернуть null.
+        return null; 
     }
 
-    return payload;
+    // 3. Возвращаем успешный ответ
+    console.log('[Auth Service] SUCCESS: Token valid.');
+    return {
+      isValid: true,
+      userId: payload.userId,
+      email: payload.email,
+      role: payload.role,
+    };
   }
 
   /**

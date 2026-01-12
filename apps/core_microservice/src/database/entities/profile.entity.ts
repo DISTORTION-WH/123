@@ -26,6 +26,7 @@ export class Profile {
   @Column({ unique: true })
   username: string;
 
+  // Исправлено: эти поля должны соответствовать миграции
   @Column({ name: 'first_name', nullable: true })
   firstName: string;
 
@@ -38,10 +39,17 @@ export class Profile {
   @Column({ name: 'avatar_url', nullable: true })
   avatarUrl: string;
 
+  // ВАЖНО: Добавлен декоратор Column. В базе колонка называется 'birthday'
+  @Column({ name: 'birthday', type: 'date', nullable: true })
+  birthDate: Date;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by', type: 'uuid' })
+  // При создании профиля мы обычно берем ID пользователя.
+  // nullable: true добавлено на случай, если профиль создается системой,
+  // или можно заполнять его user.id
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy: string;
 
   @UpdateDateColumn({ name: 'updated_at' })
@@ -72,5 +80,4 @@ export class Profile {
 
   @OneToMany(() => CommentLike, (like: CommentLike) => like.profile)
   commentLikes: CommentLike[];
-  birthDate: Date;
 }

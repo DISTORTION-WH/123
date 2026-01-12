@@ -1,48 +1,73 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
+  Inject,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
-    const authHeader = request.headers['authorization'];
+    const request = context.switchToHttp().getRequest();
+    const authHeader = request.headers.authorization;
+
+    // --- ЛОГ ОТЛАДКИ ---
+    console.log('------------------------------------------------');
+    console.log('[Core Guard] Headers:', request.headers);
+    console.log('[Core Guard] Auth Header:', authHeader);
 
     if (!authHeader) {
-      throw new UnauthorizedException('Authorization header missing');
+      console.log('[Core Guard] FAIL: No Authorization header');
+      throw new UnauthorizedException('No authorization header');
     }
 
-    const [type, token] = authHeader.split(' ');
+    const bearer = authHeader.split(' ')[0];
+    const token = authHeader.split(' ')[1];
 
-    if (type !== 'Bearer' || !token) {
-      throw new UnauthorizedException('Invalid token format');
+    if (bearer !== 'Bearer' || !token) {
+      console.log(
+        '[Core Guard] FAIL: Invalid format. Bearer:',
+        bearer,
+        'Token:',
+        token,
+      );
+      throw new UnauthorizedException('Invalid authorization format');
     }
+
+    console.log(
+      '[Core Guard] Token extracted:',
+      token.substring(0, 20) + '...',
+    );
 
     try {
+      // Валидируем токен через Auth Service
       const validationResult = await this.authService.validateToken(token);
 
+      console.log('[Core Guard] Validation Result:', validationResult);
+
       if (!validationResult || !validationResult.isValid) {
-        throw new UnauthorizedException('Invalid or expired token');
+        console.log('[Core Guard] FAIL: Validation returned false/null');
+        throw new UnauthorizedException('Invalid token');
       }
 
-      // Attach user to request
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      (request as any).user = {
+      // Прикрепляем пользователя к запросу
+      request.user = {
         id: validationResult.userId,
         email: validationResult.email,
         role: validationResult.role,
       };
 
+      console.log('[Core Guard] SUCCESS: User attached to request');
       return true;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch (e) {
+      console.log('[Core Guard] FAIL: Exception during validation:', e.message);
       throw new UnauthorizedException('Token validation failed');
     }
   }

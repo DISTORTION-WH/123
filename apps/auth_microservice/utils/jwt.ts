@@ -1,38 +1,42 @@
 import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
 
-const ACCESS_SECRET = process.env.JWT_SECRET || 'access-secret';
-const ACCESS_EXPIRES = process.env.JWT_EXPIRES_IN || '15m';
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret';
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh-secret';
 
-export interface TokenPayload extends jwt.JwtPayload {
+interface TokenPayload {
   userId: string;
   role: string;
   email: string;
-  jti: string;
-  exp?: number; 
 }
 
-export const generateAccessToken = (payload: Omit<TokenPayload, 'jti' | 'exp' | 'iat'>) => {
-  const jti = uuidv4();
+export const generateAccessToken = (payload: TokenPayload) => {
+  // Генерируем access token (живет 15 минут)
+  // jti (JWT ID) нужен для возможности добавить токен в черный список
+  const jti = require('crypto').randomBytes(16).toString('hex');
   
-
-  const token = jwt.sign(
-    { ...payload, jti }, 
-    ACCESS_SECRET as string, 
-    { expiresIn: ACCESS_EXPIRES } as jwt.SignOptions
-  );
+  const token = jwt.sign({ ...payload, jti }, ACCESS_SECRET, {
+    expiresIn: '15m', 
+  });
   
   return { token, jti };
 };
 
 export const generateRefreshTokenId = () => {
-  return uuidv4();
+  // Refresh token у нас будет просто UUID (опак токен), который мы храним в Redis
+  return require('uuid').v4(); 
 };
 
-export const verifyAccessToken = (token: string): TokenPayload | null => {
+export const verifyAccessToken = (token: string) => {
   try {
-    return jwt.verify(token, ACCESS_SECRET as string) as TokenPayload;
-  } catch (error) {
+    return jwt.verify(token, ACCESS_SECRET) as any;
+  } catch (error: any) {
+    // --- ЛОГИРОВАНИЕ ОШИБКИ ---
+    console.log('------------------------------------------------');
+    console.log('[JWT Error] Verification failed for token:');
+    console.log(token.substring(0, 20) + '...'); // Показываем начало токена
+    console.log('Reason:', error.message); // <--- Самое важное: причина ошибки
+    console.log('Using Secret:', ACCESS_SECRET); 
+    console.log('------------------------------------------------');
     return null;
   }
 };

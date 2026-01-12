@@ -15,8 +15,14 @@ export class User {
 
   @Column({ unique: true })
   email: string;
+
   @Column({ unique: true })
-  username: string; // <--- ДОБАВИЛИ ЭТО ПОЛЕ
+  username: string;
+
+  // Добавили поле role, которое есть в миграции InitSchema
+  @Column({ default: 'User' })
+  role: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

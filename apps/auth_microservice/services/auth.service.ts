@@ -2,7 +2,7 @@ import User from '../models/User';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateAccessToken, generateRefreshTokenId, verifyAccessToken } from '../utils/jwt';
 import { RedisAuthRepository } from '../repositories/redis.repository';
-import { v4 as uuidv4 } from 'uuid'; // <--- ИСПРАВЛЕНИЕ: Добавлен импорт
+import { v4 as uuidv4 } from 'uuid';
 
 export class AuthService {
   private redisRepository: RedisAuthRepository;
@@ -42,13 +42,14 @@ export class AuthService {
       displayName: data.displayName,
       birthday: data.birthday,
       bio: data.bio,
-      role: 'User', // Роль по умолчанию
+      role: 'User',
     });
 
     await newUser.save();
 
     // 4. Генерируем токены
-    return this.generateTokens(newUser._id.toString(), newUser.role, newUser.email);
+    // ВАЖНО: Передаем username
+    return this.generateTokens(newUser._id.toString(), newUser.role, newUser.email, newUser.username);
   }
 
   /**
@@ -68,7 +69,8 @@ export class AuthService {
     }
 
     // 3. Генерируем токены
-    return this.generateTokens(user._id.toString(), user.role, user.email);
+    // ВАЖНО: Передаем username
+    return this.generateTokens(user._id.toString(), user.role, user.email, user.username);
   }
 
   /**
@@ -84,32 +86,30 @@ export class AuthService {
 
     const { userId } = JSON.parse(sessionData);
 
-    // 2. Проверяем, существует ли юзер в базе (на случай удаления/бана)
+    // 2. Проверяем, существует ли юзер в базе
     const user = await User.findById(userId);
     if (!user) {
-      // Если юзера нет, чистим сессию
       await this.redisRepository.deleteSession(oldRefreshTokenId);
       throw new Error('User not found');
     }
 
-    // 3. Удаляем старую сессию (Refresh Token Rotation)
+    // 3. Удаляем старую сессию
     await this.redisRepository.deleteSession(oldRefreshTokenId);
 
     // 4. Генерируем новую пару токенов
-    return this.generateTokens(user._id.toString(), user.role, user.email);
+    // ВАЖНО: Передаем username
+    return this.generateTokens(user._id.toString(), user.role, user.email, user.username);
   }
 
   /**
    * Валидация Access токена
    */
   async validateToken(accessToken: string) {
-    // 1. Проверяем подпись JWT
     const payload = verifyAccessToken(accessToken);
     if (!payload) {
-      return null; // Invalid signature or expired
+      return null;
     }
 
-    // 2. Проверяем, не в черном ли списке этот токен (например, после логаута)
     const isBlacklisted = await this.redisRepository.isTokenBlacklisted(payload.jti, 'access');
     if (isBlacklisted) {
       return null;
@@ -122,12 +122,10 @@ export class AuthService {
    * Выход из системы (Logout)
    */
   async logout(refreshTokenId: string, accessToken?: string) {
-    // 1. Удаляем сессию рефреш токена
     if (refreshTokenId) {
       await this.redisRepository.deleteSession(refreshTokenId);
     }
 
-    // 2. (Опционально) Добавляем Access Token в черный список до конца его жизни
     if (accessToken) {
       const payload = verifyAccessToken(accessToken);
       if (payload && payload.jti && payload.exp) {
@@ -142,7 +140,8 @@ export class AuthService {
   /**
    * Приватный метод генерации пары токенов и сохранения сессии
    */
-  private async generateTokens(userId: string, role: string, email: string) {
+  // ВАЖНО: Добавлен аргумент username
+  private async generateTokens(userId: string, role: string, email: string, username: string) {
     // Создаем JWT Access Token
     const { token: accessToken, jti } = generateAccessToken({ userId, role, email });
     
@@ -153,59 +152,43 @@ export class AuthService {
     await this.redisRepository.storeRefreshTokenId(refreshTokenId, JSON.stringify({ userId }));
 
     return {
-      user: { id: userId, email, role },
+      // ВАЖНО: Возвращаем username, чтобы Core Service мог его сохранить
+      user: { id: userId, email, role, username }, 
       accessToken,
       refreshTokenId,
     };
   }
 
-  // --- НОВЫЕ МЕТОДЫ ---
+  // --- Methods for Forgot/Reset Password (без изменений, но нужны для полноты файла) ---
 
-  /**
-   * Шаг 1: Инициация сброса пароля
-   */
   async forgotPassword(email: string) {
     const user = await User.findOne({ email });
-    
     if (!user) {
       console.log(`[Forgot Password] User with email ${email} not found. Doing nothing.`);
       return; 
     }
-
     const resetToken = uuidv4();
-
     await this.redisRepository.setResetToken(resetToken, user._id.toString());
-
-    // MOCK EMAIL
     const frontendUrl = process.env.CLIENT_URL || 'http://localhost:3000';
     const resetLink = `${frontendUrl}/auth/reset-password?token=${resetToken}`;
-    
     console.log(`---------------------------------------------------------`);
     console.log(`[MOCK EMAIL SERVICE] Sending password reset link to ${email}`);
     console.log(`LINK: ${resetLink}`);
     console.log(`---------------------------------------------------------`);
   }
 
-  /**
-   * Шаг 2: Установка нового пароля
-   */
   async resetPassword(token: string, newPassword: string) {
     const userId = await this.redisRepository.getAndDeleteResetToken(token);
-    
     if (!userId) {
       throw new Error('Invalid or expired reset token');
     }
-
     const user = await User.findById(userId);
     if (!user) {
       throw new Error('User not found');
     }
-
     const passwordHash = await hashPassword(newPassword);
-    
     user.passwordHash = passwordHash;
     await user.save();
-
     return { message: 'Password successfully updated' };
   }
 }

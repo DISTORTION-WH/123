@@ -1,56 +1,75 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 import { ProfileFollow } from './profile-follow.entity';
+import { Post } from './post.entity';
+import { Comment } from './comment.entity';
+import { PostLike } from './post-like.entity';
+import { CommentLike } from './comment-like.entity';
 
 @Entity('profiles')
 export class Profile {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  user_id: string;
+  @Column({ name: 'user_id', type: 'uuid', unique: true })
+  userId: string;
 
-  @Column({ type: 'varchar', length: 50, unique: true })
+  @Column({ unique: true })
   username: string;
 
-  @Column({ type: 'varchar', length: 100 })
-  display_name: string;
+  @Column({ name: 'first_name', nullable: true })
+  firstName: string;
 
-  @Column({ type: 'date' })
-  birthday: Date;
+  @Column({ name: 'last_name', nullable: true })
+  lastName: string;
 
   @Column({ type: 'text', nullable: true })
   bio: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  avatar_url: string;
+  @Column({ name: 'avatar_url', nullable: true })
+  avatarUrl: string;
 
-  @Column({ type: 'boolean', default: true })
-  is_public: boolean;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-  @CreateDateColumn()
-  created_at: Date;
+  @Column({ name: 'created_by', type: 'uuid' })
+  createdBy: string;
 
-  @Column({ type: 'uuid' })
-  created_by: string;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
-  @UpdateDateColumn()
-  updated_at: Date;
-
-  @Column({ type: 'uuid', nullable: true })
-  updated_by: string;
-
-  @Column({ type: 'boolean', default: false })
-  deleted: boolean;
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy: string;
 
   // Relations
-  @ManyToOne(() => User, user => user.profiles)
+  @OneToOne(() => User, (user: User) => user.profile, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @OneToMany(() => ProfileFollow, follow => follow.followerProfile)
+  @OneToMany(() => ProfileFollow, (follow: ProfileFollow) => follow.follower)
   following: ProfileFollow[];
 
-  @OneToMany(() => ProfileFollow, follow => follow.followedProfile)
+  @OneToMany(() => ProfileFollow, (follow: ProfileFollow) => follow.following)
   followers: ProfileFollow[];
+
+  @OneToMany(() => Post, (post: Post) => post.profile)
+  posts: Post[];
+
+  @OneToMany(() => Comment, (comment: Comment) => comment.profile)
+  comments: Comment[];
+
+  @OneToMany(() => PostLike, (like: PostLike) => like.profile)
+  postLikes: PostLike[];
+
+  @OneToMany(() => CommentLike, (like: CommentLike) => like.profile)
+  commentLikes: CommentLike[];
 }

@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: innogram-postgres
+    environment:
+      POSTGRES_DB: innogram
+      POSTGRES_USER: innogram_user
+      POSTGRES_PASSWORD: innogram_password
+    ports:
+      - "5435:5432"
+    volumes:
+      # ВНИМАНИЕ: Я изменил имя тома на postgres_data_v2
+      - postgres_data_v2:/var/lib/postgresql/data
+    networks:
+      - innogram-network
+    restart: always
+
+  mongo:
+    image: mongo:6
+    container_name: innogram-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      # Тут тоже можно обновить на всякий случай
+      - mongo_data_v2:/data/db
+    networks:
+      - innogram-network
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: innogram-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - innogram-network
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: innogram-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - innogram-network
+    restart: always
+
+volumes:
+  # Объявляем новые тома
+  postgres_data_v2:
+  mongo_data_v2:
+  redis_data:
+
+networks:
+  innogram-network:
+    driver: bridge

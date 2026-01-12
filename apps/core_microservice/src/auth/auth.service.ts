@@ -8,11 +8,16 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AxiosError } from 'axios';
 import { lastValueFrom } from 'rxjs';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+
+import { User } from '../database/entities/user.entity';
+import { Profile } from '../database/entities/profile.entity';
 
 export interface AuthResponse {
   accessToken: string;
@@ -21,10 +26,10 @@ export interface AuthResponse {
     id: string;
     email: string;
     role: string;
+    username: string;
   };
 }
 
-// Интерфейс для ответа валидации
 interface ValidateTokenResponse {
   isValid: boolean;
   userId: string;
@@ -39,6 +44,10 @@ export class AuthService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Profile)
+    private readonly profileRepository: Repository<Profile>,
   ) {
     this.authServiceUrl =
       this.configService.get<string>('AUTH_SERVICE_URL') ||
@@ -53,8 +62,30 @@ export class AuthService {
           signUpDto,
         ),
       );
+
+      // Теперь TypeScript не будет ругаться, так как мы добавили username в User Entity
+      const user = this.userRepository.create({
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.username,
+      });
+
+      await this.userRepository.save(user);
+
+      const profile = this.profileRepository.create({
+        user: user,
+        firstName: signUpDto.username,
+      });
+
+      await this.profileRepository.save(profile);
+
       return data;
-    } catch (error) {
+    } catch (error: any) {
+      // Приводим error к any для проверки кода ошибки Postgres
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error && error.code === '23505') {
+        console.warn('User already exists in Core DB, skipping sync');
+      }
       this.handleHttpError(error);
     }
   }
@@ -67,6 +98,23 @@ export class AuthService {
           credentials,
         ),
       );
+
+      const exists = await this.userRepository.findOne({
+        where: { id: data.user.id },
+      });
+
+      if (!exists) {
+        const user = this.userRepository.create({
+          id: data.user.id,
+          email: data.user.email,
+          username: data.user.username,
+        });
+        await this.userRepository.save(user);
+
+        const profile = this.profileRepository.create({ user });
+        await this.profileRepository.save(profile);
+      }
+
       return data;
     } catch (error) {
       this.handleHttpError(error);
@@ -78,9 +126,7 @@ export class AuthService {
       const { data } = await lastValueFrom(
         this.httpService.get<{ url: string }>(
           `${this.authServiceUrl}/internal/auth/oauth/initiate`,
-          {
-            params: { provider },
-          },
+          { params: { provider } },
         ),
       );
       return data;
@@ -97,10 +143,7 @@ export class AuthService {
       const { data } = await lastValueFrom(
         this.httpService.post<AuthResponse>(
           `${this.authServiceUrl}/internal/auth/oauth/exchange-code`,
-          {
-            provider,
-            code: authorizationCode,
-          },
+          { provider, code: authorizationCode },
         ),
       );
       return data;
@@ -108,8 +151,6 @@ export class AuthService {
       this.handleHttpError(error);
     }
   }
-
-  // ИСПРАВЛЕНИЕ: Удален ошибочный метод asyncHZhandleRefresh, который содержал опечатку и дублировал код
 
   async handleRefresh(refreshTokenId: string): Promise<AuthResponse> {
     try {
@@ -139,20 +180,16 @@ export class AuthService {
 
   async validateToken(accessToken: string): Promise<ValidateTokenResponse> {
     try {
-      // ИСПРАВЛЕНИЕ: Добавлен Generic Type <ValidateTokenResponse> для Axios вызова
       const { data } = await lastValueFrom(
         this.httpService.post<ValidateTokenResponse>(
           `${this.authServiceUrl}/internal/auth/validate`,
-          {
-            accessToken,
-          },
+          { accessToken },
         ),
       );
       return data;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      // Если error не используется, можно заменить на _ или оставить (ESLint unused-vars)
-      // Здесь error используется неявно для логики потока (мы просто ловим ошибку и кидаем свою)
+      // Ошибка используется для потока управления (невалидный токен), можно игнорировать переменную
       throw new UnauthorizedException('Token validation failed');
     }
   }

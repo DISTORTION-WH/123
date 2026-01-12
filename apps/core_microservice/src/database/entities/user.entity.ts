@@ -15,7 +15,8 @@ export class User {
 
   @Column({ unique: true })
   email: string;
-
+  @Column({ unique: true })
+  username: string; // <--- ДОБАВИЛИ ЭТО ПОЛЕ
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

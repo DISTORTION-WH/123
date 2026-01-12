@@ -72,4 +72,5 @@ export class Profile {
 
   @OneToMany(() => CommentLike, (like: CommentLike) => like.profile)
   commentLikes: CommentLike[];
+  birthDate: Date;
 }

@@ -3,18 +3,17 @@ import { v4 as uuidv4 } from 'uuid';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateAccessToken, generateRefreshTokenId, verifyAccessToken } from '../utils/jwt';
 import { RedisAuthRepository } from '../repositories/redis.repository';
-// Импортируем наш новый репозиторий
 import { UserRepository } from '../repositories/user.repository';
 
 export class AuthService {
   private redisRepository: RedisAuthRepository;
-  private userRepository: UserRepository; // Добавляем свойство
+  private userRepository: UserRepository; 
   
   private coreServiceUrl = process.env.CORE_SERVICE_URL || 'http://core_microservice:3000';
 
   constructor() {
     this.redisRepository = new RedisAuthRepository();
-    this.userRepository = new UserRepository(); // Инициализируем
+    this.userRepository = new UserRepository();
   }
 
   async registerUser(data: {
@@ -25,19 +24,16 @@ export class AuthService {
     birthday?: string;
     bio?: string;
   }) {
-    // 1. ИСПОЛЬЗУЕМ РЕПОЗИТОРИЙ: Проверка на дубликаты
     const existingUser = await this.userRepository.findByEmailOrUsername(data.email, data.username);
 
     if (existingUser) {
       throw new Error('User with this email or username already exists');
     }
 
-    // 2. Хэширование и ID
     const passwordHash = await hashPassword(data.password);
     const userId = uuidv4();
 
-    // 3. ИСПОЛЬЗУЕМ РЕПОЗИТОРИЙ: Создание юзера
-    // Мы просто передаем объект данных, а репозиторий сам сделает new User() и save()
+    
     const newUser = await this.userRepository.create({
       _id: userId,
       email: data.email,
@@ -49,7 +45,6 @@ export class AuthService {
       role: 'User',
     });
 
-    // 4. Синхронизация с Core Service
     try {
       console.log(`[AuthService] Syncing user ${userId} to Core Service...`);
       await axios.post(`${this.coreServiceUrl}/internal/users/sync`, {
@@ -62,12 +57,10 @@ export class AuthService {
       console.error('[AuthService] Failed to sync user with Core Service:', error.message);
     }
 
-    // 5. Токены
     return this.generateTokens(newUser._id.toString(), newUser.role, newUser.email, newUser.username);
   }
 
   async authenticateUser(credentials: { email: string; password: string }) {
-    // ИСПОЛЬЗУЕМ РЕПОЗИТОРИЙ
     const user = await this.userRepository.findByEmail(credentials.email);
     
     if (!user) {
@@ -88,7 +81,6 @@ export class AuthService {
     }
     const { userId } = JSON.parse(sessionData);
     
-    // ИСПОЛЬЗУЕМ РЕПОЗИТОРИЙ
     const user = await this.userRepository.findById(userId);
     
     if (!user) {
@@ -148,7 +140,6 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    // ИСПОЛЬЗУЕМ РЕПОЗИТОРИЙ
     const user = await this.userRepository.findByEmail(email);
     
     if (!user) {
@@ -168,17 +159,14 @@ export class AuthService {
       throw new Error('Invalid or expired reset token');
     }
     
-    // ИСПОЛЬЗУЕМ РЕПОЗИТОРИЙ
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new Error('User not found');
     }
     
-    // Бизнес-логика изменения остается в сервисе
     const passwordHash = await hashPassword(newPassword);
     user.passwordHash = passwordHash;
     
-    // А сохранение делегируем репозиторию
     await this.userRepository.save(user);
     
     return { message: 'Password successfully updated' };

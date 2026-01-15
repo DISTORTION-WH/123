@@ -2,7 +2,7 @@ import './config/env';
 import express, { RequestHandler } from 'express'; // Импортируем тип
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import connectDB from './config/db';
+import dbConnection from './config/db';
 import authController from './controllers/auth.controller';
 import { env } from './config/env';
 
@@ -21,7 +21,7 @@ app
   .use(express.json())
   .use(limiter);
 
-connectDB();
+dbConnection();
 
 app
   .get('/health', (req, res) => {

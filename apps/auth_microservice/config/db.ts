@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
-import { env } from './env';
 
-const connectDB = async () => {
+const dbConnection = async () => {
   try {
-    await mongoose.connect(env.MONGO_URI);
+    const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/innogram_auth';
+    await mongoose.connect(mongoURI);
     console.log('Монго работает');
   } catch (err) {
     console.error('Монго не работает:', err);
@@ -11,4 +11,4 @@ const connectDB = async () => {
   }
 };
 
-export default connectDB;
+export default dbConnection;

@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
-import { randomBytes, randomUUID } from 'crypto'; // Импортируем всё из встроенного модуля
+import jwt, { JwtPayload } from 'jsonwebtoken'; 
+import { randomBytes, randomUUID } from 'crypto';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret';
 
@@ -9,8 +9,12 @@ interface TokenPayload {
   email: string;
 }
 
+
+export interface AccessTokenPayload extends JwtPayload, TokenPayload {
+  jti: string;
+}
+
 export const generateAccessToken = (payload: TokenPayload) => {
-  // randomBytes отлично подходит для создания случайной hex-строки (jti)
   const jti = randomBytes(16).toString('hex');
   
   const token = jwt.sign({ ...payload, jti }, ACCESS_SECRET, {
@@ -21,14 +25,20 @@ export const generateAccessToken = (payload: TokenPayload) => {
 };
 
 export const generateRefreshTokenId = () => {
-  // Используем нативный метод Node.js вместо библиотеки uuid
   return randomUUID(); 
 };
 
-export const verifyAccessToken = (token: string) => {
+export const verifyAccessToken = (token: string): AccessTokenPayload | null => {
   try {
-    return jwt.verify(token, ACCESS_SECRET) as any;
-  } catch (error: any) {
+    const result = jwt.verify(token, ACCESS_SECRET);
+
+     
+    if (typeof result === 'string') {
+      return null;
+    }
+
+    return result as AccessTokenPayload;
+  } catch (error) {
     console.log('[JWT Error] Verification failed.');
     return null;
   }

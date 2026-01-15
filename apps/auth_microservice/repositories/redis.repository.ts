@@ -4,7 +4,6 @@ const REFRESH_TTL = 7 * 24 * 60 * 60; // 7 дней
 const RESET_PASSWORD_TTL = 15 * 60;   // 15 минут
 
 export class RedisAuthRepository {
-  // ... существующие методы ...
 
   async isTokenBlacklisted(tokenId: string, type: 'access' | 'refresh'): Promise<boolean> {
     const key = `blacklist:${type}:${tokenId}`;
@@ -34,24 +33,17 @@ export class RedisAuthRepository {
     await redisClient.del(key);
   }
 
-  // --- НОВЫЕ МЕТОДЫ ДЛЯ СБРОСА ПАРОЛЯ ---
-
-  /**
-   * Сохранить токен сброса пароля, привязанный к userId
-   */
+  
   async setResetToken(token: string, userId: string): Promise<void> {
     const key = `reset_password:${token}`;
     await redisClient.setex(key, RESET_PASSWORD_TTL, userId);
   }
 
-  /**
-   * Получить userId по токену и сразу удалить токен (одноразовое использование)
-   */
   async getAndDeleteResetToken(token: string): Promise<string | null> {
     const key = `reset_password:${token}`;
     const userId = await redisClient.get(key);
     if (userId) {
-      await redisClient.del(key); // Токен больше недействителен после использования
+      await redisClient.del(key); 
     }
     return userId;
   }

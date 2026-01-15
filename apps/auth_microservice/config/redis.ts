@@ -1,11 +1,10 @@
 import Redis from 'ioredis';
-import * as dotenv from 'dotenv'; 
-dotenv.config();
+import { env } from './env';
 
 const redisClient = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD || undefined,
+  host: env.REDIS_HOST,
+  port: env.REDIS_PORT,
+  password: env.REDIS_PASSWORD,
   lazyConnect: true,
 });
 

@@ -39,7 +39,6 @@ export class Post {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy: string;
 
-  // Relations
   @ManyToOne(() => Profile, (profile: Profile) => profile.posts, {
     onDelete: 'CASCADE',
   })

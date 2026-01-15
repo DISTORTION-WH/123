@@ -17,8 +17,6 @@ export class PostsController {
     @CurrentUser() user: CurrentUserType,
     @Body() createPostDto: CreatePostDto,
   ) {
-    // Мы типизировали user, теперь TS знает, что там есть поле id (или userId)
-    // В ProfilesController используется user.id, поэтому здесь я тоже использую user.id
     return this.postsService.create(user.id, createPostDto);
   }
 }

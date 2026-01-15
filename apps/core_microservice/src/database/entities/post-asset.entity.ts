@@ -38,7 +38,6 @@ export class PostAsset {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy: string;
 
-  // Relations
   @ManyToOne(() => Post, (post: Post) => post.assets, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'post_id' })
   post: Post;

@@ -6,7 +6,6 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -15,13 +14,11 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
   app.enableCors({
     origin: process.env.CLIENT_URL || 'http://localhost:3000',
     credentials: true,
   });
 
-  // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Innogram Core API')
     .setDescription(

@@ -5,7 +5,6 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
-// Интерфейс для типизации данных из токена
 interface ICurrentUser {
   userId: string;
   email: string;

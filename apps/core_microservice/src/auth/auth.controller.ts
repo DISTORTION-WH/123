@@ -10,17 +10,13 @@ import express from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
-// Импортируем новые DTO
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  // ... существующие методы signUp, login, logout ...
   @Post('signup')
   async signUp(
     @Body() signUpDto: SignUpDto,
@@ -30,7 +26,6 @@ export class AuthController {
     this.setAuthCookies(res, result.accessToken, result.refreshTokenId);
     return result.user;
   }
-
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
@@ -40,16 +35,12 @@ export class AuthController {
     this.setAuthCookies(res, result.accessToken, result.refreshTokenId);
     return result.user;
   }
-
   @Post('logout')
   logout(@Res({ passthrough: true }) res: express.Response) {
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
     return { message: 'Logged out' };
   }
-
-  // --- НОВЫЕ МЕТОДЫ ---
-
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset link' })

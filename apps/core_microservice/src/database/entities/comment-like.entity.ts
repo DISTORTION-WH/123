@@ -35,7 +35,6 @@ export class CommentLike {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy: string;
 
-  // Relations
   @ManyToOne(() => Comment, (comment: Comment) => comment.likes, {
     onDelete: 'CASCADE',
   })

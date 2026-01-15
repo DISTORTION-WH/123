@@ -24,6 +24,4 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsDateString()
   birthDate?: string;
-
-  // Avatar URL пока пропустим, добавим когда сделаем загрузку файлов
 }

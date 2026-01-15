@@ -10,13 +10,10 @@ const POSTGRES_USER = process.env.POSTGRES_USER || 'innogram_user';
 const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || 'innogram_password';
 const POSTGRES_DB = process.env.POSTGRES_DB || 'innogram';
 
-console.log('--------------------------------------------------');
-console.log('TypeORM Data Source Configuration:');
 console.log(`Host: ${POSTGRES_HOST}`);
 console.log(`Port: ${POSTGRES_PORT}`);
 console.log(`User: ${POSTGRES_USER}`);
 console.log(`DB:   ${POSTGRES_DB}`);
-console.log('--------------------------------------------------');
 
 export const AppDataSource = new DataSource({
   type: 'postgres',

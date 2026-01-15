@@ -19,7 +19,6 @@ export class User {
   @Column({ unique: true })
   username: string;
 
-  // Добавили поле role, которое есть в миграции InitSchema
   @Column({ default: 'User' })
   role: string;
 

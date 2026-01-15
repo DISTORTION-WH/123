@@ -36,7 +36,6 @@ export class ProfilesService {
   }
 
   async getProfileByUsername(username: string): Promise<Profile> {
-    // Теперь это поле username валидно, так как мы добавили его в User Entity
     const user = await this.userRepository.findOne({ where: { username } });
     if (!user) {
       throw new NotFoundException(`User with username ${username} not found`);

@@ -9,11 +9,22 @@ import { User } from '../database/entities/user.entity';
 import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
 import { AuthModule } from '../auth/auth.module';
-
+import { PostLike } from '../database/entities/post-like.entity';
+import { ProfilesModule } from '../profiles/profiles.module';
+import { ProfileFollow } from '../database/entities/profile-follow.entity';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Post, Asset, PostAsset, User, Profile]),
+    TypeOrmModule.forFeature([
+      Post,
+      Asset,
+      PostAsset,
+      User,
+      Profile,
+      PostLike,
+      ProfileFollow,
+    ]),
     AuthModule,
+    ProfilesModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],

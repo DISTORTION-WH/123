@@ -1,7 +1,7 @@
 import redisClient from '../config/redis';
 
-const REFRESH_TTL = 7 * 24 * 60 * 60; // 7 дней
-const RESET_PASSWORD_TTL = 15 * 60;   // 15 минут
+const REFRESH_TTL = 7 * 24 * 60 * 60; // 7 days
+const RESET_PASSWORD_TTL = 15 * 60;   // 15 mins
 
 export class RedisAuthRepository {
 

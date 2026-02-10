@@ -27,10 +27,10 @@ const UserSchema: Schema = new Schema({
 
 
 UserSchema.set('toJSON', {
-  virtuals: true, //монго создаст виртуальное поле, в нашем случае речь о id которое нам нужно,а не _id
-  versionKey: false, //уничтожить нам не нужный ключ версий
+  virtuals: true, //mongo will create a virtual field, in our case it is the ID we need, not _id
+  versionKey: false, //destroy the version key we dont need
   transform: function (doc, ret) {
-    delete ret._id; //нам не нужно поле _id потому что мы создали виртуальное id
+    delete ret._id; //we dont need the _id field because we created a virtual id
   }
 });
 

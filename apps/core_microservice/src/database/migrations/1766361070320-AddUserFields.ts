@@ -4,12 +4,9 @@ export class AddUserFields1766361070320 implements MigrationInterface {
   name = 'AddUserFields1766361070320';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Добавляем email
     await queryRunner.query(
       `ALTER TABLE "users" ADD "email" character varying`,
     );
-    // Если таблица пустая, можно сразу ставить NOT NULL, если нет - нужно сначала заполнить данные.
-    // Полагаем, что это dev среда и можно обновить структуру.
     await queryRunner.query(
       `UPDATE "users" SET "email" = 'temp-' || "id" WHERE "email" IS NULL`,
     );
@@ -20,7 +17,6 @@ export class AddUserFields1766361070320 implements MigrationInterface {
       `ALTER TABLE "users" ADD CONSTRAINT "UQ_user_email" UNIQUE ("email")`,
     );
 
-    // Добавляем username
     await queryRunner.query(
       `ALTER TABLE "users" ADD "username" character varying`,
     );

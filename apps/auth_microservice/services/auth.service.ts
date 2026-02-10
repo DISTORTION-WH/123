@@ -1,15 +1,15 @@
-import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateAccessToken, generateRefreshTokenId, verifyAccessToken } from '../utils/jwt';
 import { RedisAuthRepository } from '../repositories/redis.repository';
 import { UserRepository } from '../repositories/user.repository';
+import { rabbitMQService } from './rabbitmq.service'; // Импорт RabbitMQ сервиса
 
 export class AuthService {
   private redisRepository: RedisAuthRepository;
   private userRepository: UserRepository; 
   
-  private coreServiceUrl = process.env.CORE_SERVICE_URL || 'http://core_microservice:3000';
+  // private coreServiceUrl = process.env.CORE_SERVICE_URL || 'http://core_microservice:3000'; // Больше не нужно для синхронизации
 
   constructor() {
     this.redisRepository = new RedisAuthRepository();
@@ -45,16 +45,22 @@ export class AuthService {
       role: 'User',
     });
 
+    // CHANGE: Заменена прямая HTTP синхронизация на отправку события в RabbitMQ
     try {
-      console.log(`[AuthService] Syncing user ${userId} to Core Service...`);
-      await axios.post(`${this.coreServiceUrl}/internal/users/sync`, {
+      console.log(`[AuthService] Queueing user sync for ${userId}...`);
+      await rabbitMQService.publishUserCreated({
         id: userId,
         email: data.email,
         username: data.username,
+        displayName: data.displayName, // Передаем также доп. данные для создания профиля
+        birthday: data.birthday,
+        bio: data.bio
       });
-      console.log(`[AuthService] Sync success.`);
+      console.log(`[AuthService] Event queued.`);
     } catch (error: any) {
-      console.error('[AuthService] Failed to sync user with Core Service:', error.message);
+      // Мы не блокируем регистрацию, если очередь недоступна, но логируем ошибку.
+      // В идеале здесь нужен механизм Outbox pattern (сохранение события в БД и отправка фоновым процессом).
+      console.error('[AuthService] Failed to queue user sync:', error.message);
     }
 
     return this.generateTokens(newUser._id.toString(), newUser.role, newUser.email, newUser.username);
@@ -128,7 +134,7 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, role: string, email: string, username: string) {
-    const { token: accessToken, jti } = generateAccessToken({ userId, role, email });
+    const { token: accessToken } = generateAccessToken({ userId, role, email });
     const refreshTokenId = generateRefreshTokenId();
     await this.redisRepository.storeRefreshTokenId(refreshTokenId, JSON.stringify({ userId }));
     

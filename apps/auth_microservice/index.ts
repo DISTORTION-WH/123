@@ -1,10 +1,11 @@
 import './config/env'; 
-import express, { RequestHandler } from 'express'; // Импортируем тип
+import express, { RequestHandler } from 'express'; 
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dbConnection from './config/db';
 import authController from './controllers/auth.controller';
 import { env } from './config/env';
+import { rabbitMQService } from './services/rabbitmq.service'; // Импорт сервиса
 
 const app = express();
 
@@ -21,14 +22,20 @@ app
   .use(express.json())
   .use(limiter);
 
+// Подключаемся к БД
 dbConnection();
+
+// Подключаемся к RabbitMQ
+rabbitMQService.connect().catch((err) => {
+  console.error('Failed to connect to RabbitMQ on startup:', err);
+});
 
 app
   .get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', service: 'Auth Microservice' });
   })
   .use('/internal/auth', authController)
-  .use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  .use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error('Unhandled Error:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   })

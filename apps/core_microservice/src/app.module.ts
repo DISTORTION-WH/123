@@ -9,7 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { PostsModule } from './posts/posts.module';
-
+import { AssetsModule } from './assets/assets.module';
+import { CommentsModule } from './comments/comments.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,7 +32,7 @@ import { PostsModule } from './posts/posts.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         autoLoadEntities: true,
 
-        synchronize: false,
+        synchronize: true,
       }),
     }),
 
@@ -39,6 +40,8 @@ import { PostsModule } from './posts/posts.module';
     UsersModule,
     ProfilesModule,
     PostsModule,
+    AssetsModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

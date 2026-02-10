@@ -1,11 +1,9 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Если .env файл лежит в корне монорепозитория (на 3 уровня выше), указываем путь явно.
-// Если он копируется в корень докера или лежит рядом при разработке - просто dotenv.config()
+
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') }); 
 
-// Можно также добавить проверку наличия критических переменных
 const requiredEnvVars = ['MONGO_URI', 'REDIS_HOST', 'JWT_ACCESS_SECRET'];
 requiredEnvVars.forEach((key) => {
   if (!process.env[key]) {

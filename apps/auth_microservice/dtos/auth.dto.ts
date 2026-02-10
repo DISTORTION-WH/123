@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// --- REGISTER ---
+
 export class RegisterEntity {
   private static schema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
@@ -16,7 +16,7 @@ export class RegisterEntity {
   }
 }
 
-// --- LOGIN ---
+
 export class LoginEntity {
   private static schema = z.object({
     email: z.string().email(),
@@ -28,7 +28,7 @@ export class LoginEntity {
   }
 }
 
-// --- REFRESH ---
+
 export class RefreshTokenEntity {
   private static schema = z.object({
     refreshTokenId: z.string().uuid({ message: "Invalid refresh token format" }),
@@ -39,7 +39,7 @@ export class RefreshTokenEntity {
   }
 }
 
-// --- VALIDATE TOKEN ---
+
 export class ValidateTokenEntity {
   private static schema = z.object({
     accessToken: z.string().min(1, "Access token is required"),
@@ -50,7 +50,7 @@ export class ValidateTokenEntity {
   }
 }
 
-// --- LOGOUT ---
+
 export class LogoutEntity {
   private static schema = z.object({
     refreshTokenId: z.string().uuid(),
@@ -62,7 +62,7 @@ export class LogoutEntity {
   }
 }
 
-// --- FORGOT PASSWORD ---
+
 export class ForgotPasswordEntity {
   private static schema = z.object({
     email: z.string().email(),
@@ -73,7 +73,7 @@ export class ForgotPasswordEntity {
   }
 }
 
-// --- RESET PASSWORD ---
+
 export class ResetPasswordEntity {
   private static schema = z.object({
     token: z.string().uuid({ message: "Invalid reset token" }),

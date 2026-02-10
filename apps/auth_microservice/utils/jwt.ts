@@ -9,7 +9,6 @@ interface TokenPayload {
   email: string;
 }
 
-
 export interface AccessTokenPayload extends JwtPayload, TokenPayload {
   jti: string;
 }
@@ -32,13 +31,12 @@ export const verifyAccessToken = (token: string): AccessTokenPayload | null => {
   try {
     const result = jwt.verify(token, ACCESS_SECRET);
 
-     
     if (typeof result === 'string') {
       return null;
     }
 
     return result as AccessTokenPayload;
-  } catch (error) {
+  } catch {
     console.log('[JWT Error] Verification failed.');
     return null;
   }

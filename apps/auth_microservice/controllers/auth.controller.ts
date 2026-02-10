@@ -24,7 +24,8 @@ const handleControllerError = (res: Response, error: any) => {
   return res.status(400).json({ error: error.message || 'Internal Server Error' });
 };
 
-router.post('/register', async (req: Request, res: Response) => {
+router
+      .post('/register', async (req: Request, res: Response) => {
   try {
     const dto = RegisterEntity.validate(req.body);
     
@@ -34,9 +35,9 @@ router.post('/register', async (req: Request, res: Response) => {
   } catch (error: any) {
     return handleControllerError(res, error);
   }
-});
+})
 
-router.post('/login', async (req: Request, res: Response) => {
+    .post('/login', async (req: Request, res: Response) => {
   try {
     const dto = LoginEntity.validate(req.body);
     const result = await authService.authenticateUser(dto);
@@ -46,9 +47,9 @@ router.post('/login', async (req: Request, res: Response) => {
     if (error instanceof ZodError) return handleControllerError(res, error);
     return res.status(401).json({ error: error.message || 'Invalid credentials' });
   }
-});
+})
 
-router.post('/refresh', async (req: Request, res: Response) => {
+      .post('/refresh', async (req: Request, res: Response) => {
   try {
     const { refreshTokenId } = RefreshTokenEntity.validate(req.body);
     const result = await authService.refreshTokens(refreshTokenId);
@@ -57,9 +58,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
     if (error instanceof ZodError) return handleControllerError(res, error);
     return res.status(401).json({ error: error.message });
   }
-});
+})
 
-router.post('/validate', async (req: Request, res: Response) => {
+      .post('/validate', async (req: Request, res: Response) => {
   try {
     const { accessToken } = ValidateTokenEntity.validate(req.body);
     
@@ -80,9 +81,9 @@ router.post('/validate', async (req: Request, res: Response) => {
     if (error instanceof ZodError) return handleControllerError(res, error);
     return res.status(500).json({ error: 'Internal server error' });
   }
-});
+})
 
-router.post('/logout', async (req: Request, res: Response) => {
+      .post('/logout', async (req: Request, res: Response) => {
   try {
     const { refreshTokenId, accessToken } = LogoutEntity.validate(req.body);
     await authService.logout(refreshTokenId, accessToken);
@@ -90,9 +91,9 @@ router.post('/logout', async (req: Request, res: Response) => {
   } catch (error: any) {
     return handleControllerError(res, error);
   }
-});
+})
 
-router.post('/forgot-password', async (req: Request, res: Response) => {
+        .post('/forgot-password', async (req: Request, res: Response) => {
   try {
     const { email } = ForgotPasswordEntity.validate(req.body);
     await authService.forgotPassword(email);
@@ -103,9 +104,9 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     if (error instanceof ZodError) return handleControllerError(res, error);
     return res.status(500).json({ error: 'Internal server error' });
   }
-});
+})
 
-router.post('/reset-password', async (req: Request, res: Response) => {
+      .post('/reset-password', async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = ResetPasswordEntity.validate(req.body);
     const result = await authService.resetPassword(token, newPassword);

@@ -47,6 +47,19 @@ export class ProfilesController {
     return await this.profilesService.getProfileByUsername(username);
   }
 
+  @Get(':username/followers')
+  @ApiOperation({ summary: 'Get users following this profile' })
+  async getFollowers(@Param('username') username: string) {
+    return await this.profilesService.getFollowers(username);
+  }
+
+  // Исправлена опечатка: asyncyb -> async
+  @Get(':username/following')
+  @ApiOperation({ summary: 'Get users this profile is following' })
+  async getFollowing(@Param('username') username: string) {
+    return await this.profilesService.getFollowing(username);
+  }
+
   @Post(':username/follow')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

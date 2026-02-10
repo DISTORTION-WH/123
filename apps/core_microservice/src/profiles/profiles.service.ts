@@ -28,10 +28,12 @@ export class ProfilesService {
     });
 
     if (!profile) {
+      // Fallback: create profile if user exists but profile doesn't (sync issue safety)
       const user = await this.userRepository.findOne({ where: { id: userId } });
       if (user) {
         const newProfile = this.profileRepository.create({
           user: user,
+          userId: user.id, // Explicitly set userId
           firstName: user.username,
           username: user.username,
           createdBy: userId,
@@ -53,21 +55,7 @@ export class ProfilesService {
 
     if (profile) return profile;
 
-    const user = await this.userRepository.findOne({ where: { username } });
-    if (!user) {
-      throw new NotFoundException(`User with username ${username} not found`);
-    }
-
-    const foundProfile = await this.profileRepository.findOne({
-      where: { user: { id: user.id } },
-      relations: ['user'],
-    });
-
-    if (!foundProfile) {
-      throw new NotFoundException('Profile not found');
-    }
-
-    return foundProfile;
+    throw new NotFoundException(`Profile with username ${username} not found`);
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<Profile> {
@@ -77,13 +65,16 @@ export class ProfilesService {
     if (dto.lastName) profile.lastName = dto.lastName;
     if (dto.bio) profile.bio = dto.bio;
     if (dto.birthDate) profile.birthDate = new Date(dto.birthDate);
+    if (dto.avatarUrl) profile.avatarUrl = dto.avatarUrl; // Added avatar support
+
+    profile.updatedBy = userId;
 
     return await this.profileRepository.save(profile);
   }
 
   async getProfileByUserId(userId: string): Promise<Profile> {
     const profile = await this.profileRepository.findOne({
-      where: { createdBy: userId },
+      where: { userId: userId }, // Fixed query to use userId column
     });
 
     if (!profile) {
@@ -109,8 +100,8 @@ export class ProfilesService {
 
     const existingFollow = await this.followRepository.findOne({
       where: {
-        follower: { id: followerProfile.id },
-        following: { id: targetProfile.id },
+        followerId: followerProfile.id,
+        followingId: targetProfile.id,
       },
     });
 
@@ -141,8 +132,8 @@ export class ProfilesService {
 
     const follow = await this.followRepository.findOne({
       where: {
-        follower: { id: followerProfile.id },
-        following: { id: targetProfile.id },
+        followerId: followerProfile.id,
+        followingId: targetProfile.id,
       },
     });
 
@@ -153,5 +144,31 @@ export class ProfilesService {
     await this.followRepository.remove(follow);
 
     return { message: `You have unfollowed ${targetUsername}` };
+  }
+
+  // --- NEW METHODS FOR LISTS ---
+
+  async getFollowers(username: string) {
+    const targetProfile = await this.getProfileByUsername(username);
+
+    const follows = await this.followRepository.find({
+      where: { followingId: targetProfile.id },
+      relations: ['follower'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return follows.map((f) => f.follower);
+  }
+
+  async getFollowing(username: string) {
+    const targetProfile = await this.getProfileByUsername(username);
+
+    const follows = await this.followRepository.find({
+      where: { followerId: targetProfile.id },
+      relations: ['following'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return follows.map((f) => f.following);
   }
 }

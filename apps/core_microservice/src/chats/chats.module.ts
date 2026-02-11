@@ -1,5 +1,8 @@
-import { Module } from '@nestjs/common'; // Убрали forwardRef
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt'; // Добавлен импорт
+
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
 import { ChatsGateway } from './chats.gateway';
@@ -10,7 +13,6 @@ import { Message } from '../database/entities/message.entity';
 import { MessageAsset } from '../database/entities/message-asset.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ProfilesModule } from '../profiles/profiles.module';
-import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -18,6 +20,15 @@ import { ConfigModule } from '@nestjs/config';
     AuthModule,
     ProfilesModule,
     ConfigModule,
+    // Добавлена регистрация JwtModule для WsJwtGuard
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        signOptions: { expiresIn: '15m' },
+      }),
+    }),
   ],
   controllers: [ChatsController],
   providers: [ChatsService, ChatsGateway, WsJwtGuard],

@@ -24,10 +24,12 @@ export class WsJwtGuard implements CanActivate {
     }
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
       });
       // Прикрепляем пользователя к объекту сокета, чтобы иметь к нему доступ в Gateway
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       client['user'] = payload;
     } catch {
       throw new UnauthorizedException();

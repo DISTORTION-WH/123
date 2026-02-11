@@ -6,14 +6,14 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource } from 'typeorm'; // Убрали In
 import { Chat, ChatType } from '../database/entities/chat.entity';
 import { ChatParticipant } from '../database/entities/chat-participant.entity';
 import { Message } from '../database/entities/message.entity';
 import { MessageAsset } from '../database/entities/message-asset.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { SendMessageDto } from './dto/send-message.dto';
-import { ChatsGateway } from './chats.gateway'; // IMPORT ADDED
+import { ChatsGateway } from './chats.gateway';
 
 @Injectable()
 export class ChatsService {
@@ -26,9 +26,11 @@ export class ChatsService {
     private messageAssetsRepository: Repository<MessageAsset>,
     private profilesService: ProfilesService,
     private dataSource: DataSource,
-    @Inject(forwardRef(() => ChatsGateway)) // INJECT GATEWAY
+    @Inject(forwardRef(() => ChatsGateway))
     private readonly chatsGateway: ChatsGateway,
   ) {}
+
+  // ... остальной код без изменений ...
 
   async createPrivateChat(currentUserId: string, targetUsername: string) {
     const me = await this.profilesService.getProfileByUserId(currentUserId);
@@ -126,7 +128,6 @@ export class ChatsService {
   }
 
   async sendMessage(chatId: string, userId: string, dto: SendMessageDto) {
-    // 1. Валидация
     await this.validateParticipant(chatId, userId);
     const profile = await this.profilesService.getProfileByUserId(userId);
 
@@ -137,7 +138,6 @@ export class ChatsService {
     let finalMessage: Message;
 
     try {
-      // 2. Создание сообщения
       const message = this.messagesRepository.create({
         chatId,
         profileId: profile.id,
@@ -164,7 +164,6 @@ export class ChatsService {
       await queryRunner.manager.update(Chat, chatId, { updatedAt: new Date() });
       await queryRunner.commitTransaction();
 
-      // 3. Получаем полное сообщение с релейшнами для возврата и рассылки
       finalMessage = await this.messagesRepository.findOne({
         where: { id: savedMessage.id },
         relations: ['profile', 'assets', 'assets.asset'],
@@ -176,11 +175,6 @@ export class ChatsService {
       await queryRunner.release();
     }
 
-    // 4. 🔥 Рассылаем уведомление через сокеты 🔥
-    // Важно: проверяем, что это не рекурсивный вызов из самого гейтвея (хотя broadcast безопасен)
-    // Если сообщение пришло через REST Controller -> вызывается broadcast
-    // Если через Gateway -> вызывается sendMessage -> вызывается broadcast
-    // В обоих случаях все подписчики получат обновление.
     this.chatsGateway.broadcastMessage(chatId, finalMessage);
 
     return finalMessage;

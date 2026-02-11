@@ -11,7 +11,8 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { PostsModule } from './posts/posts.module';
 import { AssetsModule } from './assets/assets.module';
 import { CommentsModule } from './comments/comments.module';
-import { ChatsModule } from './chats/chats.module'; // IMPORT ADDED
+import { ChatsModule } from './chats/chats.module'; // Путь теперь верный
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,10 +30,8 @@ import { ChatsModule } from './chats/chats.module'; // IMPORT ADDED
         username: configService.get<string>('POSTGRES_USER', 'postgres'),
         password: configService.get<string>('POSTGRES_PASSWORD', 'postgres'),
         database: configService.get<string>('POSTGRES_DB', 'innogram'),
-
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         autoLoadEntities: true,
-
         synchronize: true,
       }),
     }),

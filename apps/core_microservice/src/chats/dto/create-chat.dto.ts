@@ -5,9 +5,9 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
+  // IsUUID удален
 } from 'class-validator';
-import { ChatType } from '../../entities/chat.entity';
+import { ChatType } from '../../database/entities/chat.entity';
 
 export class CreateChatDto {
   @ApiProperty({
@@ -16,7 +16,7 @@ export class CreateChatDto {
   })
   @IsString()
   @IsNotEmpty()
-  @IsOptional() // Optional if creating group chat by IDs
+  @IsOptional()
   targetUsername?: string;
 
   @ApiPropertyOptional({ enum: ChatType, example: ChatType.PRIVATE })

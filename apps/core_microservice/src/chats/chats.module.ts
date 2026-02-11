@@ -1,9 +1,9 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common'; // Убрали forwardRef
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
-import { ChatsGateway } from './chats.gateway'; // IMPORT ADDED
-import { WsJwtGuard } from './guards/ws-jwt.guard'; // IMPORT ADDED
+import { ChatsGateway } from './chats.gateway';
+import { WsJwtGuard } from './guards/ws-jwt.guard';
 import { Chat } from '../database/entities/chat.entity';
 import { ChatParticipant } from '../database/entities/chat-participant.entity';
 import { Message } from '../database/entities/message.entity';
@@ -20,11 +20,7 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule,
   ],
   controllers: [ChatsController],
-  providers: [
-    ChatsService,
-    ChatsGateway, // PROVIDER ADDED
-    WsJwtGuard, // PROVIDER ADDED
-  ],
+  providers: [ChatsService, ChatsGateway, WsJwtGuard],
   exports: [ChatsService],
 })
 export class ChatsModule {}

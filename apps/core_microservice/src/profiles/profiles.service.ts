@@ -1,14 +1,17 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ClientProxy } from '@nestjs/microservices'; // Import ClientProxy
 import { Profile } from '../database/entities/profile.entity';
 import { User } from '../database/entities/user.entity';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { NOTIFICATIONS_SERVICE } from '../constants/services'; // Import Token
 
 @Injectable()
 export class ProfilesService {
@@ -19,6 +22,9 @@ export class ProfilesService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(ProfileFollow)
     private readonly followRepository: Repository<ProfileFollow>,
+    // Inject RabbitMQ Client
+    @Inject(NOTIFICATIONS_SERVICE)
+    private readonly notificationsClient: ClientProxy,
   ) {}
 
   async getMyProfile(userId: string): Promise<Profile> {
@@ -28,12 +34,10 @@ export class ProfilesService {
     });
 
     if (!profile) {
-      // Fallback: create profile if user exists but profile doesn't (sync issue safety)
       const user = await this.userRepository.findOne({ where: { id: userId } });
       if (user) {
         const newProfile = this.profileRepository.create({
           user: user,
-          userId: user.id, // Explicitly set userId
           firstName: user.username,
           username: user.username,
           createdBy: userId,
@@ -65,7 +69,7 @@ export class ProfilesService {
     if (dto.lastName) profile.lastName = dto.lastName;
     if (dto.bio) profile.bio = dto.bio;
     if (dto.birthDate) profile.birthDate = new Date(dto.birthDate);
-    if (dto.avatarUrl) profile.avatarUrl = dto.avatarUrl; // Added avatar support
+    if (dto.avatarUrl) profile.avatarUrl = dto.avatarUrl;
 
     profile.updatedBy = userId;
 
@@ -74,7 +78,7 @@ export class ProfilesService {
 
   async getProfileByUserId(userId: string): Promise<Profile> {
     const profile = await this.profileRepository.findOne({
-      where: { userId: userId }, // Fixed query to use userId column
+      where: { user: { id: userId } },
     });
 
     if (!profile) {
@@ -116,6 +120,14 @@ export class ProfilesService {
 
     await this.followRepository.save(follow);
 
+    // --- SEND NOTIFICATION ---
+    this.notificationsClient.emit('profile_followed', {
+      actorId: currentUserId, // Кто подписался
+      targetUserId: targetProfile.userId, // На кого (нужен userId, не profileId, обычно)
+      timestamp: new Date(),
+    });
+    // -------------------------
+
     return { message: `You are now following ${targetUsername}` };
   }
 
@@ -145,8 +157,6 @@ export class ProfilesService {
 
     return { message: `You have unfollowed ${targetUsername}` };
   }
-
-  // --- NEW METHODS FOR LISTS ---
 
   async getFollowers(username: string) {
     const targetProfile = await this.getProfileByUsername(username);

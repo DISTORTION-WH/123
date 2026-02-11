@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -16,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto'; // Импорт нового DTO
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import {
   CurrentUser,
@@ -66,9 +68,33 @@ export class PostsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get post by ID' })
   getOne(@Param('id') id: string) {
-    // TODO: Pass current user ID if token is present (optional auth)
+    // TODO: Pass current user ID if token is present to check like status
     return this.postsService.findOne(id);
   }
+
+  // --- НОВЫЕ МЕТОДЫ ---
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a post (content or archive status)' })
+  update(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserType,
+    @Body() updatePostDto: UpdatePostDto,
+  ) {
+    return this.postsService.update(id, user.id, updatePostDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a post' })
+  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
+    return this.postsService.remove(id, user.id);
+  }
+
+  // --------------------
 
   @Put(':id/like')
   @UseGuards(JwtAuthGuard)

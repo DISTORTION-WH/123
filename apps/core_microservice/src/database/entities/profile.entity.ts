@@ -14,6 +14,8 @@ import { Post } from './post.entity';
 import { Comment } from './comment.entity';
 import { PostLike } from './post-like.entity';
 import { CommentLike } from './comment-like.entity';
+import { ChatParticipant } from './chat-participant.entity'; // IMPORT ADDED
+import { Message } from './message.entity'; // IMPORT ADDED
 
 @Entity('profiles')
 export class Profile {
@@ -74,4 +76,11 @@ export class Profile {
 
   @OneToMany(() => CommentLike, (like: CommentLike) => like.profile)
   commentLikes: CommentLike[];
+
+  // --- NEW RELATIONS ---
+  @OneToMany(() => ChatParticipant, (participant) => participant.profile)
+  chatParticipants: ChatParticipant[];
+
+  @OneToMany(() => Message, (message) => message.profile)
+  messages: Message[];
 }

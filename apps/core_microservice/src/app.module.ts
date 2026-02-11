@@ -11,6 +11,7 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { PostsModule } from './posts/posts.module';
 import { AssetsModule } from './assets/assets.module';
 import { CommentsModule } from './comments/comments.module';
+import { ChatsModule } from './chats/chats.module'; // IMPORT ADDED
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -42,6 +43,7 @@ import { CommentsModule } from './comments/comments.module';
     PostsModule,
     AssetsModule,
     CommentsModule,
+    ChatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

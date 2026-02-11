@@ -7,10 +7,12 @@ import { Profile } from '../database/entities/profile.entity';
 import { User } from '../database/entities/user.entity';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
+import { AuthModule } from '../auth/auth.module'; // Импортируем AuthModule
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Profile, User, ProfileFollow]),
+    AuthModule, // Добавляем AuthModule в imports, чтобы JwtAuthGuard мог использовать AuthService
     // Регистрация RabbitMQ клиента
     ClientsModule.register([
       {

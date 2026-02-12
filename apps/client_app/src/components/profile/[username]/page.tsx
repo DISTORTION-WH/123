@@ -86,6 +86,9 @@ export default function ProfilePage() {
             isMyProfile={isMyProfile}
             isFollowing={isFollowing}
             stats={stats}
+            onProfileUpdate={() => {
+            window.location.reload();
+    }}
             onFollowToggle={() => {
                 setIsFollowing(!isFollowing);
                 setStats(prev => ({

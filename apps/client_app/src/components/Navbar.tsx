@@ -70,7 +70,13 @@ export default function Navbar() {
             >
               💬
             </Link>
-            
+            <Link 
+  href="/notifications"
+  className="text-gray-600 hover:text-indigo-600 font-medium text-xl"
+  title="Notifications"
+>
+  🔔
+</Link>
             <Link 
               href="/profile/me"
               className="text-gray-600 hover:text-indigo-600 font-medium"

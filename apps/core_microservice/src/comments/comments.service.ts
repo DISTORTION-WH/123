@@ -1,47 +1,173 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ClientProxy } from '@nestjs/microservices';
 import { Comment } from '../database/entities/comment.entity';
+import { CommentLike } from '../database/entities/comment-like.entity';
 import { Post } from '../database/entities/post.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { NOTIFICATIONS_SERVICE } from '../constants/services';
 
 @Injectable()
 export class CommentsService {
   constructor(
     @InjectRepository(Comment)
     private readonly commentsRepository: Repository<Comment>,
+    @InjectRepository(CommentLike)
+    private readonly commentLikesRepository: Repository<CommentLike>,
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
     private readonly profilesService: ProfilesService,
+    @Inject(NOTIFICATIONS_SERVICE)
+    private readonly notificationsClient: ClientProxy,
   ) {}
 
   async create(userId: string, dto: CreateCommentDto) {
+    const profile = await this.profilesService.getProfileByUserId(userId);
+
     const post = await this.postsRepository.findOne({
       where: { id: dto.postId },
+      relations: ['profile', 'profile.user'], // Нужно для уведомления
     });
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
+    if (!post) throw new NotFoundException('Post not found');
 
-    const profile = await this.profilesService.getProfileByUserId(userId);
+    // Проверка родительского комментария (если ответ)
+    if (dto.parentId) {
+      const parent = await this.commentsRepository.findOne({
+        where: { id: dto.parentId },
+      });
+      if (!parent) throw new NotFoundException('Parent comment not found');
+    }
 
     const comment = this.commentsRepository.create({
       content: dto.content,
-      post: post,
-      profile: profile,
-      createdBy: userId,
-      updatedBy: userId,
+      postId: dto.postId,
+      profileId: profile.id,
+      parentId: dto.parentId || null,
     });
 
-    return await this.commentsRepository.save(comment);
+    const savedComment = await this.commentsRepository.save(comment);
+
+    // Уведомление автору поста
+    if (post.profileId !== profile.id && post.profile.user) {
+      this.notificationsClient.emit('post_commented', {
+        actorId: userId,
+        targetUserId: post.profile.user.id,
+        postId: post.id,
+        commentId: savedComment.id,
+        timestamp: new Date(),
+      });
+    }
+
+    // Если это ответ на комментарий, можно уведомить автора комментария (доп. функционал)
+
+    return this.getOne(savedComment.id, userId);
   }
 
-  async findByPostId(postId: string) {
-    return await this.commentsRepository.find({
-      where: { post: { id: postId } },
-      relations: ['profile', 'profile.user'],
-      order: { createdAt: 'ASC' },
+  async getCommentsByPost(
+    postId: string,
+    currentUserId?: string,
+    page: number = 1,
+    limit: number = 20,
+  ) {
+    const [comments, total] = await this.commentsRepository.findAndCount({
+      where: { postId },
+      relations: ['profile', 'parent', 'parent.profile'], // Подгружаем автора и инфо о родителе
+      order: { createdAt: 'ASC' }, // Старые сверху
+      take: limit,
+      skip: (page - 1) * limit,
     });
+
+    const enrichedComments = await Promise.all(
+      comments.map((c) => this.enrichComment(c, currentUserId)),
+    );
+
+    return {
+      data: enrichedComments,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async getOne(id: string, currentUserId?: string) {
+    const comment = await this.commentsRepository.findOne({
+      where: { id },
+      relations: ['profile'],
+    });
+    if (!comment) throw new NotFoundException('Comment not found');
+    return this.enrichComment(comment, currentUserId);
+  }
+
+  async delete(id: string, userId: string) {
+    const comment = await this.commentsRepository.findOne({ where: { id } });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    const userProfile = await this.profilesService.getProfileByUserId(userId);
+
+    // Удалить может автор комментария
+    if (comment.profileId !== userProfile.id) {
+      // Или автор поста (опционально, но полезно для модерации)
+      const post = await this.postsRepository.findOne({
+        where: { id: comment.postId },
+      });
+      if (post && post.profileId !== userProfile.id) {
+        throw new ForbiddenException('You can only delete your own comments');
+      }
+    }
+
+    await this.commentsRepository.remove(comment);
+    return { message: 'Comment deleted' };
+  }
+
+  async toggleLike(userId: string, commentId: string) {
+    const comment = await this.commentsRepository.findOne({
+      where: { id: commentId },
+    });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    const profile = await this.profilesService.getProfileByUserId(userId);
+
+    const existingLike = await this.commentLikesRepository.findOne({
+      where: { commentId, profileId: profile.id },
+    });
+
+    if (existingLike) {
+      await this.commentLikesRepository.remove(existingLike);
+      return { message: 'Unliked', liked: false };
+    } else {
+      const newLike = this.commentLikesRepository.create({
+        commentId,
+        profileId: profile.id,
+      });
+      await this.commentLikesRepository.save(newLike);
+      return { message: 'Liked', liked: true };
+    }
+  }
+
+  // Helper для подсчета лайков и флага isLiked
+  private async enrichComment(comment: Comment, userId?: string) {
+    const likesCount = await this.commentLikesRepository.count({
+      where: { commentId: comment.id },
+    });
+
+    let isLiked = false;
+    if (userId) {
+      const profile = await this.profilesService.getProfileByUserId(userId);
+      const like = await this.commentLikesRepository.findOne({
+        where: { commentId: comment.id, profileId: profile.id },
+      });
+      isLiked = !!like;
+    }
+
+    return {
+      ...comment,
+      likesCount,
+      isLiked,
+    };
   }
 }

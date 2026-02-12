@@ -3,7 +3,6 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
   Unique,
@@ -11,39 +10,26 @@ import {
 import { Comment } from './comment.entity';
 import { Profile } from './profile.entity';
 
-@Entity('comments_likes')
-@Unique(['commentId', 'profileId'])
+@Entity('comment_likes')
+@Unique(['commentId', 'profileId']) // Один юзер - один лайк на коммент
 export class CommentLike {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'comment_id', type: 'uuid' })
+  @Column({ name: 'comment_id' })
   commentId: string;
 
-  @Column({ name: 'profile_id', type: 'uuid' })
-  profileId: string;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @Column({ name: 'created_by', type: 'uuid' })
-  createdBy: string;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
-
-  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
-  updatedBy: string;
-
-  @ManyToOne(() => Comment, (comment: Comment) => comment.likes, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Comment, (comment) => comment.likes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'comment_id' })
   comment: Comment;
 
-  @ManyToOne(() => Profile, (profile: Profile) => profile.commentLikes, {
-    onDelete: 'CASCADE',
-  })
+  @Column({ name: 'profile_id' })
+  profileId: string;
+
+  @ManyToOne(() => Profile, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'profile_id' })
   profile: Profile;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 }

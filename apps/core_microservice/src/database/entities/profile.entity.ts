@@ -14,8 +14,8 @@ import { Post } from './post.entity';
 import { Comment } from './comment.entity';
 import { PostLike } from './post-like.entity';
 import { CommentLike } from './comment-like.entity';
-import { ChatParticipant } from './chat-participant.entity'; // IMPORT ADDED
-import { Message } from './message.entity'; // IMPORT ADDED
+import { ChatParticipant } from './chat-participant.entity';
+import { Message } from './message.entity';
 
 @Entity('profiles')
 export class Profile {
@@ -27,6 +27,11 @@ export class Profile {
 
   @Column({ unique: true })
   username: string;
+
+  // --- ДОБАВЛЕНО ПОЛЕ ---
+  @Column({ name: 'display_name', nullable: true })
+  displayName: string;
+  // ----------------------
 
   @Column({ name: 'first_name', nullable: true })
   firstName: string;
@@ -77,7 +82,6 @@ export class Profile {
   @OneToMany(() => CommentLike, (like: CommentLike) => like.profile)
   commentLikes: CommentLike[];
 
-  // --- NEW RELATIONS ---
   @OneToMany(() => ChatParticipant, (participant) => participant.profile)
   chatParticipants: ChatParticipant[];
 

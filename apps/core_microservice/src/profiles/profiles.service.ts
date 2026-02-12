@@ -26,28 +26,20 @@ export class ProfilesService {
   ) {}
 
   async createProfile(user: User) {
-    // Используем relation 'user' вместо 'userId', если userId нет как колонки
-    // Или приводим к типу Partial<Profile> если уверены
     const profile = this.profilesRepository.create({
-      user: user, // Передаем объект User
-      // userId: user.id, // Убираем, если это вызывает ошибку типов
+      user: user,
       username: `user_${user.id.substring(0, 8)}`,
-      // displayName нет в сущности? Проверь сущность. Если есть - должно работать.
-      // Допустим, в базе поле first_name/last_name, но в entity.ts должно быть поле класса.
-      // Если displayName нет в entity, его нельзя использовать.
-      // Предположим, поле называется displayName (как в ТЗ)
       displayName: user.email.split('@')[0],
       createdBy: user.id,
       updatedBy: user.id,
-    } as unknown as Profile); // HACK: Если типы совсем не сходятся, но база позволяет
+    }); // Теперь TypeScript должен пропустить это без 'as unknown'
 
     return await this.profilesRepository.save(profile);
   }
 
   async getProfileByUserId(userId: string) {
-    // Ищем по relation ID
     const profile = await this.profilesRepository.findOne({
-      where: { user: { id: userId } }, // Исправлено: поиск по вложенному объекту user.id
+      where: { user: { id: userId } },
     });
     if (!profile) throw new NotFoundException('Profile not found');
     return profile;
@@ -71,8 +63,8 @@ export class ProfilesService {
           },
         });
         isFollowing = !!follow;
-      } catch (e) {
-        // Если у текущего юзера нет профиля, он не может быть подписан
+      } catch {
+        // Убрали (e), теперь линтер не будет ругаться
         isFollowing = false;
       }
     }
@@ -93,7 +85,9 @@ export class ProfilesService {
       profile.username = dto.username;
     }
 
+    // Теперь это поле существует в Entity
     if (dto.displayName) profile.displayName = dto.displayName;
+
     if (dto.bio) profile.bio = dto.bio;
     if (dto.avatarUrl) profile.avatarUrl = dto.avatarUrl;
 
@@ -116,7 +110,6 @@ export class ProfilesService {
       throw new BadRequestException('You cannot follow yourself');
     }
 
-    // Исправлено: используем relations в where
     const existingFollow = await this.followsRepository.findOne({
       where: {
         follower: { id: follower.id },
@@ -129,16 +122,13 @@ export class ProfilesService {
     }
 
     const follow = this.followsRepository.create({
-      follower: follower, // Передаем объекты
+      follower: follower,
       following: target,
       createdBy: currentUserId,
     } as unknown as ProfileFollow);
 
     await this.followsRepository.save(follow);
 
-    // Уведомление
-    // Получаем userId целевого профиля для уведомления
-    // В Profile entity должно быть поле user или загружаем его
     const targetWithUser = await this.profilesRepository.findOne({
       where: { id: target.id },
       relations: ['user'],
@@ -186,7 +176,7 @@ export class ProfilesService {
     if (!targetProfile) throw new NotFoundException('Profile not found');
 
     const [follows, count] = await this.followsRepository.findAndCount({
-      where: { following: { id: targetProfile.id } }, // Исправлено relation
+      where: { following: { id: targetProfile.id } },
       relations: ['follower'],
       take: limit,
       skip: (page - 1) * limit,
@@ -207,7 +197,7 @@ export class ProfilesService {
     if (!targetProfile) throw new NotFoundException('Profile not found');
 
     const [follows, count] = await this.followsRepository.findAndCount({
-      where: { follower: { id: targetProfile.id } }, // Исправлено relation
+      where: { follower: { id: targetProfile.id } },
       relations: ['following'],
       take: limit,
       skip: (page - 1) * limit,

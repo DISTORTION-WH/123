@@ -25,6 +25,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
 import { MessageReaction } from '../database/entities/message-reaction.entity';
+import { Post } from '../database/entities/post.entity'; // <-- Импорт
 @Injectable()
 export class ChatsService {
   private readonly logger = new Logger(ChatsService.name);
@@ -36,14 +37,15 @@ export class ChatsService {
     @InjectRepository(Message) private messagesRepository: Repository<Message>,
     @InjectRepository(MessageAsset)
     private messageAssetsRepository: Repository<MessageAsset>,
+    @InjectRepository(MessageReaction)
+    private reactionsRepository: Repository<MessageReaction>,
+    @InjectRepository(Post)
+    private postsRepository: Repository<Post>, // <-- Инжектим репозиторий постов
     private profilesService: ProfilesService,
     private dataSource: DataSource,
     @Inject(forwardRef(() => ChatsGateway))
     private readonly chatsGateway: ChatsGateway,
-    @InjectRepository(MessageReaction)
-    private reactionsRepository: Repository<MessageReaction>,
   ) {}
-
   // --- CHAT MANAGEMENT ---
 
   async createPrivateChat(currentUserId: string, targetUsername: string) {
@@ -356,8 +358,7 @@ export class ChatsService {
   async getChatMessages(chatId: string, userId: string) {
     await this.validateParticipant(chatId, userId);
 
-    // Check if blocked logic also applies to fetching messages?
-    // Usually if chat is hidden in list, user shouldn't access messages either.
+    // ... (логика проверки блокировки остается такой же) ...
     const profile = await this.profilesService.getProfileByUserId(userId);
     const chat = await this.chatsRepository.findOne({
       where: { id: chatId },
@@ -374,7 +375,6 @@ export class ChatsService {
           otherParticipant.profileId,
         );
         if (isBlocked) {
-          // If blocked, return empty or throw forbidden. Requirement says "just don't show"
           return [];
         }
       }
@@ -382,7 +382,16 @@ export class ChatsService {
 
     return await this.messagesRepository.find({
       where: { chatId },
-      relations: ['profile', 'assets', 'assets.asset', 'replyTo'],
+      relations: [
+        'profile',
+        'assets',
+        'assets.asset',
+        'replyTo',
+        'reactions',
+        'sharedPost', // <-- Подгружаем сам пост
+        'sharedPost.assets', // <-- Подгружаем ассеты поста (чтобы показать картинку)
+        'sharedPost.assets.asset',
+      ],
       order: { createdAt: 'ASC' },
     });
   }
@@ -391,24 +400,37 @@ export class ChatsService {
     await this.validateParticipant(chatId, userId);
     const profile = await this.profilesService.getProfileByUserId(userId);
 
-    // Extra check: If blocked, you can't send message (even if you somehow have the ID)
+    // ... (проверка блокировки остается) ...
     const chat = await this.chatsRepository.findOne({
       where: { id: chatId },
       relations: ['participants'],
     });
     if (chat.type === ChatType.PRIVATE) {
+      // ... (код проверки блокировки)
       const otherParticipant = chat.participants.find(
         (p) => p.profileId !== profile.id,
       );
-      if (otherParticipant) {
-        const isBlocked = await this.profilesService.checkIsBlocked(
+      if (
+        otherParticipant &&
+        (await this.profilesService.checkIsBlocked(
           profile.id,
           otherParticipant.profileId,
-        );
-        if (isBlocked) {
-          throw new ForbiddenException('Cannot send message: blocked');
-        }
+        ))
+      ) {
+        throw new ForbiddenException('Cannot send message: blocked');
       }
+    }
+
+    // --- SHARED POST LOGIC ---
+    if (dto.postId) {
+      const post = await this.postsRepository.findOne({
+        where: { id: dto.postId },
+      });
+      if (!post) {
+        throw new NotFoundException('Shared post not found');
+      }
+      // Тут можно добавить логику проверки приватности поста, если нужно.
+      // Пока считаем: если есть ID, значит можно пошарить.
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -423,6 +445,7 @@ export class ChatsService {
         profileId: profile.id,
         content: dto.content,
         replyToMessageId: dto.replyToMessageId,
+        sharedPostId: dto.postId || null, // <-- Сохраняем ID поста
         createdBy: userId,
         updatedBy: userId,
       });
@@ -447,7 +470,15 @@ export class ChatsService {
 
       finalMessage = await this.messagesRepository.findOne({
         where: { id: savedMessage.id },
-        relations: ['profile', 'assets', 'assets.asset', 'replyTo'],
+        relations: [
+          'profile',
+          'assets',
+          'assets.asset',
+          'replyTo',
+          'sharedPost', // <-- Возвращаем с постом
+          'sharedPost.assets',
+          'sharedPost.assets.asset',
+        ],
       });
     } catch (err) {
       await queryRunner.rollbackTransaction();

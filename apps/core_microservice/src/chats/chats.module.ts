@@ -14,6 +14,7 @@ import { MessageAsset } from '../database/entities/message-asset.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { MessageReaction } from '../database/entities/message-reaction.entity'; // <-- Добавлено
+import { Post } from '../database/entities/post.entity'; // <-- Импорт
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -22,6 +23,7 @@ import { MessageReaction } from '../database/entities/message-reaction.entity'; 
       Message,
       MessageAsset,
       MessageReaction,
+      Post,
     ]),
     AuthModule,
     ProfilesModule,

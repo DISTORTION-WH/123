@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Post } from './post.entity';
 import { Chat } from './chat.entity';
 import { User } from './user.entity';
 import { Profile } from './profile.entity';
@@ -42,7 +43,14 @@ export class Message {
   @Column({ name: 'is_deleted', default: false })
   isDeleted: boolean;
   // ------------------
+  // --- Start: Shared Post ---
+  @Column({ name: 'shared_post_id', nullable: true })
+  sharedPostId: string | null;
 
+  @ManyToOne(() => Post, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'shared_post_id' })
+  sharedPost: Post;
+  // --- End: Shared Post ---
   @Column({ name: 'reply_to_message_id', nullable: true })
   replyToMessageId: string;
 

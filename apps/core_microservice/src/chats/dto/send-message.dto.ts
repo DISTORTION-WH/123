@@ -24,4 +24,9 @@ export class SendMessageDto {
   @IsUUID('4', { each: true })
   @IsOptional()
   fileIds?: string[];
+
+  @ApiPropertyOptional({ description: 'ID of the post being shared' })
+  @IsUUID()
+  @IsOptional()
+  postId?: string;
 }

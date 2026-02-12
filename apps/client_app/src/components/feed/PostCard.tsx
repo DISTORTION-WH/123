@@ -1,9 +1,10 @@
 // apps/client_app/src/components/feed/PostCard.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Post } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { api } from '@/lib/axios';
+import { CommentSection } from './CommentSection'; // <-- Импорт
 
 interface PostCardProps {
   post: Post;
@@ -11,10 +12,11 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle }) => {
+  const [showComments, setShowComments] = useState(false);
+
   const handleLike = async () => {
     try {
       await api.post(`/posts/${post.id}/like`);
-      // Сообщаем родителю об изменении, чтобы обновить UI оптимистично
       onLikeToggle(post.id, !post.isLiked);
     } catch (error) {
       console.error('Like failed', error);
@@ -25,14 +27,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle }) => {
     ? `${process.env.NEXT_PUBLIC_API_URL}${post.assets[0].asset.url}` 
     : null;
 
+  const avatarUrl = post.profile.avatarUrl
+    ? `${process.env.NEXT_PUBLIC_API_URL}${post.profile.avatarUrl}`
+    : null;
+
   return (
     <div className="bg-white border rounded-xl mb-6 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center p-3">
         <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden mr-3">
-           {/* Placeholder для аватара */}
-           {post.profile.avatarUrl && (
-             <img src={`${process.env.NEXT_PUBLIC_API_URL}${post.profile.avatarUrl}`} alt="avatar" className="w-full h-full object-cover" />
+           {avatarUrl && (
+             <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
            )}
         </div>
         <div>
@@ -45,8 +50,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle }) => {
 
       {/* Image */}
       {assetUrl && (
-        <div className="w-full aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
-          <img src={assetUrl} alt="Post content" className="w-full h-full object-cover" />
+        <div className="w-full bg-gray-100 flex items-center justify-center overflow-hidden">
+          <img src={assetUrl} alt="Post content" className="w-full object-cover max-h-[500px]" />
         </div>
       )}
 
@@ -59,9 +64,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle }) => {
           >
             {post.isLiked ? '❤️' : '🤍'}
           </button>
-          <button className="text-2xl text-gray-400 hover:text-gray-600">
+          
+          <button 
+            onClick={() => setShowComments(!showComments)}
+            className="text-2xl text-gray-400 hover:text-gray-600"
+          >
             💬
           </button>
+          
           <button className="text-2xl text-gray-400 hover:text-gray-600 ml-auto">
             ✈️
           </button>
@@ -69,16 +79,20 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle }) => {
 
         <p className="font-bold text-sm mb-1">{post.likesCount} likes</p>
         
-        <div className="text-sm">
+        <div className="text-sm mb-2">
           <span className="font-bold mr-2">{post.profile.username}</span>
           {post.caption}
         </div>
         
-        {post.commentsCount > 0 && (
-            <p className="text-gray-400 text-sm mt-1 cursor-pointer">
-                View all {post.commentsCount} comments
-            </p>
-        )}
+        <button 
+            onClick={() => setShowComments(!showComments)}
+            className="text-gray-400 text-sm cursor-pointer hover:text-gray-600"
+        >
+            {showComments ? 'Hide comments' : `View all comments`}
+        </button>
+
+        {/* Секция комментариев */}
+        {showComments && <CommentSection postId={post.id} />}
       </div>
     </div>
   );

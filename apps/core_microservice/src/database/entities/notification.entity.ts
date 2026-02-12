@@ -27,7 +27,8 @@ export class Notification {
 
   @Column({ type: 'text' })
   message: string;
-
+  @Column({ name: 'target_user_id' })
+  targetUserId: string;
   @Column({ type: 'jsonb', nullable: true })
   data: Record<string, unknown>;
 

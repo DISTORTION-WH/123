@@ -13,6 +13,7 @@ import {
   UseGuards,
   UseInterceptors,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -216,5 +217,14 @@ export class ProfilesController {
   @Get(':username/following')
   async getProfileFollowing(@Param('username') username: string) {
     return await this.profilesService.getFollowingByUsername(username);
+  }
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('search') // Важно: этот метод должен быть ВЫШЕ метода @Get(':username'), иначе 'search' будет воспринято как username
+  async searchProfiles(
+    @CurrentUser() user: CurrentUserData,
+    @Query('q') query: string,
+  ) {
+    return this.profilesService.searchProfiles(query, user.id);
   }
 }

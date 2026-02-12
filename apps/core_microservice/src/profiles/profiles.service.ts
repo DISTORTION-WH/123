@@ -13,7 +13,7 @@ import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { ProfileBlock } from '../database/entities/profile-block.entity';
 import { User } from '../database/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-
+import { Like } from 'typeorm';
 @Injectable()
 export class ProfilesService {
   constructor(
@@ -34,7 +34,33 @@ export class ProfilesService {
     });
     return this.profileRepository.save(profile);
   }
+  async searchProfiles(query: string, currentUserId: string) {
+    if (!query) return [];
 
+    const profiles = await this.profileRepository.find({
+      where: [
+        { username: Like(`%${query}%`) },
+        { displayName: Like(`%${query}%`) },
+      ],
+      take: 10,
+    });
+
+    // Обогащаем данными: подписан ли я на них?
+    const results = await Promise.all(
+      profiles.map(async (profile) => {
+        const isFollowing = await this.followRepository.findOne({
+          where: {
+            followerId: (await this.getProfileByUserId(currentUserId)).id,
+            followingId: profile.id,
+            accepted: true,
+          },
+        });
+        return { ...profile, isFollowing: !!isFollowing };
+      }),
+    );
+
+    return results;
+  }
   async getProfileByUserId(userId: string): Promise<Profile> {
     const profile = await this.profileRepository.findOne({
       where: { userId },

@@ -200,7 +200,7 @@ export class PostsService {
   async toggleLike(userId: string, postId: string) {
     const post = await this.postRepository.findOne({
       where: { id: postId },
-      relations: ['profile'],
+      relations: ['profile', 'profile.user'],
     });
 
     if (!post) {
@@ -231,9 +231,10 @@ export class PostsService {
       if (post.createdBy !== userId) {
         this.notificationsClient.emit('post_liked', {
           actorId: userId,
-          targetUserId: post.createdBy,
+          targetUserId: post.profile.userId,
+          targetUserEmail: post.profile.user.email, // Добавляем Email!
           postId: postId,
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
         });
       }
 

@@ -1,9 +1,11 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import { NotificationsService } from './notifications.service';
 
 interface PostLikedEvent {
   actorId: string;
   targetUserId: string;
+  targetUserEmail?: string; // Поле может быть опциональным
   postId: string;
   timestamp: string;
 }
@@ -12,18 +14,22 @@ interface PostLikedEvent {
 export class NotificationsController {
   private readonly logger = new Logger(NotificationsController.name);
 
-  // Здесь можно инжектить MailerService или Repository для сохранения в БД
-  // constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(private readonly notificationsService: NotificationsService) {}
 
   @EventPattern('post_liked')
   handlePostLiked(@Payload() data: PostLikedEvent) {
     this.logger.log(
-      `[RabbitMQ] Event 'post_liked' received. User ${data.actorId} liked post ${data.postId} of user ${data.targetUserId}`,
+      `[RabbitMQ] Event 'post_liked' received. User ${data.actorId} liked post ${data.postId}`,
     );
 
-    // TODO:
-    // 1. Сохранить уведомление в MongoDB (Notification Entity)
-    // 2. Отправить Push-уведомление (через WebSocket, если пользователь онлайн)
-    // 3. Отправить Email (опционально)
+    // Если email пришел в событии, используем его. Иначе - заглушка.
+    const email = data.targetUserEmail || 'test@example.com';
+
+    // Вызываем сервис (синхронно, так как убрали async в сервисе)
+    this.notificationsService.sendLikeNotification(
+      email,
+      data.actorId, // Пока используем ID как имя, позже можно передавать actorName
+      data.postId,
+    );
   }
 }

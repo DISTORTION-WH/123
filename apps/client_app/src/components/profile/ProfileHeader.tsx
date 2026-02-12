@@ -1,35 +1,43 @@
-import React, { useState } from 'react'; // Добавь useState
+import React, { useState } from 'react';
+import Image from 'next/image'; 
 import { Profile } from '@/types';
-import { api } from '@/lib/axios';
-import { EditProfileModal } from './EditProfileModal'; // Импорт
+import { EditProfileModal } from './EditProfileModal';
 
-// ... интерфейс ProfileHeaderProps (без изменений) ...
 interface ProfileHeaderProps {
   profile: Profile;
   isMyProfile: boolean;
   isFollowing: boolean;
   stats: { posts: number; followers: number; following: number };
   onFollowToggle: () => void;
-  onProfileUpdate?: () => void; // Новый проп для перезагрузки данных
+  onProfileUpdate?: () => void;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ 
   profile, isMyProfile, isFollowing, stats, onFollowToggle, onProfileUpdate 
 }) => {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Состояние модалки
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // ... handleFollowAction и avatarUrl (без изменений) ...
-  const handleFollowAction = async () => { /* ... код из предыдущего шага ... */ };
+  const handleFollowAction = async () => {
+    onFollowToggle();
+  };
+
   const avatarUrl = profile.avatarUrl 
     ? `${process.env.NEXT_PUBLIC_API_URL}${profile.avatarUrl}` 
     : null;
 
   return (
     <div className="flex flex-col md:flex-row items-center gap-8 mb-8 p-4">
-      {/* ... Avatar (без изменений) ... */}
-      <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-200 overflow-hidden border-2 border-gray-100 shadow-sm shrink-0">
+    
+      <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-200 overflow-hidden border-2 border-gray-100 shadow-sm shrink-0">
         {avatarUrl ? (
-          <img src={avatarUrl} alt={profile.username} className="w-full h-full object-cover" />
+          <Image 
+            src={avatarUrl} 
+            alt={profile.username} 
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 128px, 160px"
+            priority 
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl text-gray-400">?</div>
         )}
@@ -41,23 +49,30 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           
           {isMyProfile ? (
             <button 
-                onClick={() => setIsEditModalOpen(true)} // Открываем модалку
+                onClick={() => setIsEditModalOpen(true)}
                 className="px-4 py-1.5 border border-gray-300 rounded font-semibold text-sm hover:bg-gray-50 transition"
             >
               Edit Profile
             </button>
           ) : (
-             // ... Кнопки Follow/Message (без изменений) ...
              <div className="flex gap-2">
-                <button onClick={handleFollowAction} className="...">
+                <button 
+                  onClick={handleFollowAction} 
+                  className={`px-6 py-1.5 rounded font-semibold text-sm transition text-white ${
+                    isFollowing 
+                      ? 'bg-gray-500 hover:bg-gray-600' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
+                >
                     {isFollowing ? 'Following' : 'Follow'}
                 </button>
-                <button className="...">Message</button>
+                <button className="px-4 py-1.5 border border-gray-300 rounded font-semibold text-sm hover:bg-gray-50 transition">
+                  Message
+                </button>
             </div>
           )}
         </div>
 
-        {/* ... Stats и Bio (без изменений) ... */}
         <div className="flex gap-8 mb-4 text-sm md:text-base">
           <div><span className="font-bold">{stats.posts}</span> posts</div>
           <div><span className="font-bold">{stats.followers}</span> followers</div>
@@ -70,7 +85,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </div>
       </div>
 
-      {/* Модальное окно */}
       {isEditModalOpen && (
         <EditProfileModal 
             profile={profile}

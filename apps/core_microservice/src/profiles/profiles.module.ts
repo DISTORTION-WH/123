@@ -1,31 +1,29 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ClientsModule, Transport } from '@nestjs/microservices'; // Import
 import { ProfilesService } from './profiles.service';
 import { ProfilesController } from './profiles.controller';
 import { Profile } from '../database/entities/profile.entity';
-import { User } from '../database/entities/user.entity';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
-import { NOTIFICATIONS_SERVICE } from '../constants/services';
-import { AuthModule } from '../auth/auth.module'; // Импортируем AuthModule
+import { UsersModule } from '../users/users.module';
+import { NOTIFICATIONS_SERVICE } from '../constants/services'; // Убедись, что константа есть
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Profile, User, ProfileFollow]),
-    AuthModule, // Добавляем AuthModule в imports, чтобы JwtAuthGuard мог использовать AuthService
-    // Регистрация RabbitMQ клиента
+    TypeOrmModule.forFeature([Profile, ProfileFollow]),
+    forwardRef(() => UsersModule),
+    // Подключаем клиент для отправки уведомлений
     ClientsModule.register([
       {
         name: NOTIFICATIONS_SERVICE,
         transport: Transport.RMQ,
         options: {
           urls: [
-            process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672',
+            process.env.RABBITMQ_URI || 'amqp://guest:guest@localhost:5672',
           ],
-          queue:
-            process.env.RABBITMQ_NOTIFICATIONS_QUEUE || 'notifications_queue',
+          queue: 'notifications_queue',
           queueOptions: {
-            durable: true,
+            durable: false,
           },
         },
       },

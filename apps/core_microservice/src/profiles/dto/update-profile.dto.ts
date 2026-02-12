@@ -1,42 +1,36 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsOptional,
-  MaxLength,
-  IsDateString,
-  IsUrl,
-} from 'class-validator';
+import { IsOptional, IsString, MaxLength, Matches } from 'class-validator';
 
 export class UpdateProfileDto {
+  @ApiPropertyOptional({ example: 'johndoe', description: 'Unique username' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  @Matches(/^[a-zA-Z0-9_]+$/, {
+    message: 'Username can only contain letters, numbers and underscores',
+  })
+  username?: string;
+
   @ApiPropertyOptional({ example: 'John Doe', description: 'Display name' })
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  firstName?: string;
-
-  @ApiPropertyOptional({ example: 'Smith', description: 'Family name' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  lastName?: string;
-
-  @ApiPropertyOptional({ example: 'I love coding!', description: 'Short bio' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(300)
-  bio?: string;
-
-  @ApiPropertyOptional({ example: '1990-01-01', description: 'Date of birth' })
-  @IsOptional()
-  @IsDateString()
-  birthDate?: string;
+  displayName?: string;
 
   @ApiPropertyOptional({
-    example: 'http://example.com/pic.jpg',
+    example: 'Software Engineer',
+    description: 'Bio info',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  bio?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://example.com/avatar.jpg',
     description: 'Avatar URL',
   })
   @IsOptional()
   @IsString()
-  @IsUrl() // Добавлен пропущенный декоратор
   avatarUrl?: string;
 }

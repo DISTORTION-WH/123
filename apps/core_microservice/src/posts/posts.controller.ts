@@ -10,6 +10,8 @@ import {
   UseGuards,
   ParseIntPipe,
   DefaultValuePipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -43,45 +45,48 @@ export class PostsController {
   }
 
   @Get('feed')
-  @UseGuards(JwtAuthGuard) // Добавил Guard, так как лента теперь персонализированная (нужен ID юзера)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get global feed (all posts)' })
+  @ApiOperation({ summary: 'Get global feed (subscriptions + own posts)' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getFeed(
-    @CurrentUser() user: CurrentUserType, // Добавил получение текущего юзера
+    @CurrentUser() user: CurrentUserType,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
-    // Исправлено: передаем user.id первым аргументом
     return await this.postsService.getFeed(user.id, page, limit);
   }
 
   @Get('user/:username')
+  @UseGuards(JwtAuthGuard) // Добавляем Guard, чтобы получить ID текущего пользователя
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get posts by user profile' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getUserPosts(
     @Param('username') username: string,
+    @CurrentUser() user: CurrentUserType, // Получаем юзера для проверки лайков
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
   ) {
-    // Исправлено: метод называется getPostsByUsername
-    // Можно передать undefined вместо currentUserId, если это публичный эндпоинт,
-    // или добавить декоратор @CurrentUser, если нужно проверять лайки.
     return await this.postsService.getPostsByUsername(
       username,
-      undefined,
+      user?.id, // Передаем ID, если пользователь авторизован
       page,
       limit,
     );
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get single post details' })
-  async getOne(@Param('id') id: string) {
-    // Исправлено: метод называется findOne
-    return await this.postsService.findOne(id);
+  async getOne(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserType, // Получаем юзера
+  ) {
+    return await this.postsService.findOne(id, user?.id);
   }
 
   @Patch(':id')
@@ -101,7 +106,19 @@ export class PostsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete post' })
   async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
-    // Исправлено: метод называется remove
     return await this.postsService.remove(id, user.id);
+  }
+
+  // --- НОВЫЙ МЕТОД ДЛЯ ЛАЙКОВ ---
+  @Post(':id/like')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Toggle like on post' })
+  async toggleLike(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    return await this.postsService.toggleLike(user.id, id);
   }
 }

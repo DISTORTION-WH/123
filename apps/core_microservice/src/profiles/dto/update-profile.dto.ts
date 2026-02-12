@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, Matches } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  MaxLength,
+  Matches,
+  IsDateString,
+} from 'class-validator';
 
 export class UpdateProfileDto {
   @ApiPropertyOptional({ example: 'johndoe', description: 'Unique username' })
@@ -17,6 +23,18 @@ export class UpdateProfileDto {
   @MaxLength(50)
   displayName?: string;
 
+  @ApiPropertyOptional({ example: 'John', description: 'First name' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  firstName?: string;
+
+  @ApiPropertyOptional({ example: 'Doe', description: 'Last name' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  lastName?: string;
+
   @ApiPropertyOptional({
     example: 'Software Engineer',
     description: 'Bio info',
@@ -33,4 +51,9 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   avatarUrl?: string;
+
+  @ApiPropertyOptional({ example: '2000-01-01', description: 'Birthday' })
+  @IsOptional()
+  @IsDateString()
+  birthDate?: Date;
 }

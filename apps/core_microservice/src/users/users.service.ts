@@ -60,9 +60,9 @@ export class UsersService {
       // 3. Создаем профиль для пользователя
       // Используем метод updateProfile из ProfilesService, который создаст запись, если её нет
       await this.profilesService.updateProfile(newUser.id, {
-        firstName: data.displayName || data.username,
+        displayName: data.displayName || data.username, // Исправлено: пишем в displayName
         bio: data.bio,
-        birthDate: data.birthday,
+        birthDate: data.birthday ? new Date(data.birthday) : undefined, // Исправлено: маппинг в birthDate и приведение к Date
       });
 
       console.log(`[UsersService] User ${data.id} synced successfully.`);

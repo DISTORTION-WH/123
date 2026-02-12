@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { User } from '../database/entities/user.entity';
-import { Profile } from '../database/entities/profile.entity';
+import { HttpModule } from '@nestjs/axios';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [HttpModule, TypeOrmModule.forFeature([User, Profile])],
+  imports: [HttpModule, ConfigModule],
   controllers: [AuthController],
   providers: [AuthService],
-  exports: [AuthService],
+  exports: [AuthService], // <--- ЭТО ВАЖНО: Должен быть экспортирован
 })
 export class AuthModule {}

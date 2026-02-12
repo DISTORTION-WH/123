@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Innogram - Social Media Application",
   "private": true,
+  "packageManager": "npm@11.7.0",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "turbo run dev",

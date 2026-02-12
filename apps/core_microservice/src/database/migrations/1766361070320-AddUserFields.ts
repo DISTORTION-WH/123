@@ -1,44 +1,46 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
 export class AddUserFields1766361070320 implements MigrationInterface {
-  name = 'AddUserFields1766361070320';
-
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "users" ADD "email" character varying`,
-    );
-    await queryRunner.query(
-      `UPDATE "users" SET "email" = 'temp-' || "id" WHERE "email" IS NULL`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "users" ALTER COLUMN "email" SET NOT NULL`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "users" ADD CONSTRAINT "UQ_user_email" UNIQUE ("email")`,
-    );
+    const table = await queryRunner.getTable('users');
 
-    await queryRunner.query(
-      `ALTER TABLE "users" ADD "username" character varying`,
-    );
-    await queryRunner.query(
-      `UPDATE "users" SET "username" = 'user-' || "id" WHERE "username" IS NULL`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "users" ALTER COLUMN "username" SET NOT NULL`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "users" ADD CONSTRAINT "UQ_user_username" UNIQUE ("username")`,
-    );
+    // Добавляем колонку disabled, если её нет
+    if (table && !table.findColumnByName('disabled')) {
+      await queryRunner.addColumn(
+        'users',
+        new TableColumn({
+          name: 'disabled',
+          type: 'boolean',
+          default: false,
+          isNullable: false,
+        }),
+      );
+    }
+
+    // Добавляем колонку role, если её нет
+    // Предполагаем, что роль хранится как строка (или enum), default = 'User'
+    if (table && !table.findColumnByName('role')) {
+      await queryRunner.addColumn(
+        'users',
+        new TableColumn({
+          name: 'role',
+          type: 'varchar',
+          default: "'User'",
+          isNullable: false,
+        }),
+      );
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "users" DROP CONSTRAINT "UQ_user_username"`,
-    );
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "username"`);
-    await queryRunner.query(
-      `ALTER TABLE "users" DROP CONSTRAINT "UQ_user_email"`,
-    );
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "email"`);
+    const table = await queryRunner.getTable('users');
+
+    if (table && table.findColumnByName('role')) {
+      await queryRunner.dropColumn('users', 'role');
+    }
+
+    if (table && table.findColumnByName('disabled')) {
+      await queryRunner.dropColumn('users', 'disabled');
+    }
   }
 }

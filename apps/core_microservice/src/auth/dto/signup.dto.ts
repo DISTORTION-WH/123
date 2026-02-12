@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+} from 'class-validator';
 
 export class SignUpDto {
   @ApiProperty({
@@ -40,5 +46,6 @@ export class SignUpDto {
     required: false,
   })
   @IsString({ message: 'Bio must be a string' })
+  @IsOptional() // <--- Добавлено, чтобы поле стало действительно необязательным
   bio?: string;
 }

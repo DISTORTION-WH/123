@@ -1,3 +1,5 @@
+// apps/core_microservice/src/comments/dto/create-comment.dto.ts
+
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,
@@ -8,21 +10,25 @@ import {
 } from 'class-validator';
 
 export class CreateCommentDto {
-  @ApiProperty({ example: 'Great post!', description: 'Comment content' })
+  @ApiProperty({
+    example: 'Great post!',
+    description: 'Content of the comment',
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(1000)
   content: string;
 
-  @ApiProperty({ example: 'uuid-of-post', description: 'ID of the post' })
+  @ApiProperty({ example: 'uuid-of-post', description: 'Post ID' })
   @IsUUID()
+  @IsNotEmpty()
   postId: string;
 
   @ApiPropertyOptional({
     example: 'uuid-of-parent-comment',
-    description: 'ID of parent comment (if reply)',
+    description: 'Parent Comment ID (if reply)',
   })
-  @IsOptional()
   @IsUUID()
+  @IsOptional()
   parentId?: string;
 }

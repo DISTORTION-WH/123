@@ -1,3 +1,5 @@
+// apps/notifications_consumer_microservice/src/notifications.controller.ts
+
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { NotificationsService } from './notifications.service';
@@ -5,8 +7,19 @@ import { NotificationsService } from './notifications.service';
 interface PostLikedEvent {
   actorId: string;
   targetUserId: string;
-  targetUserEmail?: string; // Поле может быть опциональным
+  targetUserEmail?: string;
   postId: string;
+  timestamp: string;
+}
+
+// Интерфейс для события комментария
+interface CommentCreatedEvent {
+  actorId: string;
+  targetUserId: string;
+  targetUserEmail: string;
+  postId: string;
+  commentId: string;
+  type: 'COMMENT_ON_POST' | 'REPLY_TO_COMMENT';
   timestamp: string;
 }
 
@@ -22,14 +35,23 @@ export class NotificationsController {
       `[RabbitMQ] Event 'post_liked' received. User ${data.actorId} liked post ${data.postId}`,
     );
 
-    // Если email пришел в событии, используем его. Иначе - заглушка.
     const email = data.targetUserEmail || 'test@example.com';
 
-    // Вызываем сервис (синхронно, так как убрали async в сервисе)
     this.notificationsService.sendLikeNotification(
       email,
-      data.actorId, // Пока используем ID как имя, позже можно передавать actorName
+      data.actorId,
       data.postId,
     );
+  }
+
+  // Добавляем обработчик для комментариев (раз мы их эмитим в CommentsService)
+  @EventPattern('comment_created')
+  handleCommentCreated(@Payload() data: CommentCreatedEvent) {
+    this.logger.log(
+      `[RabbitMQ] Event 'comment_created' received. Type: ${data.type}`,
+    );
+
+    // Здесь можно добавить вызов метода сервиса для отправки email о комментарии
+    // this.notificationsService.sendCommentNotification(...)
   }
 }

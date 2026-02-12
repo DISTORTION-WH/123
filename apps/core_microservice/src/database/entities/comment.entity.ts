@@ -1,3 +1,5 @@
+// apps/core_microservice/src/database/entities/comment.entity.ts
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -36,10 +38,11 @@ export class Comment {
   @JoinColumn({ name: 'profile_id' })
   profile: Profile;
 
+  // --- Replies Logic ---
   @Column({ name: 'parent_id', nullable: true })
-  parentId: string;
+  parentId: string | null;
 
-  @ManyToOne(() => Comment, (comment) => comment.children, {
+  @ManyToOne(() => Comment, (comment) => comment.replies, {
     onDelete: 'CASCADE',
     nullable: true,
   })
@@ -47,7 +50,10 @@ export class Comment {
   parent: Comment;
 
   @OneToMany(() => Comment, (comment) => comment.parent)
-  children: Comment[];
+  replies: Comment[];
+  // --- End Replies Logic ---
+
+  // Дублирующие поля children/parent были удалены, так как 'replies' уже выполняет эту роль.
 
   @OneToMany(() => CommentLike, (like) => like.comment)
   likes: CommentLike[];

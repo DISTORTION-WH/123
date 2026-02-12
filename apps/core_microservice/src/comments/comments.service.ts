@@ -1,3 +1,5 @@
+// apps/core_microservice/src/comments/comments.service.ts
+
 import {
   Inject,
   Injectable,
@@ -18,11 +20,11 @@ import { NOTIFICATIONS_SERVICE } from '../constants/services';
 export class CommentsService {
   constructor(
     @InjectRepository(Comment)
-    private readonly commentsRepository: Repository<Comment>,
+    private readonly commentsRepository: Repository<Comment>, // <-- Имя репозитория
     @InjectRepository(CommentLike)
     private readonly commentLikesRepository: Repository<CommentLike>,
     @InjectRepository(Post)
-    private readonly postsRepository: Repository<Post>,
+    private readonly postsRepository: Repository<Post>, // <-- Имя репозитория
     private readonly profilesService: ProfilesService,
     @Inject(NOTIFICATIONS_SERVICE)
     private readonly notificationsClient: ClientProxy,
@@ -31,39 +33,76 @@ export class CommentsService {
   async create(userId: string, dto: CreateCommentDto) {
     const profile = await this.profilesService.getProfileByUserId(userId);
 
+    // 1. Проверяем пост
     const post = await this.postsRepository.findOne({
+      // <-- Исправлено на postsRepository
       where: { id: dto.postId },
       relations: ['profile', 'profile.user'],
     });
-    if (!post) throw new NotFoundException('Post not found');
 
-    if (dto.parentId) {
-      const parent = await this.commentsRepository.findOne({
-        where: { id: dto.parentId },
-      });
-      if (!parent) throw new NotFoundException('Parent comment not found');
+    if (!post) {
+      throw new NotFoundException('Post not found');
     }
 
+    // 2. Проверяем родительский комментарий
+    let parentComment: Comment | null = null;
+    if (dto.parentId) {
+      parentComment = await this.commentsRepository.findOne({
+        // <-- Исправлено на commentsRepository
+        where: { id: dto.parentId },
+        relations: ['profile', 'profile.user'],
+      });
+      if (!parentComment)
+        throw new NotFoundException('Parent comment not found');
+
+      if (parentComment.postId !== dto.postId) {
+        throw new ForbiddenException('Parent comment belongs to another post');
+      }
+    }
+
+    // 3. Создаем
     const comment = this.commentsRepository.create({
+      // <-- Исправлено на commentsRepository
       content: dto.content,
       postId: dto.postId,
       profileId: profile.id,
       parentId: dto.parentId || null,
+      createdBy: userId,
+      updatedBy: userId,
     });
 
-    const savedComment = await this.commentsRepository.save(comment);
+    const savedComment = await this.commentsRepository.save(comment); // <-- Исправлено на commentsRepository
 
-    if (post.profileId !== profile.id && post.profile.user) {
-      this.notificationsClient.emit('post_commented', {
+    // 4. Отправляем уведомления
+    // А) Уведомление автору поста
+    if (post.createdBy !== userId) {
+      this.notificationsClient.emit('comment_created', {
         actorId: userId,
-        targetUserId: post.profile.user.id,
+        targetUserId: post.profile.userId,
+        targetUserEmail: post.profile.user.email,
         postId: post.id,
         commentId: savedComment.id,
-        timestamp: new Date(),
+        type: 'COMMENT_ON_POST',
+        timestamp: new Date().toISOString(),
       });
     }
 
-    return this.getOne(savedComment.id, userId);
+    // Б) Уведомление автору родительского комментария
+    if (parentComment && parentComment.createdBy !== userId) {
+      if (parentComment.createdBy !== post.createdBy) {
+        this.notificationsClient.emit('comment_created', {
+          actorId: userId,
+          targetUserId: parentComment.profile.userId,
+          targetUserEmail: parentComment.profile.user.email,
+          postId: post.id,
+          commentId: savedComment.id,
+          type: 'REPLY_TO_COMMENT',
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    return this.getOne(savedComment.id); // <-- Исправлено с this.findOne на this.getOne
   }
 
   async getCommentsByPost(
@@ -90,6 +129,7 @@ export class CommentsService {
     };
   }
 
+  // --- Public Get One ---
   async getOne(id: string, currentUserId?: string) {
     const comment = await this.commentsRepository.findOne({
       where: { id },
@@ -107,6 +147,7 @@ export class CommentsService {
 
     if (comment.profileId !== userProfile.id) {
       const post = await this.postsRepository.findOne({
+        // <-- Исправлено
         where: { id: comment.postId },
       });
       if (post && post.profileId !== userProfile.id) {

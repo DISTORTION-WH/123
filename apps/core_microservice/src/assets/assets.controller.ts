@@ -22,7 +22,7 @@ import {
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import {
   CurrentUser,
-  CurrentUser as CurrentUserType,
+  CurrentUserData, // Используем интерфейс
 } from '../decorators/current-user.decorator';
 
 @ApiTags('Assets')
@@ -58,7 +58,7 @@ export class AssetsController {
   )
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData, // Исправлен тип
   ) {
     return await this.assetsService.createAsset(file, user.id);
   }

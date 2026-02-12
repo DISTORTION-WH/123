@@ -14,14 +14,14 @@ import { ChatsService } from './chats.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import {
   CurrentUser,
-  CurrentUser as CurrentUserType,
+  CurrentUserData, // Импортируем интерфейс, а не делаем алиас на декоратор
 } from '../decorators/current-user.decorator';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { ChatType } from '../database/entities/chat.entity';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { AddParticipantDto } from './dto/add-participant.dto';
-import { EditMessageDto } from './dto/edit-message.dto'; // Импорт DTO
+import { EditMessageDto } from './dto/edit-message.dto';
 
 @ApiTags('Chats')
 @Controller('chats')
@@ -33,7 +33,7 @@ export class ChatsController {
   @Post()
   @ApiOperation({ summary: 'Create private or group chat' })
   async createChat(
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData, // Используем правильный тип
     @Body() dto: CreateChatDto,
   ) {
     if (dto.type === ChatType.GROUP) {
@@ -48,7 +48,7 @@ export class ChatsController {
 
   @Get()
   @ApiOperation({ summary: 'Get list of my chats' })
-  async getMyChats(@CurrentUser() user: CurrentUserType) {
+  async getMyChats(@CurrentUser() user: CurrentUserData) {
     return this.chatsService.getUserChats(user.id);
   }
 
@@ -56,7 +56,7 @@ export class ChatsController {
   @ApiOperation({ summary: 'Update group chat info (Admin only)' })
   async updateChat(
     @Param('id') chatId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Body() dto: UpdateChatDto,
   ) {
     return this.chatsService.updateGroupChat(chatId, user.id, dto);
@@ -66,7 +66,7 @@ export class ChatsController {
   @ApiOperation({ summary: 'Add participant to group (Admin only)' })
   async addParticipant(
     @Param('id') chatId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Body() dto: AddParticipantDto,
   ) {
     return this.chatsService.addParticipant(chatId, user.id, dto.username);
@@ -77,7 +77,7 @@ export class ChatsController {
   async removeParticipant(
     @Param('id') chatId: string,
     @Param('profileId') profileId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
   ) {
     return this.chatsService.removeParticipant(chatId, user.id, profileId);
   }
@@ -86,7 +86,7 @@ export class ChatsController {
   @ApiOperation({ summary: 'Leave group chat' })
   async leaveChat(
     @Param('id') chatId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
   ) {
     return this.chatsService.leaveChat(chatId, user.id);
   }
@@ -95,7 +95,7 @@ export class ChatsController {
   @ApiOperation({ summary: 'Get messages in a chat' })
   async getMessages(
     @Param('id') chatId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
   ) {
     return this.chatsService.getChatMessages(chatId, user.id);
   }
@@ -104,7 +104,7 @@ export class ChatsController {
   @ApiOperation({ summary: 'Send a message' })
   async sendMessage(
     @Param('id') chatId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Body() dto: SendMessageDto,
   ) {
     return this.chatsService.sendMessage(chatId, user.id, dto);
@@ -116,7 +116,7 @@ export class ChatsController {
   @ApiOperation({ summary: 'Edit a message' })
   async editMessage(
     @Param('messageId') messageId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Body() dto: EditMessageDto,
   ) {
     return this.chatsService.editMessage(messageId, user.id, dto);
@@ -126,7 +126,7 @@ export class ChatsController {
   @ApiOperation({ summary: 'Delete a message' })
   async deleteMessage(
     @Param('messageId') messageId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
   ) {
     return this.chatsService.deleteMessage(messageId, user.id);
   }

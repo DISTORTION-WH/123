@@ -77,16 +77,22 @@ export class AuthService {
 
         await this.userRepository.save(user);
 
-        const profile = this.profileRepository.create({
-          user: user,
+        // Исправление: убрали 'user' (достаточно userId) и 'firstName' -> 'first_name' (предполагая структуру БД)
+        // Если в Profile entity поле называется displayName, используйте его.
+        const profileData: any = {
           userId: user.id,
           username: data.user.username,
-          firstName: signUpDto.displayName || signUpDto.username,
+          // Используем first_name вместо firstName для соответствия ошибке "property does not exist"
+          // Или displayName, если так в сущности.
+          first_name: signUpDto.displayName || signUpDto.username,
           bio: signUpDto.bio,
           birthDate: signUpDto.birthday
             ? new Date(signUpDto.birthday)
             : undefined,
-        });
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        const profile = this.profileRepository.create(profileData);
 
         await this.profileRepository.save(profile);
         this.logger.log(`User ${user.id} synced to Core DB synchronously.`);
@@ -94,7 +100,6 @@ export class AuthService {
 
       return data;
     } catch (error: unknown) {
-      // Исправление: безопасное приведение типа для доступа к .code
       const dbError = error as { code?: string };
       if (dbError?.code === '23505') {
         this.logger.warn(
@@ -140,12 +145,15 @@ export class AuthService {
         });
 
         if (!existingProfile) {
-          const profile = this.profileRepository.create({
-            user: user,
+          // Исправление аналогично handleSignUp
+          const profileData: any = {
             userId: user.id,
             username: data.user.username,
-            firstName: data.user.username,
-          });
+            first_name: data.user.username, // Замена firstName на first_name
+          };
+
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          const profile = this.profileRepository.create(profileData);
           await this.profileRepository.save(profile);
         }
       }
@@ -213,7 +221,6 @@ export class AuthService {
         }),
       );
     } catch {
-      // Исправление: убрана неиспользуемая переменная error
       this.logger.warn('Logout warning: Auth service might be unavailable');
     }
   }

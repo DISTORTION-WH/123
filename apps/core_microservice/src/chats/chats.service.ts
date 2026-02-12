@@ -1,3 +1,5 @@
+// apps/core_microservice/src/chats/chats.service.ts
+
 import {
   BadRequestException,
   ForbiddenException,
@@ -8,7 +10,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm'; // Убрал In
+import { Repository, DataSource } from 'typeorm';
 import { Chat, ChatType } from '../database/entities/chat.entity';
 import {
   ChatParticipant,
@@ -49,6 +51,23 @@ export class ChatsService {
 
     if (me.id === target.id) {
       throw new BadRequestException('Cannot chat with yourself');
+    }
+
+    // --- REQUIREMENT: Check mutual follow (Friendship) ---
+    const isFriend = await this.profilesService.checkIsFriend(me.id, target.id);
+    if (!isFriend) {
+      throw new ForbiddenException(
+        'You can only start a chat with friends (mutual follow)',
+      );
+    }
+
+    // Check if blocked
+    const isBlocked = await this.profilesService.checkIsBlocked(
+      me.id,
+      target.id,
+    );
+    if (isBlocked) {
+      throw new ForbiddenException('Cannot start chat: blocked user');
     }
 
     const existingChatId = await this.chatsRepository
@@ -117,7 +136,6 @@ export class ChatsService {
         try {
           return await this.profilesService.getProfileByUsername(username);
         } catch {
-          // Убрал неиспользуемую переменную 'e'
           this.logger.warn(`User ${username} not found during chat creation`);
           return null;
         }
@@ -139,7 +157,6 @@ export class ChatsService {
       const chat = this.chatsRepository.create({
         type: ChatType.GROUP,
         name: dto.name || 'New Group',
-        // Исправлено: dto.description удалено, так как его нет в CreateChatDto
         description: '',
         createdBy: currentUserId,
         updatedBy: currentUserId,
@@ -193,6 +210,16 @@ export class ChatsService {
     await this.validateAdmin(chatId, currentUserId);
     const targetProfile =
       await this.profilesService.getProfileByUsername(targetUsername);
+
+    // Optional: Check block status before adding
+    const me = await this.profilesService.getProfileByUserId(currentUserId);
+    const isBlocked = await this.profilesService.checkIsBlocked(
+      me.id,
+      targetProfile.id,
+    );
+    if (isBlocked) {
+      throw new ForbiddenException('Cannot add blocked user');
+    }
 
     const existing = await this.participantsRepository.findOne({
       where: { chatId, profileId: targetProfile.id },
@@ -279,14 +306,38 @@ export class ChatsService {
 
     const chats = participants.map((p) => p.chat);
 
+    // --- REQUIREMENT: Primitive Blocking (Don't show if blocked) ---
+    // We need to filter out private chats where the other user is blocked/blocker
+    const validChats = [];
+
+    for (const chat of chats) {
+      if (chat.type === ChatType.PRIVATE) {
+        const otherParticipant = chat.participants.find(
+          (p) => p.profileId !== profile.id,
+        );
+        if (otherParticipant) {
+          const isBlocked = await this.profilesService.checkIsBlocked(
+            profile.id,
+            otherParticipant.profileId,
+          );
+          if (isBlocked) {
+            continue; // Skip this chat (Hidden)
+          }
+        }
+      }
+      validChats.push(chat);
+    }
+
     const result = await Promise.all(
-      chats.map(async (chat) => {
+      validChats.map(async (chat) => {
         const lastMessage = await this.messagesRepository.findOne({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
           where: { chatId: chat.id },
           order: { createdAt: 'DESC' },
           relations: ['profile'],
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return {
           ...chat,
           lastMessage,
@@ -294,6 +345,7 @@ export class ChatsService {
       }),
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return result;
   }
 
@@ -301,6 +353,30 @@ export class ChatsService {
 
   async getChatMessages(chatId: string, userId: string) {
     await this.validateParticipant(chatId, userId);
+
+    // Check if blocked logic also applies to fetching messages?
+    // Usually if chat is hidden in list, user shouldn't access messages either.
+    const profile = await this.profilesService.getProfileByUserId(userId);
+    const chat = await this.chatsRepository.findOne({
+      where: { id: chatId },
+      relations: ['participants'],
+    });
+
+    if (chat.type === ChatType.PRIVATE) {
+      const otherParticipant = chat.participants.find(
+        (p) => p.profileId !== profile.id,
+      );
+      if (otherParticipant) {
+        const isBlocked = await this.profilesService.checkIsBlocked(
+          profile.id,
+          otherParticipant.profileId,
+        );
+        if (isBlocked) {
+          // If blocked, return empty or throw forbidden. Requirement says "just don't show"
+          return [];
+        }
+      }
+    }
 
     return await this.messagesRepository.find({
       where: { chatId },
@@ -312,6 +388,26 @@ export class ChatsService {
   async sendMessage(chatId: string, userId: string, dto: SendMessageDto) {
     await this.validateParticipant(chatId, userId);
     const profile = await this.profilesService.getProfileByUserId(userId);
+
+    // Extra check: If blocked, you can't send message (even if you somehow have the ID)
+    const chat = await this.chatsRepository.findOne({
+      where: { id: chatId },
+      relations: ['participants'],
+    });
+    if (chat.type === ChatType.PRIVATE) {
+      const otherParticipant = chat.participants.find(
+        (p) => p.profileId !== profile.id,
+      );
+      if (otherParticipant) {
+        const isBlocked = await this.profilesService.checkIsBlocked(
+          profile.id,
+          otherParticipant.profileId,
+        );
+        if (isBlocked) {
+          throw new ForbiddenException('Cannot send message: blocked');
+        }
+      }
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

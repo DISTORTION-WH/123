@@ -1,3 +1,5 @@
+// apps/core_microservice/src/profiles/profiles.controller.ts
+
 import {
   BadRequestException,
   Body,
@@ -13,7 +15,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiTags,
+  ApiOperation,
+} from '@nestjs/swagger';
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -80,6 +87,8 @@ export class ProfilesController {
     const avatarUrl = `/uploads/${file.filename}`;
     return this.profilesService.updateAvatar(user.id, avatarUrl);
   }
+
+  // --- Follows ---
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -151,6 +160,32 @@ export class ProfilesController {
   ) {
     return await this.profilesService.rejectFollowRequest(user.id, username);
   }
+
+  // --- Blocking ---
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post(':username/block')
+  @ApiOperation({ summary: 'Block a user' })
+  async blockUser(
+    @CurrentUser() user: CurrentUserData,
+    @Param('username') username: string,
+  ) {
+    return await this.profilesService.blockUser(user.id, username);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Delete(':username/block')
+  @ApiOperation({ summary: 'Unblock a user' })
+  async unblockUser(
+    @CurrentUser() user: CurrentUserData,
+    @Param('username') username: string,
+  ) {
+    return await this.profilesService.unblockUser(user.id, username);
+  }
+
+  // --- Profile Management ---
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

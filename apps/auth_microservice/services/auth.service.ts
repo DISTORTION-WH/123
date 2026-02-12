@@ -3,13 +3,11 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateAccessToken, generateRefreshTokenId, verifyAccessToken } from '../utils/jwt';
 import { RedisAuthRepository } from '../repositories/redis.repository';
 import { UserRepository } from '../repositories/user.repository';
-import { rabbitMQService } from './rabbitmq.service'; // Импорт RabbitMQ сервиса
+import { rabbitMQService } from './rabbitmq.service'; 
 
 export class AuthService {
   private redisRepository: RedisAuthRepository;
-  private userRepository: UserRepository; 
-  
-  // private coreServiceUrl = process.env.CORE_SERVICE_URL || 'http://core_microservice:3000'; // Больше не нужно для синхронизации
+  private userRepository: UserRepository;
 
   constructor() {
     this.redisRepository = new RedisAuthRepository();
@@ -33,7 +31,6 @@ export class AuthService {
     const passwordHash = await hashPassword(data.password);
     const userId = uuidv4();
 
-    
     const newUser = await this.userRepository.create({
       _id: userId,
       email: data.email,
@@ -45,30 +42,34 @@ export class AuthService {
       role: 'User',
     });
 
-    // CHANGE: Заменена прямая HTTP синхронизация на отправку события в RabbitMQ
+    // --- RABBITMQ EVENT ---
     try {
-      console.log(`[AuthService] Queueing user sync for ${userId}...`);
+      console.log(`[AuthService] Publishing user_created event for ${userId}...`);
+      
+      // Отправляем событие. Core его тоже может слушать (для логов), 
+      // но главное - его слушает Notifications Service для отправки Email.
       await rabbitMQService.publishUserCreated({
         id: userId,
         email: data.email,
         username: data.username,
-        displayName: data.displayName, // Передаем также доп. данные для создания профиля
+        displayName: data.displayName || data.username,
         birthday: data.birthday,
-        bio: data.bio
+        bio: data.bio,
+        role: 'User'
       });
-      console.log(`[AuthService] Event queued.`);
+      
     } catch (error: any) {
-      // Мы не блокируем регистрацию, если очередь недоступна, но логируем ошибку.
-      // В идеале здесь нужен механизм Outbox pattern (сохранение события в БД и отправка фоновым процессом).
-      console.error('[AuthService] Failed to queue user sync:', error.message);
+      console.error('[AuthService] WARNING: Failed to publish RabbitMQ event:', error.message);
+      // Не прерываем регистрацию, если очередь упала
     }
+    // ---------------------
 
     return this.generateTokens(newUser._id.toString(), newUser.role, newUser.email, newUser.username);
   }
 
   async authenticateUser(credentials: { email: string; password: string }) {
     const user = await this.userRepository.findByEmail(credentials.email);
-    
+
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -81,19 +82,19 @@ export class AuthService {
 
   async refreshTokens(oldRefreshTokenId: string) {
     const sessionData = await this.redisRepository.findSessionByTokenId(oldRefreshTokenId);
-    
+
     if (!sessionData) {
       throw new Error('Invalid or expired refresh token');
     }
     const { userId } = JSON.parse(sessionData);
-    
+
     const user = await this.userRepository.findById(userId);
-    
+
     if (!user) {
       await this.redisRepository.deleteSession(oldRefreshTokenId);
       throw new Error('User not found');
     }
-    
+
     await this.redisRepository.deleteSession(oldRefreshTokenId);
     return this.generateTokens(user._id.toString(), user.role, user.email, user.username);
   }
@@ -101,7 +102,7 @@ export class AuthService {
   async validateToken(accessToken: string) {
     const payload = verifyAccessToken(accessToken);
     if (!payload) return null;
-    
+
     try {
         const isBlacklisted = await this.redisRepository.isTokenBlacklisted(payload.jti, 'access');
         if (isBlacklisted) return null;
@@ -137,9 +138,9 @@ export class AuthService {
     const { token: accessToken } = generateAccessToken({ userId, role, email });
     const refreshTokenId = generateRefreshTokenId();
     await this.redisRepository.storeRefreshTokenId(refreshTokenId, JSON.stringify({ userId }));
-    
+
     return {
-      user: { id: userId, email, role, username }, 
+      user: { id: userId, email, role, username },
       accessToken,
       refreshTokenId,
     };
@@ -147,14 +148,12 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     const user = await this.userRepository.findByEmail(email);
-    
-    if (!user) {
-      return; 
-    }
-    
+    if (!user) return;
+
     const resetToken = uuidv4();
     await this.redisRepository.setResetToken(resetToken, user._id.toString());
-    
+
+    // Здесь в будущем тоже лучше отправлять событие в RabbitMQ (forgot_password_requested)
     const resetLink = `/auth/reset-password?token=${resetToken}`;
     console.log(`[MOCK EMAIL] Reset link for ${email}: ${resetLink}`);
   }
@@ -164,17 +163,17 @@ export class AuthService {
     if (!userId) {
       throw new Error('Invalid or expired reset token');
     }
-    
+
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new Error('User not found');
     }
-    
+
     const passwordHash = await hashPassword(newPassword);
     user.passwordHash = passwordHash;
-    
+
     await this.userRepository.save(user);
-    
+
     return { message: 'Password successfully updated' };
   }
 }

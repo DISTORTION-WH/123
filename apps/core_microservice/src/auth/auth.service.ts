@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AxiosError } from 'axios';
@@ -39,6 +39,7 @@ interface ValidateTokenResponse {
 @Injectable()
 export class AuthService {
   private readonly authServiceUrl: string;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly httpService: HttpService,
@@ -50,7 +51,7 @@ export class AuthService {
   ) {
     this.authServiceUrl =
       this.configService.get<string>('AUTH_SERVICE_URL') ||
-      'http://localhost:3002';
+      'http://auth_microservice:3002';
   }
 
   async handleSignUp(signUpDto: SignUpDto): Promise<AuthResponse> {
@@ -62,36 +63,47 @@ export class AuthService {
         ),
       );
 
-      const user = this.userRepository.create({
-        id: data.user.id,
-        email: data.user.email,
-        username: data.user.username,
-        role: data.user.role,
+      const existingUser = await this.userRepository.findOne({
+        where: { id: data.user.id },
       });
 
-      await this.userRepository.save(user);
+      if (!existingUser) {
+        const user = this.userRepository.create({
+          id: data.user.id,
+          email: data.user.email,
+          username: data.user.username,
+          role: data.user.role,
+        });
 
-      const profile = this.profileRepository.create({
-        user: user,
-        userId: user.id,
-        username: data.user.username,
-        firstName: signUpDto.displayName || signUpDto.username,
-        bio: signUpDto.bio,
-        birthDate: signUpDto.birthday
-          ? new Date(signUpDto.birthday)
-          : undefined,
-      });
+        await this.userRepository.save(user);
 
-      await this.profileRepository.save(profile);
+        const profile = this.profileRepository.create({
+          user: user,
+          userId: user.id,
+          username: data.user.username,
+          firstName: signUpDto.displayName || signUpDto.username,
+          bio: signUpDto.bio,
+          birthDate: signUpDto.birthday
+            ? new Date(signUpDto.birthday)
+            : undefined,
+        });
+
+        await this.profileRepository.save(profile);
+        this.logger.log(`User ${user.id} synced to Core DB synchronously.`);
+      }
 
       return data;
-    } catch (error: any) {
-      if (error && error.code === '23505') {
-        console.warn(
-          'User or Profile already exists in Core DB, skipping sync',
+    } catch (error: unknown) {
+      // Исправление: безопасное приведение типа для доступа к .code
+      const dbError = error as { code?: string };
+      if (dbError?.code === '23505') {
+        this.logger.warn(
+          'User duplicate detected during sync in Core, proceeding...',
         );
+      } else {
+        this.handleHttpError(error);
       }
-      this.handleHttpError(error);
+      throw error;
     }
   }
 
@@ -110,6 +122,9 @@ export class AuthService {
       });
 
       if (!user) {
+        this.logger.log(
+          `User ${data.user.id} missing in Core. Lazy syncing...`,
+        );
         user = this.userRepository.create({
           id: data.user.id,
           email: data.user.email,
@@ -197,38 +212,24 @@ export class AuthService {
           accessToken,
         }),
       );
-    } catch (error) {
-      console.warn('Logout warning:', error);
+    } catch {
+      // Исправление: убрана неиспользуемая переменная error
+      this.logger.warn('Logout warning: Auth service might be unavailable');
     }
   }
 
   async validateToken(accessToken: string): Promise<ValidateTokenResponse> {
     try {
-      console.log(
-        `[AuthService Core] Sending validation request to: ${this.authServiceUrl}/internal/auth/validate`,
-      );
-
       const { data } = await lastValueFrom(
         this.httpService.post<ValidateTokenResponse>(
           `${this.authServiceUrl}/internal/auth/validate`,
           { accessToken },
         ),
       );
-
-      console.log('[AuthService Core] Validation response:', data);
       return data;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error: any) {
-      console.log('[AuthService Core] ERROR validating token:');
-      if (error.response) {
-        console.log('Status:', error.response.status);
-        console.log('Data:', error.response.data);
-      } else if (error.code) {
-        console.log('Error Code:', error.code);
-        console.log('Message:', error.message);
-      } else {
-        console.log('Error:', error);
-      }
-
+      this.logger.error(`Token validation failed`);
       throw new UnauthorizedException('Token validation failed');
     }
   }
@@ -267,42 +268,15 @@ export class AuthService {
 
   private handleHttpError(error: unknown): never {
     const axiosError = error as AxiosError<{ error: string; message?: string }>;
-
-    console.log('URL:', axiosError.config?.url);
-    console.log('Method:', axiosError.config?.method);
-
-    if (axiosError.response) {
-      console.log(' Response Status:', axiosError.response.status);
-      console.log(
-        ' Response Data:',
-        JSON.stringify(axiosError.response.data, null, 2),
-      );
-    } else {
-      console.log('No Response (Network Error) or DB Error');
-      console.log('Error Code:', axiosError.code);
-      console.log('Error Message:', axiosError.message);
-
-      if (axiosError['code'] && !isNaN(Number(axiosError['code']))) {
-        console.log(' DATABASE ERROR detected inside Auth Service wrapper');
-        throw error;
-      }
-
-      if (axiosError.code === 'ECONNREFUSED') {
-        console.log(
-          ' ПОДСКАЗКА: Core сервис не может найти Auth сервис по этому адресу/порту.',
-        );
-      }
-    }
+    this.logger.error(`Auth Service Error: ${axiosError.message}`);
 
     if (axiosError.response) {
       const { status, data } = axiosError.response;
-      const message =
-        data.error || data.message || 'Error communicating with Auth Service';
+      const message = data.error || data.message || 'Auth Service Error';
 
       if (status === 400) throw new BadRequestException(message);
       if (status === 401) throw new UnauthorizedException(message);
-      if (status === 404)
-        throw new BadRequestException('Resource not found in Auth Service');
+      if (status === 404) throw new BadRequestException('Resource not found');
     }
 
     throw new InternalServerErrorException(

@@ -10,7 +10,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In, Not } from 'typeorm';
 import { Chat, ChatType } from '../database/entities/chat.entity';
 import {
   ChatParticipant,
@@ -130,7 +130,43 @@ export class ChatsService {
       await queryRunner.release();
     }
   }
+  async markChatAsRead(chatId: string, userId: string) {
+    await this.validateParticipant(chatId, userId);
 
+    const profile = await this.profilesService.getProfileByUserId(userId);
+
+    // Находим все НЕпрочитанные сообщения в этом чате, которые отправлены НЕ мной
+    // (потому что свои сообщения я читать не могу)
+    const unreadMessages = await this.messagesRepository.find({
+      where: {
+        chatId: chatId,
+        profileId: Not(profile.id), // Не мои сообщения
+        isRead: false,
+      },
+      select: ['id'], // Нам нужны только ID для обновления
+    });
+
+    if (unreadMessages.length === 0) {
+      return { message: 'No new messages to mark as read' };
+    }
+
+    const unreadIds = unreadMessages.map((m) => m.id);
+
+    // Массовое обновление
+    await this.messagesRepository.update(
+      { id: In(unreadIds) },
+      { isRead: true, readAt: new Date() },
+    );
+
+    // Отправляем событие в сокет: "В чате X пользователь Y прочитал сообщения"
+    // Это нужно, чтобы у собеседника галочки стали цветными
+    this.chatsGateway.broadcastMessagesRead(chatId, {
+      profileId: profile.id,
+      messageIds: unreadIds, // Список ID, которые стали прочитанными
+    });
+
+    return { success: true, readCount: unreadIds.length };
+  }
   async createGroupChat(currentUserId: string, dto: CreateChatDto) {
     const me = await this.profilesService.getProfileByUserId(currentUserId);
     const participantsProfiles = [me];

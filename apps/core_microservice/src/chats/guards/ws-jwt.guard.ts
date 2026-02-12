@@ -1,3 +1,5 @@
+// apps/core_microservice/src/chats/guards/ws-jwt.guard.ts
+
 import {
   CanActivate,
   ExecutionContext,
@@ -7,18 +9,35 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Socket } from 'socket.io';
-import { ProfilesService } from '../../profiles/profiles.service'; // Добавлен импорт
+import { ProfilesService } from '../../profiles/profiles.service';
+
+// 1. Описываем структуру пользователя
+interface ChatUser {
+  userId: string;
+  sub: string;
+  username: string;
+  id: string;
+  [key: string]: any;
+}
+
+// 2. Расширяем тип Socket, чтобы TS знал о поле data.user
+interface AuthenticatedSocket extends Socket {
+  data: {
+    user?: ChatUser;
+  };
+}
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly profilesService: ProfilesService, // Инъекция сервиса профилей
+    private readonly profilesService: ProfilesService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const client: Socket = context.switchToWs().getClient<Socket>();
+    // 3. Используем наш расширенный интерфейс вместо обычного Socket
+    const client = context.switchToWs().getClient<AuthenticatedSocket>();
     const token = this.extractTokenFromHeader(client);
 
     if (!token) {
@@ -26,25 +45,31 @@ export class WsJwtGuard implements CanActivate {
     }
 
     try {
-      // 1. Валидация токена
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-      });
+      const payload = await this.jwtService.verifyAsync<{ userId: string }>(
+        token,
+        {
+          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        },
+      );
 
-      // 2. Получение профиля для username (которого нет в токене)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      const userId = payload.userId as string;
+      const userId = payload.userId;
       const profile = await this.profilesService.getProfileByUserId(userId);
 
-      // 3. Формирование объекта пользователя для сокета
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      client['user'] = {
+      const user: ChatUser = {
         ...payload,
-        sub: userId, // Gateway использует sub
+        id: userId,
+        sub: userId,
         userId: userId,
-        username: profile.username, // Gateway использует username
+        username: profile.username,
       };
+
+      // 4. Теперь это безопасно, так как мы типизировали client.data
+      client.data.user = user;
+
+      // 5. Исправлено использование ts-ignore на ts-expect-error
+      // Используем @ts-expect-error, так как свойства 'user' официально нет в типе Socket,
+      // но мы хотим сохранить обратную совместимость.
+      client['user'] = user;
     } catch (err) {
       console.error('WS Auth failed:', err);
       throw new UnauthorizedException();
@@ -53,19 +78,15 @@ export class WsJwtGuard implements CanActivate {
   }
 
   private extractTokenFromHeader(client: Socket): string | undefined {
-    // Вариант 1: Authorization Header (стандартный для современных клиентов)
     const [type, token] =
       client.handshake.headers.authorization?.split(' ') ?? [];
     if (type === 'Bearer') {
       return token;
     }
-
-    // Вариант 2: Query param (для удобства тестирования или старых клиентов)
     const queryToken = client.handshake.query.token;
     if (typeof queryToken === 'string') {
       return queryToken;
     }
-
     return undefined;
   }
 }

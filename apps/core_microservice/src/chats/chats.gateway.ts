@@ -1,3 +1,5 @@
+// apps/core_microservice/src/chats/chats.gateway.ts
+
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -9,16 +11,26 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { UseGuards, Inject, forwardRef } from '@nestjs/common';
-import { WsJwtGuard } from './guards/ws-jwt.guard'; // Проверь путь к гарду, возможно './guards/...'
+import { WsJwtGuard } from './guards/ws-jwt.guard';
 import { ChatsService } from './chats.service';
 import { SendMessageDto } from './dto/send-message.dto';
 
+// Описываем структуру данных пользователя
+interface ChatUser {
+  sub: string;
+  email?: string;
+  username: string;
+  id: string; // Добавлено, так как используется в коде
+}
+
+// Расширяем стандартный сокет
 interface AuthenticatedSocket extends Socket {
-  user: {
-    sub: string;
-    email: string;
-    username: string;
+  // Стандартное место хранения данных в Socket.IO v4
+  data: {
+    user?: ChatUser;
   };
+  // Твой кастомный проперти (легаси)
+  user: ChatUser;
 }
 
 @WebSocketGateway({
@@ -44,13 +56,49 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Client disconnected: ${client.id}`);
   }
 
+  broadcastMessagesRead(
+    chatId: string,
+    payload: { profileId: string; messageIds: string[] },
+  ) {
+    this.server.to(`chat_${chatId}`).emit('messagesRead', payload);
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('typingStart')
+  handleTypingStart(
+    @MessageBody() data: { chatId: string },
+    // Используем AuthenticatedSocket вместо Socket для типизации
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    // Теперь client.data.user типизирован, и линтер не будет ругаться
+    client.broadcast.to(`chat_${data.chatId}`).emit('userTyping', {
+      chatId: data.chatId,
+      userId: client.data.user?.id,
+      isTyping: true,
+    });
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('typingStop')
+  handleTypingStop(
+    @MessageBody() data: { chatId: string },
+    // Используем AuthenticatedSocket вместо Socket
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    client.broadcast.to(`chat_${data.chatId}`).emit('userTyping', {
+      chatId: data.chatId,
+      userId: client.data.user?.id,
+      isTyping: false,
+    });
+  }
+
   @UseGuards(WsJwtGuard)
   @SubscribeMessage('join_chat')
   async handleJoinChat(
     @MessageBody() data: { chatId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    await client.join(data.chatId);
+    await client.join(`chat_${data.chatId}`); // Исправлено: лучше добавлять префикс, чтобы не было коллизий
     console.log(`User ${client.user.sub} joined chat ${data.chatId}`);
     return { event: 'joined_chat', data: { chatId: data.chatId } };
   }
@@ -61,7 +109,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { chatId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    await client.leave(data.chatId);
+    await client.leave(`chat_${data.chatId}`); // Исправлено: префикс
     return { event: 'left_chat', data: { chatId: data.chatId } };
   }
 
@@ -71,8 +119,6 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { chatId: string; dto: SendMessageDto },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    // Мы просто вызываем сервис. Сервис сам вызовет broadcastMessage внутри.
-    // Если здесь оставить this.broadcastMessage, будет дублирование сообщений.
     const message = await this.chatsService.sendMessage(
       payload.chatId,
       client.user.sub,
@@ -87,9 +133,10 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { chatId: string; isTyping: boolean },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    client.to(data.chatId).emit('typing_status', {
+    // client.to(...) отправляет всем кроме отправителя
+    client.to(`chat_${data.chatId}`).emit('typing_status', {
       userId: client.user.sub,
-      username: client.user.username, // Убедись, что username есть в токене/request
+      username: client.user.username,
       isTyping: data.isTyping,
       chatId: data.chatId,
     });
@@ -97,26 +144,20 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // --- PUBLIC METHODS FOR SERVICE ---
 
-  /**
-   * Отправка нового сообщения всем в комнате
-   */
   broadcastMessage(chatId: string, message: any) {
-    this.server.to(chatId).emit('new_message', message);
+    this.server.to(`chat_${chatId}`).emit('new_message', message);
   }
 
-  /**
-   * Уведомление об изменении сообщения (редактирование)
-   */
   broadcastMessageUpdated(chatId: string, message: any) {
-    this.server.to(chatId).emit('message_updated', message);
+    this.server.to(`chat_${chatId}`).emit('message_updated', message);
   }
 
-  /**
-   * Уведомление об удалении сообщения
-   */
   broadcastMessageDeleted(chatId: string, messageId: string) {
-    this.server.to(chatId).emit('message_deleted', { id: messageId, chatId });
+    this.server
+      .to(`chat_${chatId}`)
+      .emit('message_deleted', { id: messageId, chatId });
   }
+
   broadcastReactionUpdate(
     chatId: string,
     payload: {
@@ -126,8 +167,6 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       action: 'added' | 'removed' | 'updated';
     },
   ) {
-    // Клиент получит событие и сможет обновить конкретное сообщение локально,
-    // не запрашивая весь список заново.
     this.server.to(`chat_${chatId}`).emit('reactionUpdated', payload);
   }
 }

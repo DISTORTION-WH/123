@@ -51,6 +51,13 @@ export class Message {
   @JoinColumn({ name: 'shared_post_id' })
   sharedPost: Post;
   // --- End: Shared Post ---
+  // --- Start: Read Status ---
+  @Column({ name: 'is_read', default: false })
+  isRead: boolean;
+
+  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
+  readAt: Date;
+  // --- End: Read Status ---
   @Column({ name: 'reply_to_message_id', nullable: true })
   replyToMessageId: string;
 

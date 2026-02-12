@@ -133,6 +133,16 @@ export class ChatsController {
   }
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Post(':chatId/read')
+  @ApiOperation({ summary: 'Mark all messages in chat as read' })
+  async markChatAsRead(
+    @CurrentUser() user: CurrentUserData,
+    @Param('chatId') chatId: string,
+  ) {
+    return await this.chatsService.markChatAsRead(chatId, user.id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post('messages/:messageId/reactions')
   @ApiOperation({ summary: 'Toggle reaction on a message' })
   async toggleReaction(

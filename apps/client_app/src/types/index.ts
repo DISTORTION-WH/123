@@ -68,7 +68,16 @@ export interface MessageReaction {
 
 export interface Post {
   id: string;
-  // ... поля поста, если нужны
   caption?: string;
   assets: { id: string; asset: Asset }[];
+  profile: Profile;
+  createdAt: string;
+  likesCount: number;
+  commentsCount: number;
+  isLiked: boolean; // Флаг, лайкнул ли я этот пост
+}
+
+export interface CreatePostDto {
+  caption?: string;
+  files: File[];
 }

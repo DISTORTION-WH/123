@@ -117,4 +117,17 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   broadcastMessageDeleted(chatId: string, messageId: string) {
     this.server.to(chatId).emit('message_deleted', { id: messageId, chatId });
   }
+  broadcastReactionUpdate(
+    chatId: string,
+    payload: {
+      messageId: string;
+      profileId: string;
+      reaction: string | null;
+      action: 'added' | 'removed' | 'updated';
+    },
+  ) {
+    // Клиент получит событие и сможет обновить конкретное сообщение локально,
+    // не запрашивая весь список заново.
+    this.server.to(`chat_${chatId}`).emit('reactionUpdated', payload);
+  }
 }

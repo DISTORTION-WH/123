@@ -12,6 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ChatsService } from './chats.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { ToggleReactionDto } from './dto/toggle-reaction.dto';
 import {
   CurrentUser,
   CurrentUserData, // Импортируем интерфейс, а не делаем алиас на декоратор
@@ -129,5 +130,20 @@ export class ChatsController {
     @CurrentUser() user: CurrentUserData,
   ) {
     return this.chatsService.deleteMessage(messageId, user.id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('messages/:messageId/reactions')
+  @ApiOperation({ summary: 'Toggle reaction on a message' })
+  async toggleReaction(
+    @CurrentUser() user: CurrentUserData,
+    @Param('messageId') messageId: string,
+    @Body() dto: ToggleReactionDto,
+  ) {
+    return await this.chatsService.toggleReaction(
+      messageId,
+      user.id,
+      dto.reaction,
+    );
   }
 }

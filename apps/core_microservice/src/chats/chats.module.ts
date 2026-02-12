@@ -13,10 +13,16 @@ import { Message } from '../database/entities/message.entity';
 import { MessageAsset } from '../database/entities/message-asset.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ProfilesModule } from '../profiles/profiles.module';
-
+import { MessageReaction } from '../database/entities/message-reaction.entity'; // <-- Добавлено
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Chat, ChatParticipant, Message, MessageAsset]),
+    TypeOrmModule.forFeature([
+      Chat,
+      ChatParticipant,
+      Message,
+      MessageAsset,
+      MessageReaction,
+    ]),
     AuthModule,
     ProfilesModule,
     ConfigModule,

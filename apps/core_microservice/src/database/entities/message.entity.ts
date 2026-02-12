@@ -12,7 +12,7 @@ import { Chat } from './chat.entity';
 import { User } from './user.entity';
 import { Profile } from './profile.entity';
 import { MessageAsset } from './message-asset.entity';
-
+import { MessageReaction } from './message-reaction.entity';
 @Entity('messages')
 export class Message {
   @PrimaryGeneratedColumn('uuid')
@@ -72,4 +72,6 @@ export class Message {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+  @OneToMany(() => MessageReaction, (reaction) => reaction.message)
+  reactions: MessageReaction[];
 }

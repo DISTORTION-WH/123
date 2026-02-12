@@ -7,10 +7,10 @@ import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
-
+import { ProfileBlock } from '../database/entities/profile-block.entity'; // <-- Важно
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Profile, ProfileFollow]),
+    TypeOrmModule.forFeature([Profile, ProfileFollow, ProfileBlock]),
     AuthModule,
     ClientsModule.register([
       {

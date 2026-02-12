@@ -24,7 +24,7 @@ import { ChatsGateway } from './chats.gateway';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
-
+import { MessageReaction } from '../database/entities/message-reaction.entity';
 @Injectable()
 export class ChatsService {
   private readonly logger = new Logger(ChatsService.name);
@@ -40,6 +40,8 @@ export class ChatsService {
     private dataSource: DataSource,
     @Inject(forwardRef(() => ChatsGateway))
     private readonly chatsGateway: ChatsGateway,
+    @InjectRepository(MessageReaction)
+    private reactionsRepository: Repository<MessageReaction>,
   ) {}
 
   // --- CHAT MANAGEMENT ---
@@ -534,7 +536,62 @@ export class ChatsService {
       throw new NotFoundException('Chat not found or you are not a member');
     }
   }
+  async toggleReaction(messageId: string, userId: string, reaction: string) {
+    const message = await this.messagesRepository.findOne({
+      where: { id: messageId },
+    });
 
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    // Проверяем доступ к чату
+    await this.validateParticipant(message.chatId, userId);
+
+    const profile = await this.profilesService.getProfileByUserId(userId);
+
+    const existingReaction = await this.reactionsRepository.findOne({
+      where: {
+        messageId: messageId,
+        profileId: profile.id,
+      },
+    });
+
+    let action: 'added' | 'removed' | 'updated';
+
+    if (existingReaction) {
+      if (existingReaction.reaction === reaction) {
+        // Если та же эмодзи — удаляем (toggle off)
+        await this.reactionsRepository.remove(existingReaction);
+        action = 'removed';
+      } else {
+        // Если другая — обновляем
+        existingReaction.reaction = reaction;
+        await this.reactionsRepository.save(existingReaction);
+        action = 'updated';
+      }
+    } else {
+      // Если нет — создаем
+      const newReaction = this.reactionsRepository.create({
+        messageId,
+        profileId: profile.id,
+        reaction,
+      });
+      await this.reactionsRepository.save(newReaction);
+      action = 'added';
+    }
+
+    // Отправляем событие в WebSocket
+
+    this.chatsGateway.broadcastReactionUpdate(message.chatId, {
+      messageId,
+      profileId: profile.id,
+      reaction: action === 'removed' ? null : reaction,
+      action,
+    });
+
+    return { status: 'success', action };
+  }
   private async validateAdmin(chatId: string, userId: string) {
     const profile = await this.profilesService.getProfileByUserId(userId);
     const participant = await this.participantsRepository.findOne({

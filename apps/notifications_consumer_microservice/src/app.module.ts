@@ -7,22 +7,20 @@ import * as path from 'path';
 
 @Module({
   imports: [
-    // Загружаем .env из корня монорепозитория
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: path.resolve(__dirname, '../../../.env'),
     }),
-
     MailerModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         transport: {
-          host: configService.get('SMTP_HOST') || 'smtp.ethereal.email',
-          port: configService.get('SMTP_PORT') || 587,
-          secure: false, // true for 465, false for other ports
+          host: configService.get<string>('SMTP_HOST') || 'smtp.ethereal.email',
+          port: configService.get<number>('SMTP_PORT') || 587,
+          secure: false,
           auth: {
-            user: configService.get('SMTP_USER') || 'test_user',
-            pass: configService.get('SMTP_PASS') || 'test_pass',
+            user: configService.get<string>('SMTP_USER') || 'test_user',
+            pass: configService.get<string>('SMTP_PASS') || 'test_pass',
           },
         },
         defaults: {

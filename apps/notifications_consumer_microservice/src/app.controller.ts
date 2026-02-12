@@ -1,16 +1,22 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload, Ctx, RmqContext } from '@nestjs/microservices';
 import { AppService } from './app.service';
+import { UserCreatedDto } from './dtos/user-created.dto';
 
 @Controller()
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
+
   constructor(private readonly appService: AppService) {}
 
   @EventPattern('user_created')
-  async handleUserCreated(@Payload() data: any, @Ctx() context: RmqContext) {
-    console.log('Received event: user_created', data);
+  async handleUserCreated(
+    @Payload() data: UserCreatedDto,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    @Ctx() _context: RmqContext,
+  ) {
+    this.logger.log(`Received event: user_created for ${data.email}`);
 
-    // Валидация данных (простая)
     if (data && data.email) {
       await this.appService.sendWelcomeEmail({
         email: data.email,
@@ -18,7 +24,5 @@ export class AppController {
         displayName: data.displayName,
       });
     }
-
-    // Подтверждаем получение сообщения (если включен manualAck, но здесь мы используем авто-подтверждение по умолчанию)
   }
 }

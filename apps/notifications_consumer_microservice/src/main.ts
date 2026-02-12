@@ -1,17 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { INestMicroservice } from '@nestjs/common';
 
 async function bootstrap() {
-  // Получаем переменные окружения (предполагаем, что они загрузятся через ConfigModule в AppModule)
   const RABBITMQ_USER = process.env.RABBITMQ_USER || 'guest';
   const RABBITMQ_PASS = process.env.RABBITMQ_PASS || 'guest';
   const RABBITMQ_HOST = process.env.RABBITMQ_HOST || 'localhost';
   const RABBITMQ_PORT = process.env.RABBITMQ_PORT || '5672';
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const app: INestMicroservice =
+    await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
       transport: Transport.RMQ,
       options: {
         urls: [
@@ -19,13 +19,16 @@ async function bootstrap() {
         ],
         queue: 'notifications_queue',
         queueOptions: {
-          durable: false, // В продакшене лучше true, но для разработки false упрощает очистку
+          durable: false,
         },
       },
-    },
-  );
+    });
 
   await app.listen();
   console.log('Notifications Microservice is listening via RabbitMQ...');
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  console.error('Error starting microservice:', err);
+  process.exit(1);
+});

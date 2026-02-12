@@ -22,11 +22,15 @@
   },
   "dependencies": {
     "@nestjs/common": "11.1.12",
+    "@nestjs/config": "3.3.0",
     "@nestjs/core": "11.1.12",
     "@nestjs/microservices": "11.1.12",
     "@nestjs/platform-express": "11.1.12",
+    "@nestjs-modules/mailer": "1.10.3",
     "amqp-connection-manager": "4.1.14",
     "amqplib": "0.10.3",
+    "handlebars": "4.7.8",
+    "nodemailer": "6.9.9",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1"
   },
@@ -40,6 +44,7 @@
     "@types/jest": "29.5.14",
     "@types/jsonwebtoken": "9.0.7",
     "@types/node": "20.10.0",
+    "@types/nodemailer": "6.4.14",
     "@types/supertest": "6.0.2",
     "eslint": "9.18.0",
     "eslint-config-prettier": "10.1.1",

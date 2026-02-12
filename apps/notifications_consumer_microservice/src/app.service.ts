@@ -11,15 +11,13 @@ export class AppService {
     email: string;
     username: string;
     displayName?: string;
-  }) {
+  }): Promise<void> {
     this.logger.log(`Processing welcome email for: ${data.email}`);
 
     try {
       const subject = 'Welcome to Innogram!';
       const name = data.displayName || data.username;
 
-      // В реальном проекте используем HTML шаблоны (hbs/pug),
-      // но для базовой реализации достаточно HTML строки.
       const html = `
         <h1>Welcome, ${name}!</h1>
         <p>Thank you for joining <b>Innogram</b>.</p>
@@ -37,11 +35,6 @@ export class AppService {
       this.logger.log(`Welcome email sent successfully to ${data.email}`);
     } catch (error) {
       this.logger.error(`Failed to send email to ${data.email}`, error);
-      // В реальной системе здесь можно реализовать механизм повторных попыток (Retry)
     }
-  }
-
-  getHello(): string {
-    return 'Notifications Service is running';
   }
 }

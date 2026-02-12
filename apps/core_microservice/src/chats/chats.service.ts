@@ -5,9 +5,10 @@ import {
   NotFoundException,
   Inject,
   forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource } from 'typeorm'; // Убрал In
 import { Chat, ChatType } from '../database/entities/chat.entity';
 import {
   ChatParticipant,
@@ -20,10 +21,12 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { ChatsGateway } from './chats.gateway';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
-import { EditMessageDto } from './dto/edit-message.dto'; // Импорт DTO
+import { EditMessageDto } from './dto/edit-message.dto';
 
 @Injectable()
 export class ChatsService {
+  private readonly logger = new Logger(ChatsService.name);
+
   constructor(
     @InjectRepository(Chat) private chatsRepository: Repository<Chat>,
     @InjectRepository(ChatParticipant)
@@ -37,153 +40,8 @@ export class ChatsService {
     private readonly chatsGateway: ChatsGateway,
   ) {}
 
-  // ... (методы createPrivateChat, createGroupChat, updateGroupChat, add/remove/leave/getUserChats остаются без изменений) ...
+  // --- CHAT MANAGEMENT ---
 
-  // Я приведу только измененные/добавленные методы и те, что нужны для контекста
-
-  // --- MESSAGES LOGIC ---
-
-  async getChatMessages(chatId: string, userId: string) {
-    await this.validateParticipant(chatId, userId);
-
-    return await this.messagesRepository.find({
-      where: { chatId },
-      relations: ['profile', 'assets', 'assets.asset', 'replyTo'],
-      order: { createdAt: 'ASC' },
-    });
-  }
-
-  async sendMessage(chatId: string, userId: string, dto: SendMessageDto) {
-    await this.validateParticipant(chatId, userId);
-    const profile = await this.profilesService.getProfileByUserId(userId);
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    let finalMessage: Message;
-
-    try {
-      const message = this.messagesRepository.create({
-        chatId,
-        profileId: profile.id,
-        content: dto.content,
-        replyToMessageId: dto.replyToMessageId,
-        createdBy: userId,
-        updatedBy: userId,
-      });
-
-      const savedMessage = await queryRunner.manager.save(Message, message);
-
-      if (dto.fileIds && dto.fileIds.length > 0) {
-        const assets = dto.fileIds.map((assetId, index) =>
-          this.messageAssetsRepository.create({
-            messageId: savedMessage.id,
-            assetId,
-            orderIndex: index,
-            createdBy: userId,
-          }),
-        );
-        await queryRunner.manager.save(MessageAsset, assets);
-      }
-
-      await queryRunner.manager.update(Chat, chatId, { updatedAt: new Date() });
-      await queryRunner.commitTransaction();
-
-      finalMessage = await this.messagesRepository.findOne({
-        where: { id: savedMessage.id },
-        relations: ['profile', 'assets', 'assets.asset', 'replyTo'], // Добавил replyTo
-      });
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
-    }
-
-    // Отправляем через сокет
-    this.chatsGateway.broadcastMessage(chatId, finalMessage);
-
-    return finalMessage;
-  }
-
-  async editMessage(messageId: string, userId: string, dto: EditMessageDto) {
-    const message = await this.messagesRepository.findOne({
-      where: { id: messageId },
-      relations: ['profile'],
-    });
-
-    if (!message) throw new NotFoundException('Message not found');
-
-    // Проверяем, что редактирует автор
-    // Сравниваем profileId. Для этого нужно получить profileId текущего пользователя
-    const userProfile = await this.profilesService.getProfileByUserId(userId);
-
-    if (message.profileId !== userProfile.id) {
-      throw new ForbiddenException('You can only edit your own messages');
-    }
-
-    if (message.isDeleted) {
-      throw new BadRequestException('Cannot edit deleted message');
-    }
-
-    message.content = dto.content;
-    message.isEdited = true;
-    message.updatedBy = userId;
-
-    const savedMessage = await this.messagesRepository.save(message);
-
-    // Подгружаем связи для корректной отправки на фронт
-    const fullMessage = await this.messagesRepository.findOne({
-      where: { id: savedMessage.id },
-      relations: ['profile', 'assets', 'assets.asset', 'replyTo'],
-    });
-
-    this.chatsGateway.broadcastMessageUpdated(message.chatId, fullMessage);
-
-    return fullMessage;
-  }
-
-  async deleteMessage(messageId: string, userId: string) {
-    const message = await this.messagesRepository.findOne({
-      where: { id: messageId },
-    });
-
-    if (!message) throw new NotFoundException('Message not found');
-
-    const userProfile = await this.profilesService.getProfileByUserId(userId);
-
-    if (message.profileId !== userProfile.id) {
-      throw new ForbiddenException('You can only delete your own messages');
-    }
-
-    if (message.isDeleted) {
-      // Уже удалено, можно вернуть 200 или ошибку
-      return { message: 'Message already deleted' };
-    }
-
-    // Soft delete согласно требованиям:
-    // "Deleted messages are marked as deleted, shown within chat and have empty content."
-    message.isDeleted = true;
-    message.content = ''; // Очищаем контент
-    message.updatedBy = userId;
-
-    await this.messagesRepository.save(message);
-
-    this.chatsGateway.broadcastMessageDeleted(message.chatId, messageId);
-
-    return { message: 'Message deleted' };
-  }
-
-  // --- HELPERS (Дублирую, чтобы файл был валидным, если копируешь целиком) ---
-
-  // ... (методы createPrivateChat и прочие вспомогательные остаются, но для краткости ответа я показал только новые методы сообщений.
-  // В реальном файле весь код должен быть собран вместе).
-
-  // Для компиляции, восстановим недостающие методы, так как ты просил полные листинги.
-  // Ниже полный код Service с добавленными методами.
-
-  // --- PRIVATE CHAT ---
   async createPrivateChat(currentUserId: string, targetUsername: string) {
     const me = await this.profilesService.getProfileByUserId(currentUserId);
     const target =
@@ -193,19 +51,21 @@ export class ChatsService {
       throw new BadRequestException('Cannot chat with yourself');
     }
 
-    const myChats = await this.participantsRepository.find({
-      where: { profileId: me.id },
-      relations: ['chat', 'chat.participants'],
-    });
+    const existingChatId = await this.chatsRepository
+      .createQueryBuilder('chat')
+      .innerJoin('chat.participants', 'p1')
+      .innerJoin('chat.participants', 'p2')
+      .where('chat.type = :type', { type: ChatType.PRIVATE })
+      .andWhere('p1.profileId = :meId', { meId: me.id })
+      .andWhere('p2.profileId = :targetId', { targetId: target.id })
+      .select('chat.id')
+      .getOne();
 
-    const existingChat = myChats.find(
-      (p) =>
-        p.chat.type === ChatType.PRIVATE &&
-        p.chat.participants.some((op) => op.profileId === target.id),
-    );
-
-    if (existingChat) {
-      return existingChat.chat;
+    if (existingChatId) {
+      return this.chatsRepository.findOne({
+        where: { id: existingChatId.id },
+        relations: ['participants', 'participants.profile'],
+      });
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -223,18 +83,23 @@ export class ChatsService {
       const part1 = this.participantsRepository.create({
         chatId: savedChat.id,
         profileId: me.id,
+        role: ChatRole.MEMBER,
         createdBy: currentUserId,
       });
       const part2 = this.participantsRepository.create({
         chatId: savedChat.id,
         profileId: target.id,
+        role: ChatRole.MEMBER,
         createdBy: currentUserId,
       });
 
       await queryRunner.manager.save(ChatParticipant, [part1, part2]);
       await queryRunner.commitTransaction();
 
-      return savedChat;
+      return this.chatsRepository.findOne({
+        where: { id: savedChat.id },
+        relations: ['participants', 'participants.profile'],
+      });
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
@@ -243,23 +108,27 @@ export class ChatsService {
     }
   }
 
-  // --- GROUP CHAT ---
   async createGroupChat(currentUserId: string, dto: CreateChatDto) {
     const me = await this.profilesService.getProfileByUserId(currentUserId);
-
     const participantsProfiles = [me];
+
     if (dto.participantUsernames && dto.participantUsernames.length > 0) {
-      for (const username of dto.participantUsernames) {
+      const promises = dto.participantUsernames.map(async (username) => {
         try {
-          const profile =
-            await this.profilesService.getProfileByUsername(username);
-          if (!participantsProfiles.find((p) => p.id === profile.id)) {
-            participantsProfiles.push(profile);
-          }
+          return await this.profilesService.getProfileByUsername(username);
         } catch {
-          console.warn(`User ${username} not found, skipping`);
+          // Убрал неиспользуемую переменную 'e'
+          this.logger.warn(`User ${username} not found during chat creation`);
+          return null;
         }
-      }
+      });
+
+      const results = await Promise.all(promises);
+      results.forEach((profile) => {
+        if (profile && !participantsProfiles.find((p) => p.id === profile.id)) {
+          participantsProfiles.push(profile);
+        }
+      });
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -270,6 +139,7 @@ export class ChatsService {
       const chat = this.chatsRepository.create({
         type: ChatType.GROUP,
         name: dto.name || 'New Group',
+        // Исправлено: dto.description удалено, так как его нет в CreateChatDto
         description: '',
         createdBy: currentUserId,
         updatedBy: currentUserId,
@@ -288,7 +158,10 @@ export class ChatsService {
       await queryRunner.manager.save(ChatParticipant, participantsEntities);
       await queryRunner.commitTransaction();
 
-      return savedChat;
+      return this.chatsRepository.findOne({
+        where: { id: savedChat.id },
+        relations: ['participants', 'participants.profile'],
+      });
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
@@ -306,7 +179,7 @@ export class ChatsService {
       throw new BadRequestException('Not a group chat');
 
     if (dto.name) chat.name = dto.name;
-    if (dto.description) chat.description = dto.description;
+    if (dto.description !== undefined) chat.description = dto.description;
     chat.updatedBy = userId;
 
     return await this.chatsRepository.save(chat);
@@ -335,7 +208,6 @@ export class ChatsService {
     });
 
     const saved = await this.participantsRepository.save(participant);
-
     return saved;
   }
 
@@ -405,16 +277,18 @@ export class ChatsService {
       order: { chat: { updatedAt: 'DESC' } },
     });
 
+    const chats = participants.map((p) => p.chat);
+
     const result = await Promise.all(
-      participants.map(async (p) => {
+      chats.map(async (chat) => {
         const lastMessage = await this.messagesRepository.findOne({
-          where: { chatId: p.chatId },
+          where: { chatId: chat.id },
           order: { createdAt: 'DESC' },
           relations: ['profile'],
         });
 
         return {
-          ...p.chat,
+          ...chat,
           lastMessage,
         };
       }),
@@ -422,6 +296,138 @@ export class ChatsService {
 
     return result;
   }
+
+  // --- MESSAGES LOGIC ---
+
+  async getChatMessages(chatId: string, userId: string) {
+    await this.validateParticipant(chatId, userId);
+
+    return await this.messagesRepository.find({
+      where: { chatId },
+      relations: ['profile', 'assets', 'assets.asset', 'replyTo'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async sendMessage(chatId: string, userId: string, dto: SendMessageDto) {
+    await this.validateParticipant(chatId, userId);
+    const profile = await this.profilesService.getProfileByUserId(userId);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    let finalMessage: Message;
+
+    try {
+      const message = this.messagesRepository.create({
+        chatId,
+        profileId: profile.id,
+        content: dto.content,
+        replyToMessageId: dto.replyToMessageId,
+        createdBy: userId,
+        updatedBy: userId,
+      });
+
+      const savedMessage = await queryRunner.manager.save(Message, message);
+
+      if (dto.fileIds && dto.fileIds.length > 0) {
+        const assets = dto.fileIds.map((assetId, index) =>
+          this.messageAssetsRepository.create({
+            messageId: savedMessage.id,
+            assetId,
+            orderIndex: index,
+            createdBy: userId,
+          }),
+        );
+        await queryRunner.manager.save(MessageAsset, assets);
+      }
+
+      await queryRunner.manager.update(Chat, chatId, { updatedAt: new Date() });
+
+      await queryRunner.commitTransaction();
+
+      finalMessage = await this.messagesRepository.findOne({
+        where: { id: savedMessage.id },
+        relations: ['profile', 'assets', 'assets.asset', 'replyTo'],
+      });
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+
+    if (finalMessage) {
+      this.chatsGateway.broadcastMessage(chatId, finalMessage);
+    }
+
+    return finalMessage;
+  }
+
+  async editMessage(messageId: string, userId: string, dto: EditMessageDto) {
+    const message = await this.messagesRepository.findOne({
+      where: { id: messageId },
+      relations: ['profile'],
+    });
+
+    if (!message) throw new NotFoundException('Message not found');
+
+    const userProfile = await this.profilesService.getProfileByUserId(userId);
+
+    if (message.profileId !== userProfile.id) {
+      throw new ForbiddenException('You can only edit your own messages');
+    }
+
+    if (message.isDeleted) {
+      throw new BadRequestException('Cannot edit deleted message');
+    }
+
+    message.content = dto.content;
+    message.isEdited = true;
+    message.updatedBy = userId;
+
+    const savedMessage = await this.messagesRepository.save(message);
+
+    const fullMessage = await this.messagesRepository.findOne({
+      where: { id: savedMessage.id },
+      relations: ['profile', 'assets', 'assets.asset', 'replyTo'],
+    });
+
+    this.chatsGateway.broadcastMessageUpdated(message.chatId, fullMessage);
+
+    return fullMessage;
+  }
+
+  async deleteMessage(messageId: string, userId: string) {
+    const message = await this.messagesRepository.findOne({
+      where: { id: messageId },
+    });
+
+    if (!message) throw new NotFoundException('Message not found');
+
+    const userProfile = await this.profilesService.getProfileByUserId(userId);
+
+    if (message.profileId !== userProfile.id) {
+      throw new ForbiddenException('You can only delete your own messages');
+    }
+
+    if (message.isDeleted) {
+      return { message: 'Message already deleted' };
+    }
+
+    message.isDeleted = true;
+    message.content = '';
+    message.updatedBy = userId;
+
+    await this.messagesRepository.save(message);
+
+    this.chatsGateway.broadcastMessageDeleted(message.chatId, messageId);
+
+    return { message: 'Message deleted' };
+  }
+
+  // --- HELPERS ---
 
   public async validateParticipant(chatId: string, userId: string) {
     const profile = await this.profilesService.getProfileByUserId(userId);

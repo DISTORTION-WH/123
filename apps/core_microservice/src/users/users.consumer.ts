@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 
 interface UserEventData {
@@ -7,7 +7,7 @@ interface UserEventData {
   username?: string;
 }
 
-@Injectable()
+@Controller()
 export class UsersConsumer {
   private readonly logger = new Logger(UsersConsumer.name);
 

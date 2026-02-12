@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MailerModule } from '@nestjs-modules/mailer';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { NotificationsController } from './notifications.controller'; // Импорт нового контроллера
+import { NotificationsController } from './notifications.controller';
 
 @Module({
   imports: [
@@ -10,9 +11,28 @@ import { NotificationsController } from './notifications.controller'; // Имп�
       isGlobal: true,
       envFilePath: './.env',
     }),
-    // Здесь должны быть подключение к Mongo и MailerModule
+    // Подключаем MailerModule асинхронно, чтобы использовать ConfigService
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      // Исправление: убрали async, так как чтение конфига синхронное
+      useFactory: (configService: ConfigService) => ({
+        transport: {
+          host: configService.get<string>('SMTP_HOST') || 'localhost',
+          port: configService.get<number>('SMTP_PORT') || 1025, // Дефолтный порт для Mailhog
+          secure: false, // true для 465, false для других портов
+          auth: {
+            user: configService.get<string>('SMTP_USER'),
+            pass: configService.get<string>('SMTP_PASS'),
+          },
+        },
+        defaults: {
+          from: '"Innogram" <noreply@innogram.com>',
+        },
+      }),
+      inject: [ConfigService],
+    }),
   ],
-  controllers: [AppController, NotificationsController], // Добавили контроллер
+  controllers: [AppController, NotificationsController],
   providers: [AppService],
 })
 export class AppModule {}

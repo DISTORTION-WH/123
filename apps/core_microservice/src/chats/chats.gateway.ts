@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { UseGuards, Inject, forwardRef } from '@nestjs/common';
-import { WsJwtGuard } from './guards/ws-jwt.guard';
+import { WsJwtGuard } from './guards/ws-jwt.guard'; // Проверь путь к гарду, возможно './guards/...'
 import { ChatsService } from './chats.service';
 import { SendMessageDto } from './dto/send-message.dto';
 
@@ -36,7 +36,6 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly chatsService: ChatsService,
   ) {}
 
-  // Убрали async
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
   }
@@ -72,31 +71,50 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { chatId: string; dto: SendMessageDto },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
+    // Мы просто вызываем сервис. Сервис сам вызовет broadcastMessage внутри.
+    // Если здесь оставить this.broadcastMessage, будет дублирование сообщений.
     const message = await this.chatsService.sendMessage(
       payload.chatId,
       client.user.sub,
       payload.dto,
     );
-    this.broadcastMessage(payload.chatId, message);
     return message;
   }
 
   @UseGuards(WsJwtGuard)
   @SubscribeMessage('typing')
-  // Убрали async, так как emit синхронный (fire-and-forget)
   handleTyping(
     @MessageBody() data: { chatId: string; isTyping: boolean },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     client.to(data.chatId).emit('typing_status', {
       userId: client.user.sub,
-      username: client.user.username,
+      username: client.user.username, // Убедись, что username есть в токене/request
       isTyping: data.isTyping,
       chatId: data.chatId,
     });
   }
 
+  // --- PUBLIC METHODS FOR SERVICE ---
+
+  /**
+   * Отправка нового сообщения всем в комнате
+   */
   broadcastMessage(chatId: string, message: any) {
     this.server.to(chatId).emit('new_message', message);
+  }
+
+  /**
+   * Уведомление об изменении сообщения (редактирование)
+   */
+  broadcastMessageUpdated(chatId: string, message: any) {
+    this.server.to(chatId).emit('message_updated', message);
+  }
+
+  /**
+   * Уведомление об удалении сообщения
+   */
+  broadcastMessageDeleted(chatId: string, messageId: string) {
+    this.server.to(chatId).emit('message_deleted', { id: messageId, chatId });
   }
 }

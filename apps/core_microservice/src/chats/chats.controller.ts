@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -20,6 +21,7 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { ChatType } from '../database/entities/chat.entity';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { AddParticipantDto } from './dto/add-participant.dto';
+import { EditMessageDto } from './dto/edit-message.dto'; // Импорт DTO
 
 @ApiTags('Chats')
 @Controller('chats')
@@ -106,5 +108,26 @@ export class ChatsController {
     @Body() dto: SendMessageDto,
   ) {
     return this.chatsService.sendMessage(chatId, user.id, dto);
+  }
+
+  // --- Новые эндпоинты ---
+
+  @Put('messages/:messageId')
+  @ApiOperation({ summary: 'Edit a message' })
+  async editMessage(
+    @Param('messageId') messageId: string,
+    @CurrentUser() user: CurrentUserType,
+    @Body() dto: EditMessageDto,
+  ) {
+    return this.chatsService.editMessage(messageId, user.id, dto);
+  }
+
+  @Delete('messages/:messageId')
+  @ApiOperation({ summary: 'Delete a message' })
+  async deleteMessage(
+    @Param('messageId') messageId: string,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    return this.chatsService.deleteMessage(messageId, user.id);
   }
 }

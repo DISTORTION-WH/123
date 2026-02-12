@@ -3,20 +3,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommentsService } from './comments.service';
 import { CommentsController } from './comments.controller';
 import { Comment } from '../database/entities/comment.entity';
-import { CommentLike } from '../database/entities/comment-like.entity'; // 1. Импортируем сущность
+import { CommentLike } from '../database/entities/comment-like.entity';
 import { Post } from '../database/entities/post.entity';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
+import { AuthModule } from '../auth/auth.module'; // 1. Импортируем AuthModule
 
 @Module({
   imports: [
-    // 2. Регистрируем сущности, репозитории которых используются в CommentsService
-    // Было: [Comment, Post] (или похожее)
-    // Стало: Добавили CommentLike
     TypeOrmModule.forFeature([Comment, CommentLike, Post]),
-
     ProfilesModule,
+    AuthModule, // 2. Добавляем в imports
     ClientsModule.register([
       {
         name: NOTIFICATIONS_SERVICE,
@@ -35,6 +33,6 @@ import { NOTIFICATIONS_SERVICE } from '../constants/services';
   ],
   controllers: [CommentsController],
   providers: [CommentsService],
-  exports: [CommentsService], // Экспортируем, если он понадобится в других модулях
+  exports: [CommentsService],
 })
 export class CommentsModule {}

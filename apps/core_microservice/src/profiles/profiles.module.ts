@@ -4,12 +4,30 @@ import { ProfilesService } from './profiles.service';
 import { ProfilesController } from './profiles.controller';
 import { Profile } from '../database/entities/profile.entity';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
-import { AuthModule } from '../auth/auth.module'; // 1. Импортируем AuthModule
+import { AuthModule } from '../auth/auth.module';
+import { ClientsModule, Transport } from '@nestjs/microservices'; // 1. Импорт
+import { NOTIFICATIONS_SERVICE } from '../constants/services'; // 2. Импорт констант
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Profile, ProfileFollow]),
-    AuthModule, // 2. Добавляем в imports
+    AuthModule,
+    // 3. Регистрируем клиент RabbitMQ для отправки уведомлений
+    ClientsModule.register([
+      {
+        name: NOTIFICATIONS_SERVICE,
+        transport: Transport.RMQ,
+        options: {
+          urls: [
+            process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672',
+          ],
+          queue: 'notifications_queue',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
+    ]),
   ],
   controllers: [ProfilesController],
   providers: [ProfilesService],

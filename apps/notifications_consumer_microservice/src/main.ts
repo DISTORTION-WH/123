@@ -9,7 +9,6 @@ async function bootstrap() {
   const RABBITMQ_HOST = process.env.RABBITMQ_HOST || 'localhost';
   const RABBITMQ_PORT = process.env.RABBITMQ_PORT || '5672';
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const app: INestMicroservice =
     await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
       transport: Transport.RMQ,

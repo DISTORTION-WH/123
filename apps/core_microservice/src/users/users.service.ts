@@ -1,10 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../database/entities/user.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 
-// Интерфейс для данных синхронизации
 export interface UserSyncDto {
   id: string;
   email: string;
@@ -17,6 +16,8 @@ export interface UserSyncDto {
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -31,44 +32,64 @@ export class UsersService {
   }
 
   /**
-   * Метод синхронизации пользователя, вызываемый RabbitMQ консьюмером.
-   * Создает пользователя и базовый профиль в Core базе данных.
+   * Метод синхронизации пользователя.
+   * Должен быть идемпотентным (безопасным при повторном вызове).
    */
   async syncUser(data: UserSyncDto): Promise<void> {
     try {
-      console.log(`[UsersService] Syncing user ${data.id}...`);
+      this.logger.log(`Syncing user ${data.id}...`);
 
-      // 1. Проверяем идемпотентность (не создан ли уже такой юзер)
+      // 1. Проверяем, существует ли уже пользователь
       const existingUser = await this.userRepository.findOne({
         where: { id: data.id },
       });
+
       if (existingUser) {
-        console.log(`[UsersService] User ${data.id} already exists. Skipping.`);
-        return;
+        this.logger.log(`User ${data.id} already exists. Updating info...`);
+        // Если пользователь есть, обновляем базовые поля (если нужно)
+        existingUser.email = data.email;
+        existingUser.username = data.username;
+        await this.userRepository.save(existingUser);
+      } else {
+        // 2. Если нет - пытаемся создать
+        try {
+          const newUser = this.userRepository.create({
+            id: data.id,
+            email: data.email,
+            username: data.username,
+            role: data.role || 'User',
+          });
+          await this.userRepository.save(newUser);
+          this.logger.log(`User ${data.id} created in Core DB.`);
+        } catch (error: any) {
+          // 2.1 Ловим ошибку дубликата (код 23505 в Postgres)
+          // Это может случиться при состоянии гонки (Race Condition)
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          if (error.code === '23505') {
+            this.logger.warn(
+              `User ${data.id} was created concurrently. Skipping insert.`,
+            );
+          } else {
+            throw error; // Если ошибка другая - пробрасываем её дальше
+          }
+        }
       }
 
-      // 2. Создаем сущность User
-      const newUser = this.userRepository.create({
-        id: data.id,
-        email: data.email,
-        username: data.username,
-        role: data.role || 'User',
-      });
-
-      await this.userRepository.save(newUser);
-
-      // 3. Создаем профиль для пользователя
-      // Используем метод updateProfile из ProfilesService, который создаст запись, если её нет
-      await this.profilesService.updateProfile(newUser.id, {
-        displayName: data.displayName || data.username, // Исправлено: пишем в displayName
+      // 3. Синхронизируем профиль (создаем или обновляем)
+      // Важно делать это ПОСЛЕ того, как мы убедились, что User существует
+      await this.profilesService.updateProfile(data.id, {
+        displayName: data.displayName || data.username,
         bio: data.bio,
-        birthDate: data.birthday ? new Date(data.birthday) : undefined, // Исправлено: маппинг в birthDate и приведение к Date
+        birthDate: data.birthday ? new Date(data.birthday) : undefined,
       });
 
-      console.log(`[UsersService] User ${data.id} synced successfully.`);
+      this.logger.log(`User ${data.id} sync completed successfully.`);
     } catch (error) {
-      console.error(`[UsersService] Error syncing user ${data.id}:`, error);
-      throw error; // Бросаем ошибку, чтобы RabbitMQ (если настроен ack) мог повторить попытку
+      this.logger.error(`Error syncing user ${data.id}:`, error);
+      // Важно: если мы выбросим ошибку здесь, RabbitMQ может попытаться доставить сообщение снова.
+      // Если ошибка критическая (например, БД упала) - throw нужен.
+      // Если логическая - лучше залогировать и не ломать очередь.
+      throw error;
     }
   }
 }

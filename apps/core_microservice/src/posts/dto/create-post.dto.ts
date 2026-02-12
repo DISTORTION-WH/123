@@ -1,19 +1,24 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsString,
-  IsOptional,
   IsArray,
+  IsOptional,
+  IsString,
   IsUUID,
   MaxLength,
 } from 'class-validator';
 
 export class CreatePostDto {
+  @ApiProperty({ example: 'My wonderful trip!', description: 'Post content' })
   @IsString()
-  @IsOptional()
   @MaxLength(2200)
-  content?: string;
+  content: string;
 
+  @ApiPropertyOptional({
+    example: ['uuid-1', 'uuid-2'],
+    description: 'Array of uploaded asset IDs',
+  })
+  @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  @IsOptional()
   fileIds?: string[];
 }

@@ -1,11 +1,31 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreatePostDto } from './create-post.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
-export class UpdatePostDto extends PartialType(CreatePostDto) {
-  @ApiPropertyOptional({ description: 'Archive the post (hide from feed)' })
+export class UpdatePostDto {
+  @ApiPropertyOptional({
+    example: 'Updated content',
+    description: 'New content',
+  })
   @IsOptional()
-  @IsBoolean()
+  @IsString()
+  @MaxLength(2200)
+  content?: string;
+
+  @ApiPropertyOptional({ example: false, description: 'Archive post' })
+  @IsOptional()
   isArchived?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'New list of asset IDs (replaces old ones)',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  fileIds?: string[];
 }

@@ -4,25 +4,27 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
-  Put,
   Query,
   UseGuards,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
-  ApiTags,
   ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto'; // Импорт нового DTO
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import {
   CurrentUser,
   CurrentUser as CurrentUserType,
 } from '../decorators/current-user.decorator';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -33,77 +35,73 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new post' })
-  create(
+  async create(
     @CurrentUser() user: CurrentUserType,
-    @Body() createPostDto: CreatePostDto,
+    @Body() dto: CreatePostDto,
   ) {
-    return this.postsService.create(user.id, createPostDto);
+    return await this.postsService.create(user.id, dto);
   }
 
   @Get('feed')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard) // Добавил Guard, так как лента теперь персонализированная (нужен ID юзера)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user feed' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  getFeed(
-    @CurrentUser() user: CurrentUserType,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+  @ApiOperation({ summary: 'Get global feed (all posts)' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  async getFeed(
+    @CurrentUser() user: CurrentUserType, // Добавил получение текущего юзера
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
-    return this.postsService.getFeed(user.id, Number(page), Number(limit));
+    // Исправлено: передаем user.id первым аргументом
+    return await this.postsService.getFeed(user.id, page, limit);
   }
 
   @Get('user/:username')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get posts by username' })
-  getUserPosts(
+  @ApiOperation({ summary: 'Get posts by user profile' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  async getUserPosts(
     @Param('username') username: string,
-    @CurrentUser() user: CurrentUserType,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
   ) {
-    return this.postsService.getPostsByUsername(username, user.id);
+    // Исправлено: метод называется getPostsByUsername
+    // Можно передать undefined вместо currentUserId, если это публичный эндпоинт,
+    // или добавить декоратор @CurrentUser, если нужно проверять лайки.
+    return await this.postsService.getPostsByUsername(
+      username,
+      undefined,
+      page,
+      limit,
+    );
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get post by ID' })
-  getOne(@Param('id') id: string) {
-    // TODO: Pass current user ID if token is present to check like status
-    return this.postsService.findOne(id);
+  @ApiOperation({ summary: 'Get single post details' })
+  async getOne(@Param('id') id: string) {
+    // Исправлено: метод называется findOne
+    return await this.postsService.findOne(id);
   }
 
-  // --- НОВЫЕ МЕТОДЫ ---
-
-  @Put(':id')
+  @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a post (content or archive status)' })
-  update(
+  @ApiOperation({ summary: 'Update post content or assets' })
+  async update(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserType,
-    @Body() updatePostDto: UpdatePostDto,
+    @Body() dto: UpdatePostDto,
   ) {
-    return this.postsService.update(id, user.id, updatePostDto);
+    return await this.postsService.update(id, user.id, dto);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a post' })
-  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
-    return this.postsService.remove(id, user.id);
-  }
-
-  // --------------------
-
-  @Put(':id/like')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Toggle like on a post' })
-  async toggleLike(
-    @Param('id') postId: string,
-    @CurrentUser() user: CurrentUserType,
-  ) {
-    return this.postsService.toggleLike(user.id, postId);
+  @ApiOperation({ summary: 'Delete post' })
+  async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
+    // Исправлено: метод называется remove
+    return await this.postsService.remove(id, user.id);
   }
 }

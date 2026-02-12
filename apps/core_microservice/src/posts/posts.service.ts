@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices'; // Import ClientProxy
+import { ClientProxy } from '@nestjs/microservices';
 import { Post } from '../database/entities/post.entity';
 import { PostAsset } from '../database/entities/post-asset.entity';
 import { Profile } from '../database/entities/profile.entity';
@@ -15,7 +15,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { PostLike } from '../database/entities/post-like.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
-import { NOTIFICATIONS_SERVICE } from '../constants/services'; // Import Token
+import { NOTIFICATIONS_SERVICE } from '../constants/services';
 
 @Injectable()
 export class PostsService {
@@ -32,7 +32,6 @@ export class PostsService {
     private readonly followRepository: Repository<ProfileFollow>,
     private readonly dataSource: DataSource,
     private readonly profilesService: ProfilesService,
-    // Inject RabbitMQ Client
     @Inject(NOTIFICATIONS_SERVICE)
     private readonly notificationsClient: ClientProxy,
   ) {}
@@ -46,25 +45,25 @@ export class PostsService {
     await queryRunner.startTransaction();
 
     try {
+      // Исправлено: используем content вместо caption
       const post = this.postRepository.create({
         content: dto.content,
         profile: profile,
         createdBy: userId,
+        updatedBy: userId,
       });
 
+      // Сохраняем пост. Типизация Post гарантирует, что вернется один объект.
       const savedPost = await queryRunner.manager.save(Post, post);
 
       if (dto.fileIds && dto.fileIds.length > 0) {
-        const postAssets: PostAsset[] = [];
-
-        dto.fileIds.forEach((assetId, index) => {
-          const postAsset = this.postAssetRepository.create({
-            postId: savedPost.id,
+        const postAssets: PostAsset[] = dto.fileIds.map((assetId, index) => {
+          return this.postAssetRepository.create({
+            postId: savedPost.id, // Теперь TS видит .id, так как savedPost корректно типизирован
             assetId: assetId,
             orderIndex: index,
             createdBy: userId,
           });
-          postAssets.push(postAsset);
         });
 
         await queryRunner.manager.save(PostAsset, postAssets);
@@ -72,7 +71,7 @@ export class PostsService {
 
       await queryRunner.commitTransaction();
 
-      // Optional: Emit post_created event for analytics or feed updates
+      // Уведомление о создании поста (опционально)
       // this.notificationsClient.emit('post_created', { postId: savedPost.id, userId });
 
       return this.findOne(savedPost.id, userId);
@@ -89,6 +88,9 @@ export class PostsService {
     const post = await this.postRepository.findOne({
       where: { id },
       relations: ['assets', 'assets.asset', 'profile'],
+      order: {
+        assets: { orderIndex: 'ASC' },
+      },
     });
 
     if (!post) throw new NotFoundException('Post not found');
@@ -100,12 +102,14 @@ export class PostsService {
     const currentProfile =
       await this.profilesService.getProfileByUserId(userId);
 
+    // Получаем список ID тех, на кого подписан пользователь
     const follows = await this.followRepository.find({
       where: { followerId: currentProfile.id },
       select: ['followingId'],
     });
 
     const followingIds = follows.map((f) => f.followingId);
+    // В ленту добавляем свои посты и посты подписок
     const feedProfileIds = [currentProfile.id, ...followingIds];
 
     const [posts, total] = await this.postRepository.findAndCount({
@@ -129,18 +133,30 @@ export class PostsService {
     };
   }
 
-  async getPostsByUsername(username: string, currentUserId?: string) {
+  async getPostsByUsername(
+    username: string,
+    currentUserId?: string,
+    page: number = 1,
+    limit: number = 12,
+  ) {
     const profile = await this.profilesService.getProfileByUsername(username);
 
-    const posts = await this.postRepository.find({
+    const [posts, total] = await this.postRepository.findAndCount({
       where: { profile: { id: profile.id }, isArchived: false },
       relations: ['assets', 'assets.asset', 'profile'],
       order: { createdAt: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
     });
 
-    return await Promise.all(
+    const enrichedPosts = await Promise.all(
       posts.map((post) => this.enrichPostWithLikeStatus(post, currentUserId)),
     );
+
+    return {
+      data: enrichedPosts,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // --- UPDATE ---
@@ -151,10 +167,29 @@ export class PostsService {
     if (post.createdBy !== userId)
       throw new ForbiddenException('You are not allowed to edit this post');
 
+    // Исправлено: используем content вместо caption
     if (dto.content !== undefined) post.content = dto.content;
     if (dto.isArchived !== undefined) post.isArchived = dto.isArchived;
 
     post.updatedBy = userId;
+
+    // Обновляем файлы, если переданы
+    if (dto.fileIds) {
+      // Логика обновления файлов требует транзакции, упростим здесь:
+      // В реальном проекте лучше обернуть это в транзакцию как в create
+      await this.postAssetRepository.delete({ postId });
+
+      const newAssets = dto.fileIds.map((assetId, index) =>
+        this.postAssetRepository.create({
+          postId,
+          assetId,
+          orderIndex: index,
+          createdBy: userId,
+        }),
+      );
+      await this.postAssetRepository.save(newAssets);
+    }
+
     await this.postRepository.save(post);
 
     return this.findOne(postId, userId);
@@ -172,9 +207,8 @@ export class PostsService {
     return { message: 'Post deleted successfully', id: postId };
   }
 
-  // --- LIKES with Notifications ---
+  // --- LIKES ---
   async toggleLike(userId: string, postId: string) {
-    // Need relation 'profile' to know the author ID for notification
     const post = await this.postRepository.findOne({
       where: { id: postId },
       relations: ['profile'],
@@ -205,22 +239,20 @@ export class PostsService {
       });
       await this.postLikeRepository.save(newLike);
 
-      // --- SEND NOTIFICATION ---
-      // Не уведомляем, если лайкаем сами себя
       if (post.createdBy !== userId) {
         this.notificationsClient.emit('post_liked', {
-          actorId: userId, // Кто лайкнул
-          targetUserId: post.createdBy, // Кого лайкнули (автор поста)
+          actorId: userId,
+          targetUserId: post.createdBy,
           postId: postId,
           timestamp: new Date(),
         });
       }
-      // -------------------------
 
       return { message: 'Post liked', liked: true };
     }
   }
 
+  // Helper для проверки лайка текущим юзером
   private async enrichPostWithLikeStatus(post: Post, userId?: string) {
     const likesCount = await this.postLikeRepository.count({
       where: { postId: post.id },

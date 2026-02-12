@@ -8,11 +8,10 @@ import { PostAsset } from '../database/entities/post-asset.entity';
 import { PostLike } from '../database/entities/post-like.entity';
 import { Profile } from '../database/entities/profile.entity';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
-import { ProfilesService } from '../profiles/profiles.service';
 import { User } from '../database/entities/user.entity';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
 import { AuthModule } from '../auth/auth.module';
-
+import { ProfilesModule } from '../profiles/profiles.module'; // <-- Импортируем модуль
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -23,6 +22,7 @@ import { AuthModule } from '../auth/auth.module';
       ProfileFollow,
       User,
     ]),
+    ProfilesModule,
     AuthModule,
     ClientsModule.register([
       {
@@ -42,6 +42,6 @@ import { AuthModule } from '../auth/auth.module';
     ]),
   ],
   controllers: [PostsController],
-  providers: [PostsService, ProfilesService],
+  providers: [PostsService],
 })
 export class PostsModule {}

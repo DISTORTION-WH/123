@@ -11,7 +11,7 @@ import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { User } from '../database/entities/user.entity';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
-import { AuthModule } from '../auth/auth.module'; // Импортируем AuthModule
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -23,8 +23,7 @@ import { AuthModule } from '../auth/auth.module'; // Импортируем Auth
       ProfileFollow,
       User,
     ]),
-    AuthModule, // Добавляем AuthModule для работы JwtAuthGuard в PostsController
-    // Регистрация RabbitMQ клиента
+    AuthModule,
     ClientsModule.register([
       {
         name: NOTIFICATIONS_SERVICE,

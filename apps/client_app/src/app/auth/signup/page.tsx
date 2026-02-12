@@ -1,13 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */ //i know
 'use client';
 
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
-import axios from 'axios';
-
-const AUTH_SERVICE_URL = 'http://localhost:3001';
+import { api } from '../../../lib/axios';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -18,23 +15,27 @@ export default function SignupPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = async (data: any) => { //i know
+  const onSubmit = async (data: {
+    email: string;
+    password: string;
+    username: string;
+    dateOfBirth: string;
+  }) => {
     setIsLoading(true);
     setErrorMsg('');
     try {
-      await axios.post(`${AUTH_SERVICE_URL}/auth/signup`, {
+      await api.post('/auth/signup', {
         email: data.email,
         password: data.password,
         username: data.username,
-        firstName: data.firstName,
-        lastName: data.lastName,
         dateOfBirth: data.dateOfBirth,
       });
 
       router.push('/auth/login');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const message = err.response?.data?.message;
+      const error = err as { response?: { data?: { message?: string | string[] } } };
+      const message = error.response?.data?.message;
       setErrorMsg(Array.isArray(message) ? message[0] : (message || 'Registration failed'));
     } finally {
       setIsLoading(false);
@@ -64,20 +65,6 @@ export default function SignupPage() {
               className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               {...register('email', { required: true })}
             />
-            <div className="flex gap-2">
-                <input
-                type="text"
-                placeholder="First Name"
-                className="block w-1/2 rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                {...register('firstName', { required: true })}
-                />
-                <input
-                type="text"
-                placeholder="Last Name"
-                className="block w-1/2 rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                {...register('lastName', { required: true })}
-                />
-            </div>
             <div>
                 <label className="text-xs text-gray-500">Date of Birth</label>
                 <input

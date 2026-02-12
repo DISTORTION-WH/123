@@ -28,16 +28,8 @@ export class Profile {
   @Column({ unique: true })
   username: string;
 
-  // --- ДОБАВЛЕНО ПОЛЕ ---
   @Column({ name: 'display_name', nullable: true })
   displayName: string;
-  // ----------------------
-
-  @Column({ name: 'first_name', nullable: true })
-  firstName: string;
-
-  @Column({ name: 'last_name', nullable: true })
-  lastName: string;
 
   @Column({ type: 'text', nullable: true })
   bio: string;
@@ -47,6 +39,12 @@ export class Profile {
 
   @Column({ name: 'birthday', type: 'date', nullable: true })
   birthDate: Date;
+
+  @Column({ name: 'is_public', default: true })
+  isPublic: boolean;
+
+  @Column({ default: false })
+  deleted: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

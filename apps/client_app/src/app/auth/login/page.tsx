@@ -9,15 +9,14 @@ export default function LoginPage() {
   const router = useRouter();
   const { register, handleSubmit, setError, formState: { errors } } = useForm();
 
-  const onSubmit = async (data: unknown) => { //2 i fix this later, i know that its a bad practice
+  const onSubmit = async (data: { email: string; password: string }) => {
     try {
-      
-const response = await api.post('/auth/login', data);      
+      const response = await api.post('/auth/login', data);
       const { accessToken } = response.data;
       localStorage.setItem('accessToken', accessToken);
-      
+
       router.push('/feed');
-    } catch (err: unknown) { //2 i fix this later, i know that its a bad practice
+    } catch (err) {
       console.error(err);
       setError('root', { message: 'Invalid credentials' });
     }

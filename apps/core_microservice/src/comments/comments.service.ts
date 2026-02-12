@@ -33,11 +33,10 @@ export class CommentsService {
 
     const post = await this.postsRepository.findOne({
       where: { id: dto.postId },
-      relations: ['profile', 'profile.user'], // Нужно для уведомления
+      relations: ['profile', 'profile.user'],
     });
     if (!post) throw new NotFoundException('Post not found');
 
-    // Проверка родительского комментария (если ответ)
     if (dto.parentId) {
       const parent = await this.commentsRepository.findOne({
         where: { id: dto.parentId },
@@ -54,7 +53,6 @@ export class CommentsService {
 
     const savedComment = await this.commentsRepository.save(comment);
 
-    // Уведомление автору поста
     if (post.profileId !== profile.id && post.profile.user) {
       this.notificationsClient.emit('post_commented', {
         actorId: userId,
@@ -64,8 +62,6 @@ export class CommentsService {
         timestamp: new Date(),
       });
     }
-
-    // Если это ответ на комментарий, можно уведомить автора комментария (доп. функционал)
 
     return this.getOne(savedComment.id, userId);
   }
@@ -78,8 +74,8 @@ export class CommentsService {
   ) {
     const [comments, total] = await this.commentsRepository.findAndCount({
       where: { postId },
-      relations: ['profile', 'parent', 'parent.profile'], // Подгружаем автора и инфо о родителе
-      order: { createdAt: 'ASC' }, // Старые сверху
+      relations: ['profile', 'parent', 'parent.profile'],
+      order: { createdAt: 'ASC' },
       take: limit,
       skip: (page - 1) * limit,
     });
@@ -109,9 +105,7 @@ export class CommentsService {
 
     const userProfile = await this.profilesService.getProfileByUserId(userId);
 
-    // Удалить может автор комментария
     if (comment.profileId !== userProfile.id) {
-      // Или автор поста (опционально, но полезно для модерации)
       const post = await this.postsRepository.findOne({
         where: { id: comment.postId },
       });
@@ -143,13 +137,13 @@ export class CommentsService {
       const newLike = this.commentLikesRepository.create({
         commentId,
         profileId: profile.id,
+        createdBy: userId,
       });
       await this.commentLikesRepository.save(newLike);
       return { message: 'Liked', liked: true };
     }
   }
 
-  // Helper для подсчета лайков и флага isLiked
   private async enrichComment(comment: Comment, userId?: string) {
     const likesCount = await this.commentLikesRepository.count({
       where: { commentId: comment.id },

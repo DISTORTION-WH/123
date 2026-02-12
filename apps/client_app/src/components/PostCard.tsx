@@ -8,9 +8,10 @@ interface PostCardProps {
   post: Post;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const getImageUrl = (filename: string) => {
-  return `http://localhost:3001/uploads/${filename}`;
+  return `${API_URL}/uploads/${filename}`;
 };
 
 export default function PostCard({ post }: PostCardProps) {

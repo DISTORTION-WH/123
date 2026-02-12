@@ -1,0 +1,2185 @@
+Project Setup 
+Setup 
+Follow these steps to setup your project: 
+1. Initialize Git local repository; 
+2. Initialize monorepository project using NX or Turbo (preferable); 
+3. Set up ESlint; 
+4. Create main applications: 
+<aside> 
+⚠
+ 
+1. I recommend starting with creating the server application: NestJS 
+First Steps - here you will find the initial scripts necessary to create a 
+NestJS application. 
+2. Also, in the project's root directory, create a client application on 
+Next.js (React JS) using TypeScript: Next.js Installation Guide - here 
+you will find the scripts for setting up the project. The recommended 
+configuration: </aside> 
+Project structure 
+None
+intern_project/ 
+├── .git/ 
+├── apps/ 
+│   ├── core_microservice/ 
+│   ├── auth_microservice/ 
+│   ├── notifications_consumer_microservice/ 
+│   └── client_app/ 
+└── packages/ 
+Programming toolset 
+● VSCode: https://code.visualstudio.com/download (mandatory, or WebStorm 
+(i’m using VSCode) 
+● Node.js: https://nodejs.org/en/download (mandatory). After NPM and npx is 
+installed: 
+○ Nest CLI: npm install -g @nestjs/cli 
+● Docker: https://www.docker.com/ (mandatory) 
+● PostgreSQL: https://www.postgresql.org/download/ (can be replaced with 
+Docker image) 
+● Better use DBeaver instead of pgAdmin: https://dbeaver.io/download/ 
+(optional) 
+Additional Required Files 
+Dockerfiles 
+Project must: 
+1. Contain for each application, successfully deploying application within 
+containers: 
+1. You don’t have to have all containers deployed all together. 
+PostgreSQL database and Redis database are the only required ones 
+to be always deployed within containers; 
+2. Otherwise, you may launch both of them (databases) locally without 
+Docker. 
+2. Contain docker-compose.yml within root folder; 
+.gitignore 
+Project must: 
+1. Contain .gitignore file within root folder. 
+Environmental variables 
+Project must: 
+1. Contain .env.example with all the required values, excluding secret keys 
+(only names of variables and placeholders). 
+README 
+Project must: 
+1. Contain README files for each application (core microservice, auth 
+microservice, notifications consumer, client application) with setup guide; 
+2. Contain README file in a root folder of application with project description, 
+CLI commands can be executed from root folder, setup guide and 
+environment variables descriptions; 
+<aside> <img src="/icons/document_purple.svg" 
+alt="/icons/document_purple.svg" width="40px" /> 
+README files must have .md format. 
+</aside> 
+Git Flow Requirements 
+1. Repository with your solution for Technical Assignment must be stored on 
+GitHub; 
+2. Since the moment you remote repository is initialize, separate development 
+into 2 main branches: main and dev; 
+3. For features development create separate branches: feature/INO-ХХХ (for 
+example, feature/INO-1 for the first feature implementation); 
+4. Create PRs and give PRs to your mentor for Code Review. 
+CI/CD Implementation 
+CI/CD: 
+1. Create GitHub Action pipeline (workflow) to run lint and type-check on 
+opened PRs and new commits; 
+2. Create GitHub Action pipeline (workflow) to run unit tests within Core 
+Microservice; 
+Backend roadmap v2 - EN 
+Project Description 
+As part of the internship, participants will create a backend application for a social network, 
+supporting key functions such as user management, posts, likes, comments, subscriptions, 
+notifications, and real-time chat. The project will be built based on a microservice architecture 
+with a separate authentication service, ensuring flexibility, scalability, and high performance. 
+Functional Requirements 
+Users: 
+Posts: 
+Chat: 
+• Registration (name, email, phone, password). 
+• Authentication via Google and GitHub (OAuth2). 
+• Update, view, and delete profile. 
+• Follow/unfollow other users. 
+• View notifications for activities (follows, likes, comments). 
+• Create, edit, and delete posts. 
+• Upload images to the server using Multer and store them in MinIO. 
+• Likes and comments on posts. 
+• Pagination of the post list. 
+• Real-time implementation using WebSockets. 
+• Send messages and store them in the database. 
+• View message history. 
+Notifications: 
+• Email notifications for subscriptions using Nodemailer. 
+• Push notifications through WebSockets for events (likes, comments). 
+Caching: 
+• Set up Redis for caching: 
+• Authorization tokens. 
+• Popular posts. 
+• User sessions to improve performance. 
+Message Queues: 
+• Use RabbitMQ or Kafka: 
+• For processing notifications. 
+• For event transmission between services (post creation, likes, comments, 
+follows). 
+Admin Role: 
+• User Management: 
+• View the list of users. 
+• Delete users (hard delete). 
+• Block/unblock users. 
+• Content Management: 
+• View the list of posts. 
+• Delete posts that violate rules. 
+• Work with Reports: 
+• Handle user or post complaints. 
+• Admin Panel: 
+• Access app statistics: number of active users, posts, likes, comments. 
+• Access server metrics: performance, errors, resource usage. 
+Monitoring and Logging: 
+• Integrate Prometheus for collecting metrics (request latencies, database 
+performance). 
+• Set up Grafana dashboards for visualizing metrics. 
+• Log requests and errors. 
+Microservice Architecture 
+• Dedicated authentication service on ExpressJS.  
+Here is description of secure JWT authentication flow provided: 
+https://obsidian-swift-569.notion.site/Authentication-flow-description-2627e285e99c80ddb645d3
+11e076dfad?pvs=74  
+• Main app on NestJS. 
+• Service interaction via REST and WebSockets. 
+Testing: 
+• Functional coverage with unit and integration tests. 
+• Use Jest for testing. 
+Deployment: 
+• Set up CI/CD for automating testing, building, and deploying. 
+• Deploy the app on a cloud platform. 
+Technical Requirements 
+Development Processes: 
+• GitHub Flow: 
+• Main branches: main, dev. 
+• For new features, create separate branches named after the task (e.g., 
+feature/JIRA-123). 
+• Pull Requests with mandatory reviews and issue resolution. 
+Architecture: 
+• Microservice architecture. 
+• Use message queues (RabbitMQ, Kafka) for event exchange between services. 
+Databases: 
+• PostgreSQL for structured data. 
+• MongoDB for storing tokens and messages. Redis can be used instead. 
+Caching: 
+• Redis for temporary storage of tokens, popular data, and session cache. 
+Monitoring and Metrics: 
+• Prometheus for metrics collection. 
+• Grafana for visualizing monitoring data. 
+Development Tools: 
+• TypeScript for strict typing. 
+• ESLint and Prettier for code quality maintenance. 
+Containerization and Deployment: 
+• Docker for packaging applications. 
+• CI/CD for automating building, testing, and deployment. 
+Testing: 
+• Use Jest for unit tests. 
+• Integration tests and API tests. 
+Documentation: 
+• README for each service. 
+• Swagger/OpenAPI for API documentation. 
+Frontend roadmap v2 - EN 
+Project Description 
+As part of the internship, participants will create a fully functional clone of Instagram, which 
+includes all the key features of the social network. The project aims to teach the creation of user 
+interfaces, interaction with APIs, working with data, and real-time implementation. Participants 
+will gain experience in architecture design, using modern technologies, and working in 
+accordance with real business processes. 
+The project is a web application with a responsive interface that allows users to create and 
+interact with content, send real-time messages, and manage their profiles. All components of 
+the application are integrated into a coherent system based on the principles of clean 
+architecture. 
+Functional Requirements 
+Frontend: 
+1. 
+Authorization and Registration: 
+• Registration of a new user with fields: name, email, phone number, password. 
+• Authorization through third-party services (Google, GitHub). 
+• Ability to log out, making the token invalid. 
+• Email confirmation. 
+2. 
+User Profile: 
+• View personal information: name, email, phone number. 
+• Edit profile data (nickname, BIO, and others). 
+• Delete profile (soft delete with the option to recover within one month, after which 
+recovery is not possible). 
+3. 
+Content Creation: 
+• Create posts with images and text. 
+• Add likes to posts. 
+• Comment on posts. 
+4. 
+User Interaction: 
+• Follow/unfollow other users. 
+• View followers and following lists. 
+• Notifications about actions (likes, comments, follows). 
+5. 
+Real-Time Chat: 
+• Send and receive private messages. 
+• Synchronize messages between users in real time. 
+Functionality for Administrators: 
+1. 
+2. 
+Content moderation. 
+User management (e.g., account blocking). 
+Technologies: 
+• Frontend: React/Next.js, TailwindCSS/ShadCN, ReactHookForm, Redux 
+• Core: TypeScript, ESLint, Prettier, Docker 
+Architecture and Structure 
+1. 
+Application Architecture: 
+The application is based on the principles of clean architecture with layer separation: 
+• UI Components: User interface. 
+• Logic: Data processing and state management. 
+• Services: Integration with backend APIs and third-party services. 
+2. 
+Interface Design: 
+• Use TailwindCSS for styling. 
+• ShadCN components for reusable interface elements. 
+3. 
+Working with Data: 
+• Form validation using ReactHookForm. 
+• Global state management with Redux. 
+4. 
+Real-Time Integration: 
+• Use WebSockets to synchronize messages, notifications, and likes. 
+5. 
+Containerization: 
+Each application is packaged in a Docker container with a Dockerfile description. 
+Technical Requirements 
+1. 
+Frontend: 
+• Create an SPA using React/Next.js. 
+• Full interface responsiveness (mobile devices, tablets, desktops). 
+• Ensure cross-browser compatibility. 
+2. 
+Code Quality: 
+• Set up ESLint and Prettier. 
+• Use TypeScript for strict typing. 
+3. 
+Development Processes: 
+• GitHub Flow: 
+• Main branches: main, dev. 
+• New functionality is developed in separate branches named after the task (e.g., 
+feature/JIRA-123). 
+• Pull Requests with mandatory reviews and fixing of issues. 
+4. 
+CI/CD: 
+• Set up GitHub Actions for automated testing, linting, and deployment. 
+5. 
+Documentation: 
+• README for each repository with setup and environment variable descriptions. 
+• Swagger/OpenAPI for API documentation. 
+Core Database Implementation 
+Entities / Tables 
+Innogram is a Social Web. The main entities may be required to implement base 
+functionality within application are in the following lists (lists are not exhaustive, 
+additional points may be added). 
+Main Entities 
+All the following entities are created within SQL relational database 
+(PostgreSQL). 
+Level of necessity determines the order of implementation: 
+1 - Implementation in first iteration (most important); 
+2 - Desirable minimum level of functionality (desired to be done as minimum with 
+1 level of necessity); 
+3 - Additional functionality (good to be implemented and practiced); 
+4 - Extra functionality (not required, but good to try). 
+DO NOT IMPLEMENT THEM ALL AT ONCE. CREATE THEM ONE BY ONE 
+ACCORDING TO THE LEVEL OF IMPLEMENTATION (BASE, ADDITIONAL, 
+FULL) YOU ARE AIMING 
+Entity 
+Name 
+User 
+Account 
+Profile 
+Post 
+Comme
+nt 
+Sche
+ma 
+auth 
+auth 
+main 
+main 
+main 
+Purpose 
+Base entity connecting account 
+authentication ways (aka user 
+identities, aka providers) and profiles 
+(representative side of user) 
+Base entity storing user 
+identities/providers/ways to 
+authenticate user 
+Base entity with data, introduced 
+within client application UI and 
+representing person behind user 
+account 
+Base entity to store data for posts 
+(caption, title, metadata) 
+Base entity to store data for 
+comments (content, metadata) 
+Ne
+ces
+sity 
+1 
+1 
+1 
+1 
+1 
+Asset 
+Chat 
+Messag
+e 
+Notificati
+on 
+Profile 
+Configur
+ation 
+Audit 
+Log 
+main 
+main 
+main 
+notif
+icati
+on 
+main 
+main 
+Base entity to store assets (mime 
+type, url, size, type (video/image, 
+metadata) 
+Base entity to store chats (name, 
+metadata, description) 
+Base entity to store messages 
+(metadata, text content) 
+Base entity to store notifications 
+(action type, entity type, entity id, 
+notification content, metadata) 
+Base entity to store all existing 
+feature flags for users with Simple 
+User (or any other name for ordinary 
+user) 
+Base entity to store audit logs (old 
+and new version of entity, entity type, 
+metadata) 
+Relationships Entities (Many-to-Many) 
+Here is the list of entities used to connect base entities: 
+1 
+2 
+2 
+3 
+3 
+4 
+Entity Name Table Name S
+c
+h
+e
+m
+a 
+Con
+nect
+ion 
+(Firs
+t 
+Enti
+ty) 
+Conn
+ectio
+n 
+(Seco
+nd 
+Entit
+y) 
+PostAsset posts_assets m
+a
+i
+n 
+Post Asset 
+ProfileFollow profiles_folows m
+a
+i
+n 
+Prof
+ile 
+Profil
+e 
+ChatParticipant chats_participants m
+a
+i
+n 
+Prof
+ile 
+Chat 
+MessageAsset messages_assets m
+a
+Mes
+sag
+e 
+Asset 
+i
+n 
+PostLike 
+CommentLike 
+ProfileToProfileC
+onfiguration 
+Tables Attributes 
+posts_likes 
+comments_likes 
+profiles_to_profiles_c
+onfigurations 
+m
+a
+i
+n 
+m
+a
+i
+n 
+m
+a
+i
+n 
+Post 
+Co
+mm
+ent 
+Prof
+ile 
+Like 
+Like 
+Profil
+e 
+Confi
+gurat
+ion 
+Here is the list of columns (fields) should be created within tables (entities). 
+List can have additional fields or may not have some of fields based on your 
+discussion with mentor. 
+List is not exhaustive. 
+<aside> 
+⚠
+ 
+Tables attributes are provided as SQL scripts for creating tables. 
+**PAY ATTENTION: YOU MUST IMPLEMENT THESE TABLES WITH CODE FIRST 
+APPROACH (THROUGH MIGRATION WITHIN YOUR ORM). 
+THE FOLLOWING SCRIPTS ARE NOT INTENDED TO BE EXECUTED AND ONLY 
+PROVIDED TO SHOW THE STRUCTURE OF ENTITIES** 
+</aside> 
+Base Tables 
+● User 
+SQL
+CREATE TABLE users ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+role VARCHAR(20) NOT NULL DEFAULT 'User', -- 
+Enum values: 'User', 'Admin' (validated in code) 
+CURRENT_TIMESTAMP, 
+disabled BOOLEAN NOT NULL DEFAULT false, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+created_by VARCHAR(36) REFERENCES users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id) 
+); 
+●  
+SQL
+Account 
+CREATE TABLE accounts ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+user_id VARCHAR(36) NOT NULL REFERENCES 
+users(id) ON DELETE CASCADE, 
+email VARCHAR(255) NOT NULL UNIQUE, 
+password_hash VARCHAR(255) NOT NULL, 
+provider VARCHAR(20) NOT NULL DEFAULT 'local', -- Enum values: 'local', 'google', 'facebook', 
+'github', 'twitter' (validated in code) 
+provider_id VARCHAR(255), 
+last_login_at TIMESTAMP, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id) 
+); 
+●  
+SQL
+Profile 
+CREATE TABLE profiles ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+user_id VARCHAR(36) NOT NULL REFERENCES 
+users(id) ON DELETE CASCADE, 
+username VARCHAR(50) NOT NULL UNIQUE, 
+display_name VARCHAR(100) NOT NULL, 
+birthday DATE NOT NULL, 
+bio TEXT, 
+avatar_url VARCHAR(500), 
+is_public BOOLEAN NOT NULL DEFAULT TRUE, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+deleted BOOLEAN NOT NULL DEFAULT FALSE 
+); 
+●  
+SQL
+Post 
+CREATE TABLE posts ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+profile_id VARCHAR(36) NOT NULL REFERENCES 
+profiles(id) ON DELETE CASCADE, 
+content TEXT NOT NULL, 
+is_archived BOOLEAN NOT NULL DEFAULT FALSE, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+); 
+●  
+SQL
+Comment 
+CREATE TABLE comments ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+post_id VARCHAR(36) NOT NULL REFERENCES 
+posts(id) ON DELETE CASCADE, 
+profile_id VARCHAR(36) NOT NULL REFERENCES 
+profiles(id) ON DELETE CASCADE, 
+parent_comment_id VARCHAR(36) REFERENCES 
+comments(id) ON DELETE CASCADE, 
+content TEXT NOT NULL, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id) 
+); 
+●  
+Asset 
+SQL
+CREATE TABLE assets ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+file_name VARCHAR(255) NOT NULL, 
+file_path VARCHAR(500) NOT NULL, 
+file_type VARCHAR(100) NOT NULL, 
+file_size INTEGER NOT NULL, 
+order_index INTEGER NOT NULL DEFAULT 0, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id) 
+); 
+●  
+Chat 
+SQL
+CREATE TABLE chats ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+name VARCHAR(100) NOT NULL, 
+description TEXT, 
+type VARCHAR(20) NOT NULL DEFAULT 'private', -- 
+Enum values: 'private', 'group' (validated in code) 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+); 
+●  
+SQL
+Message 
+CREATE TABLE messages ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+chat_id VARCHAR(36) NOT NULL REFERENCES 
+chats(id) ON DELETE CASCADE, 
+profile_id VARCHAR(36) NOT NULL REFERENCES 
+profiles(id) ON DELETE CASCADE, 
+content TEXT NOT NULL, 
+reply_to_message_id VARCHAR(36) REFERENCES 
+messages(id) ON DELETE SET NULL, 
+is_edited BOOLEAN NOT NULL DEFAULT false, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+deleted BOOLEAN NOT NULL DEFAULT FALSE 
+); 
+●  
+Profile Configuration 
+SQL
+CREATE TABLE profile_configurations ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+config_key VARCHAR(100) NOT NULL, 
+is_admin_accessible_only BOOLEAN NOT NULL 
+DEFAULT false, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+users(id), 
+); 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id) 
+●  
+Notification 
+SQL
+CREATE TABLE notifications ( 
+    id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+    type VARCHAR(20) NOT NULL, -- Enum values: 
+'like', 'comment', 'follow', 'subscription', 
+'system' (validated in code) 
+    title VARCHAR(255) NOT NULL, 
+    message TEXT NOT NULL, 
+    data JSONB, 
+    is_read BOOLEAN NOT NULL DEFAULT false, 
+    read_at TIMESTAMP, 
+    created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+    created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+    updated_at TIMESTAMP NOT NULL, 
+    updated_by VARCHAR(36) REFERENCES users(id) 
+); 
+SQL
+●  
+Audit Log 
+ 
+CREATE TABLE audit_logs ( 
+    id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+    user_id VARCHAR(36) NOT NULL REFERENCES 
+users(id) ON DELETE CASCADE, 
+    action VARCHAR(100) NOT NULL, 
+    resource_type VARCHAR(50) NOT NULL, 
+    resource_id VARCHAR(36) NOT NULL, 
+    old_values JSONB, 
+    new_values JSONB, 
+    ip_address INET, 
+    user_agent TEXT, 
+    created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+    created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id) 
+); 
+Many-to-Many Tables 
+● PostAsset 
+SQL
+CREATE TABLE posts_assets ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+post_id VARCHAR(36) NOT NULL REFERENCES 
+posts(id) ON DELETE CASCADE, 
+asset_id VARCHAR(36) NOT NULL REFERENCES 
+assets(id) ON DELETE CASCADE, 
+order_index INTEGER NOT NULL DEFAULT 0, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+UNIQUE(post_id, asset_id) 
+); 
+●  
+SQL
+ProfileFollow 
+CREATE TABLE profiles_follows ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+follower_profile_id VARCHAR(36) NOT NULL 
+REFERENCES profiles(id) ON DELETE CASCADE, 
+followed_profile_id VARCHAR(36) NOT NULL 
+REFERENCES profiles(id) ON DELETE CASCADE, 
+accepted BOOLEAN, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+UNIQUE(follower_profile_id, 
+followed_profile_id), 
+CHECK(follower_profile_id != 
+followed_profile_id) 
+); 
+●  
+SQL
+ChatParticipant 
+CREATE TABLE chats_participants ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+profile_id VARCHAR(36) NOT NULL REFERENCES 
+profiles(id) ON DELETE CASCADE, 
+chat_id VARCHAR(36) NOT NULL REFERENCES 
+chats(id) ON DELETE CASCADE, 
+role VARCHAR(20) NOT NULL DEFAULT 'member', -- 
+Enum values: 'admin', 'member' (validated in code) 
+joined_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+left_at TIMESTAMP, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+UNIQUE(profile_id, chat_id) 
+); 
+●  
+MessageAsset 
+SQL
+CREATE TABLE messages_assets ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+message_id VARCHAR(36) NOT NULL REFERENCES 
+messages(id) ON DELETE CASCADE, 
+asset_id VARCHAR(36) NOT NULL REFERENCES 
+assets(id) ON DELETE CASCADE, 
+order_index INTEGER NOT NULL DEFAULT 0, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+UNIQUE(message_id, asset_id) 
+); 
+●  
+PostLike 
+SQL
+CREATE TABLE posts_likes ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+post_id VARCHAR(36) NOT NULL REFERENCES 
+posts(id) ON DELETE CASCADE, 
+profile_id VARCHAR(36) NOT NULL REFERENCES 
+profiles(id) ON DELETE CASCADE, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+UNIQUE(post_id, like_id) 
+); 
+●  
+CommentLike 
+SQL
+CREATE TABLE comments_likes ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+comment_id VARCHAR(36) NOT NULL REFERENCES 
+comments(id) ON DELETE CASCADE, 
+profile_id VARCHAR(36) NOT NULL REFERENCES 
+profiles(id) ON DELETE CASCADE, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+UNIQUE(comment_id, profile_id) 
+); 
+●  
+ProfileToProfileConfiguration 
+SQL
+CREATE TABLE profiles_to_profiles_configurations ( 
+id VARCHAR(36) PRIMARY KEY, -- ID generated in 
+application code 
+profile_id VARCHAR(36) NOT NULL REFERENCES 
+profiles(id) ON DELETE CASCADE, 
+profile_configuration_id VARCHAR(36) NOT NULL 
+REFERENCES profiles_configurations(id) ON DELETE 
+CASCADE, 
+created_at TIMESTAMP NOT NULL DEFAULT 
+CURRENT_TIMESTAMP, 
+created_by VARCHAR(36) NOT NULL REFERENCES 
+users(id), 
+updated_at TIMESTAMP NOT NULL, 
+updated_by VARCHAR(36) REFERENCES users(id), 
+UNIQUE(profile_id, profile_configuration_id) 
+); 
+Redis Storage 
+Description 
+Redis storage main purposes in this project are: 
+1. To store refresh tokens sessions: 
+1. Key: refresh_tokens:{refresh_token_id} 
+2. Values to store in JSON: userId, ipAddress, userAgent, 
+expiresAt 
+2. To store blacklists of refresh and access tokens (Set : 
+1. Refresh tokens: 
+1. Key: blacklist:refresh:{refresh_token_id} 
+Shell
+# Set key "blacklist:access:abc-123" value "true" 
+for 900 seconds (must be equal to amount of second 
+left till the expire date) 
+SETEX blacklist:refresh:abc-123 900 true 
+3.  
+Shell
+# Check if key "blacklist:access:abc-123" exists. 
+Returns 1 or 0. Can be used to check if key is still 
+in blacklist 
+EXISTS blacklist:access:abc-123 
+4.  
+b. Access tokens: 
+1. Key: blacklist:access:{access_token_jti} or 
+blacklist:access:{access_token} 
+5. 
+⚙
+ 
+Access token jti - is a unique identifier being put into payload of JWT 
+token. 
+Notifications Consumer 
+Description 
+Notifications Consumer - part of application responsible for: 
+1. Management of notifications, retrieved from RabbitMQ/Kafka message 
+broker; 
+2. Forming and saving notifications into Core Database; 
+3. Sending notifications to Users via Emails. 
+Technological Stack 
+Main Technologies 
+● NestJS - Node.js framework. Documentation: https://docs.nestjs.com/ 
+● TS - TypeScript, a high-level programming language that adds static typing 
+with optional type annotations to JavaScript. Documentation: 
+https://www.typescriptlang.org/ 
+Libraries 
+The list of packages is not exhaustive, but includes most of required packages: 
+● amqplib 
+● amqp-connection-manager 
+● nodemailer 
+● @nestjs/microservices 
+● @nestjs-modules/mailer 
+Client Application (Monolith) Description 
+Description 
+Client Application for technical assignment must be a monolith Next.js application 
+Technological Stack 
+Main Technologies 
+● Next.js - Node.js framework. Documentation: https://nextjs.org/docs 
+Libraries 
+The list of packages is not exhaustive, but includes most of required packages: 
+● ReactJS 
+● Styling: 
+○ CSS + Styled Components; 
+○ CSS, SCSS, MUI; 
+○ CSS, SCSS, Mantine; 
+○ CSS, SCSS, shadcn, TailwindCSS. 
+● React Hook Form 
+Client Application Structure 
+Here it the structure of client application folders within Next.js project is providen: 
+Client Application Structure (BASE 
+IMPLEMENTATION) (FLOWCHART) 
+Detailed Routing Structure 
+Authentication Routes (/auth) 
+● /auth/signup - User registration (email/password + OAuth) 
+● /auth/signin - User login 
+Main App Routes (/app) 
+Dashboard (/app/feed) 
+● Main page with posts feed 
+● Navigation to main sections 
+Profile Routes (/app/profile) 
+● /app/profile/me - My profile 
+● /app/profile/[username] - Other user's profile 
+● /app/profile/me/edit - Edit profile 
+● /app/profile/me/followers - My followers 
+● /app/profile/me/following - My following 
+● /app/profile/me/follow-requests - Follow requests 
+Posts Routes (/app/posts) 
+● /app/posts/create - Create post 
+● /app/posts/[id] - View post 
+● /app/posts/[id]/edit - Edit post 
+● /app/posts/archived - Archived posts 
+Feed Routes (/app/feed) 
+● /app/feed - Main feed 
+Chat Routes (/app/chat) 
+● /app/chat - Chat list 
+● /app/chat/[id] - Chat room 
+● /app/chat/create - Create chat 
+● /app/chat/group/[id]/settings - Group chat settings 
+Settings Routes (/app/settings) 
+● /app/settings/account - Account settings 
+● /app/settings/privacy - Privacy settings 
+● /app/settings/notifications - Notification settings 
+● /app/settings/delete-account - Delete account 
+Authentication Microservice Description 
+Description 
+Authentication Microservice - part of server overall application responsible for 
+validating, generating and refreshing JWT access and refresh tokens 
+Authentication Microservice receives requests from Core Microservice via HTTP. 
+Authentication Microservice additionally process requests for OAuth 2.0 
+authentication flow. 
+Technological Stack 
+Main Technologies 
+● Express.js- Node.js framework. Documentation: 
+● TS - TypeScript, a high-level programming language that adds static typing 
+with optional type annotations to JavaScript. Documentation: 
+https://www.typescriptlang.org/ 
+Libraries 
+The list of packages is not exhaustive, but includes most of required packages: 
+● jsonwebtoken 
+● bcryptjs 
+● passport 
+● passport-jwt 
+● passport-google-oauth20, passport-facebook, 
+passport-github2 
+● ioredis 
+● dotenv 
+● cors 
+Authentication flows 
+All requests for authentication even using OAuth 2.0 go first through Core 
+Microservice, then Core Microservice communicates with Authentication 
+Microservice. 
+Email and password authentication flows: 
+Sign Up (SEQUENCE) 
+Sign In & Token Generation (SEQUENCE) 
+Successful Access Token Validation (SEQUENCE) 
+Token expired → Unsuccessful Access Token Validation → Successful Token 
+Refresh (SEQUENCE) 
+Token expired → Unsuccessful Access Token Validation → Unsuccessful Token 
+Refresh (SEQUENCE) 
+Logout (SEQUENCE) 
+OAuth 2.0 authentication flows: 
+First-Time User Login via OAuth 2.0 (SEQUENCE) 
+Existing User Login via OAuth 2.0 (SEQUENCE) 
+<aside> 
+⚠
+ 
+Flows for access token being expired and requiring refresh, access token 
+validation, logout flows are the same as for authentication with email and 
+password for OAuth 2.0 based authentication. 
+</aside> 
+Authentication API Descriptions 
+Core Microservice (API Gateway) 
+This service is the public entry point for all client requests. 
+AuthenticationController 
+Global Path: /auth 
+HT
+TP 
+Me
+tho
+d 
+Path 
+Bod
+Quer
+Controller Method 
+y / 
+y 
+Desc
+ripti
+on 
+Us
+ed 
+In 
+PO
+ST 
+/logi
+n 
+Body
+: 
+{ema
+il, 
+pass
+word
+} 
+login(credenti
+als) 
+Acce
+pts 
+emai
+l and 
+pass
+word 
+from 
+the 
+clien
+t for 
+login
+. 
+Sig
+n 
+In 
+& 
+To
+ke
+n 
+Ge
+ner
+ati
+on 
+(SE
+QU
+EN
+CE
+) 
+      
+PO
+ST 
+/refr
+esh 
+ref
+res
+h_t
+oke
+n_i
+d , 
+refresh(refres
+h_token_id) 
+Acce
+pts a 
+ref
+res
+h_t
+oke
+To
+ke
+n 
+ex
+pir
+ed 
+retrie
+ved 
+from 
+cooki
+es 
+n_i
+d to 
+get a 
+new 
+pair 
+of 
+toke
+ns. 
+→ 
+Un
+suc
+ces
+sfu
+l 
+Ac
+ces
+s 
+To
+ke
+n 
+Val
+ida
+tio
+n 
+→ 
+Su
+cce
+ssf
+ul 
+To
+ke
+n 
+Ref
+res
+h 
+(SE
+QU
+EN
+CE
+) 
+To
+ke
+n 
+ex
+pir
+ed 
+→ 
+Un
+suc
+ces
+sfu
+l 
+Ac
+ces
+s 
+To
+ke
+     
+n 
+Val
+ida
+tio
+n 
+→ 
+Un
+suc
+ces
+sfu
+l 
+To
+ke
+n 
+Ref
+res
+h 
+(SE
+QU
+EN
+CE
+) 
+GE
+T 
+/logi
+n/[pr
+Emp
+ty 
+handleOAuthLog
+in() 
+Initia
+tes 
+Fir
+st
+ovide
+r] 
+the 
+OAu
+th 
+2.0 
+login 
+proc
+ess. 
+Ti
+me 
+Us
+er 
+Lo
+gin 
+via 
+OA
+uth 
+2.0 
+(SE
+QU
+EN
+CE
+) 
+Exi
+sti
+ng 
+Us
+er 
+Lo
+gin 
+via 
+OA
+     
+uth 
+2.0 
+(SE
+QU
+EN
+CE
+) 
+GE
+T 
+/[pro
+vider
+]/cal
+lback 
+Quer
+y 
+para
+mete
+r: 
+cod
+e 
+handleOAuthCal
+lback(authoriz
+ation_code) 
+Han
+dles 
+the 
+callb
+ack 
+from 
+the 
+OAu
+th 
+2.0 
+provi
+der. 
+Fir
+st
+Ti
+me 
+Us
+er 
+Lo
+gin 
+via 
+OA
+uth 
+2.0 
+(SE
+QU
+EN
+CE
+) 
+Exi
+sti
+ng 
+Us
+er 
+Lo
+gin 
+via 
+OA
+uth 
+2.0 
+(SE
+QU
+EN
+CE
+) 
+     
+PO
+ST 
+/logo
+ut 
+ref
+res
+h_t
+oke
+n_i
+d , 
+retrie
+ved 
+logout(refresh
+_token_id) 
+Initia
+tes 
+the 
+logo
+ut 
+proc
+ess. 
+Lo
+go
+ut 
+(SE
+QU
+EN
+CE
+) 
+from 
+cooki
+es 
+PO
+ST 
+/sign
+up 
+DTO 
+from 
+body 
+signUp(signUpD
+to) 
+Acce
+pts 
+new 
+user 
+data 
+(ema
+il, 
+pass
+word
+, 
+user
+nam
+e, 
+etc.) 
+for 
+regis
+tratio
+n. 
+Sig
+n 
+Up 
+(SE
+QU
+EN
+CE
+) 
+AuthService 
+Service Method Description Used In 
+handleLogin(credentials) Forwards credentials 
+to the 
+AuthenticationM
+icroservice. 
+Sign In 
+& Token 
+Generati
+on 
+(SEQUE
+NCE) 
+handleOAuthInit() Makes an HTTP 
+request to the 
+AuthenticationM
+icroservice to 
+get a redirect URL. 
+First-Ti
+me User 
+Login 
+via 
+OAuth 
+2.0 
+(SEQUE
+NCE) 
+Existing User Login via OAuth 
+2.0 (SEQUENCE) 
+  
+handleOAuthCallback(auth
+orization_code) 
+Forwards the 
+authorization_c
+ode to the 
+First-Ti
+me User 
+Login 
+via 
+AuthenticationM
+icroservice. 
+OAuth 
+2.0 
+(SEQUE
+NCE) 
+handleRefresh**(**refres
+h_token_id**)** 
+Forwards tokens to 
+the 
+AuthenticationM
+icroservice for 
+renewal. 
+Token 
+expired 
+→ 
+Unsucce
+ssful 
+Access 
+Token 
+Validatio
+n → 
+Successf
+ul Token 
+Refresh 
+(SEQUE
+NCE) 
+Token expired → Unsuccessful 
+Access Token Validation → 
+Unsuccessful Token Refresh 
+(SEQUENCE) 
+  
+handleLogout(refresh_tok
+en_id) 
+Forwards the 
+refresh_token_i
+dto the 
+AuthenticationM
+icroservice to 
+terminate the 
+session. 
+Logout 
+(SEQUE
+NCE) 
+validateToken(accessToke
+n) 
+Called by 
+AccessGuard. 
+Makes an HTTP 
+request to the 
+AuthenticationM
+icroservice to 
+validate a token. 
+Successf
+ul 
+Access 
+Token 
+Validatio
+n 
+(SEQUE
+NCE) 
+handleSignUp(signUpDto) Forwards 
+registration data to 
+the 
+AuthenticationM
+icroservice 
+Sign Up 
+(SEQUE
+NCE) 
+ 
+AccessGuard 
+Method 
+canActivat
+e(context) 
+Description 
+A NestJS Guard method. It intercepts protected 
+requests and uses the AuthService for validation. 
+Authentication Microservice 
+This is an internal service that contains all authentication logic. 
+AuthController 
+Global Path: /internal/auth (assumed to be accessible only by internal 
+services) 
+HTTP 
+Metho
+d 
+POST 
+Path 
+/login 
+Controller Method 
+login(credentia
+ls) 
+Descri
+ption 
+Verifie
+s 
+email/p
+asswor
+d and 
+genera
+Used 
+In 
+Sign 
+In & 
+Token 
+Gener
+ation 
+(SEQ
+tes 
+tokens. 
+UENC
+E) 
+POST /valid
+ate 
+validate(access
+_token) 
+Validat
+es an 
+acces
+s_tok
+en. 
+Succe
+ssful 
+Acces
+s 
+Token 
+Valida
+tion 
+(SEQ
+UENC
+E) 
+POST /refre
+sh 
+refreshTokens(r
+efresh_token_id
+) 
+Renew
+s a pair 
+of 
+tokens. 
+Token 
+expire
+d → 
+Unsuc
+cessfu
+l 
+Acces
+s 
+Token 
+Valida
+tion → 
+Succe
+ssful 
+Token 
+Refres
+h 
+(SEQ
+UENC
+E) 
+Token 
+expire
+d → 
+Unsuc
+cessfu
+l 
+Acces
+s 
+Token 
+Valida
+tion → 
+Unsuc
+cessfu
+l 
+Token 
+Refres
+h 
+    
+(SEQ
+UENC
+E) 
+POST /logou
+t 
+handleLogout(re
+fresh_token_id) 
+Termin
+ates a 
+sessio
+n and 
+blackli
+sts the 
+tokens. 
+Logou
+t 
+(SEQ
+UENC
+E) 
+GET /oauth
+/initi
+ate 
+initiateOAuthFl
+ow() 
+Genera
+tes 
+and 
+returns 
+a 
+redirec
+t URL 
+for an 
+OAuth 
+provid
+er. 
+First-T
+ime 
+User 
+Login 
+via 
+OAuth 
+2.0 
+(SEQ
+UENC
+E) 
+Existin
+g User 
+    
+Login 
+via 
+OAuth 
+2.0 
+(SEQ
+UENC
+E) 
+POST /oauth
+/excha
+nge-co
+de 
+exchangeCodeFor
+Tokens(code) 
+Exchan
+ges an 
+authori
+zation 
+code 
+for 
+interna
+l 
+tokens. 
+First-T
+ime 
+User 
+Login 
+via 
+OAuth 
+2.0 
+(SEQ
+UENC
+E) 
+Existin
+g User 
+Login 
+via 
+OAuth 
+2.0 
+(SEQ
+    
+UENC
+E) 
+POST 
+/regis
+ter 
+register(signUp
+Dto) 
+Create
+s a 
+new 
+user 
+based 
+on the 
+provid
+ed 
+data. 
+Sign 
+Up 
+(SEQ
+UENC
+E) 
+AuthService 
+<aside> 
+⚠
+ 
+JWT generation logic can be moved into separate reusable private method 
+generateNewTokens() . 
+</aside> 
+Service Method 
+authenticateUser(credenti
+als) 
+Description 
+Check credentials, 
+creates a new pair 
+Used In 
+Sign In & 
+Token 
+of access and 
+refresh tokens 
+and saves the 
+session. 
+Generati
+on 
+(SEQUE
+NCE) 
+processRefreshToken(old_r
+efresh_token_id) 
+Validates the 
+old_refresh_t
+oken_id(old 
+token) in Redis 
+and generates a 
+new pair of tokens. 
+Token 
+expired 
+→ 
+Unsucce
+ssful 
+Access 
+Token 
+Validatio
+n → 
+Successf
+ul Token 
+Refresh 
+(SEQUE
+NCE) 
+Token expired → Unsuccessful 
+Access Token Validation → 
+Unsuccessful Token Refresh 
+(SEQUENCE) 
+  
+validateToken(access_toke
+n) 
+Checks the 
+signature, 
+expiration, and 
+blacklist status of 
+an 
+access_token. 
+Successf
+ul 
+Access 
+Token 
+Validatio
+n 
+(SEQUE
+NCE) 
+exchageCodeForTokens(code
+) 
+Exchanges the 
+code for a user 
+profile, 
+finds/creates the 
+user, and calls 
+generateNewTo
+kens. 
+First-Tim
+e User 
+Login via 
+OAuth 
+2.0 
+(SEQUE
+NCE) 
+Existing User Login via OAuth 2.0 
+(SEQUENCE) 
+  
+registerUser(signUpDto) Checks for data 
+uniqueness, 
+hashes the 
+password, creates 
+the user in 
+Sign Up 
+(SEQUE
+NCE) 
+PostgreSQL, and 
+generates tokens. 
+RedisRepository 
+● repository class can be named RedisAuthRepository 
+Method 
+isTokenBlacklisted(toke
+n) 
+blacklistToken(token, 
+expiresIn) 
+storeRefreshTokenId(use
+rId, refresh_token_id) 
+findSessionByTokenId(to
+kenId) 
+Description 
+Checks if a token's id is in the 
+blacklist. 
+Adds a token's id to the blacklist 
+with a specified TTL. 
+Saves a refresh_token's id for 
+a specific user, creating a session. 
+Finds an active session by the 
+refresh_token's id. 
+Core Microservice Description 
+Description 
+Core Microservice - main part of server application, responsible for handling 
+client requests processing and behaving as an API Gateway. **** 
+Core Microservice handle authenticating client’s requests through communication 
+with Authentication Microservice. 
+Core Microservice application provides: 
+1. Entity Classes - describe database entities structure within ORM approach; 
+2. Controller Classes - requests main data processing entry points; 
+3. Service Classes - contain business related logic and manipulate with 
+Database, communicate with other services. 
+Core Microservice API must be documented using Swagger (Open API). 
+Technological Stack 
+Main Technologies 
+● NestJS - Node.js framework. Documentation: https://docs.nestjs.com/ 
+● TS - TypeScript, a high-level programming language that adds static typing 
+with optional type annotations to JavaScript. Documentation: 
+https://www.typescriptlang.org/ 
+Libraries 
+The list of packages is not exhaustive, but includes most of required packages: 
+● @nestjs/websockets 
+● @nestjs/platform-socket.io 
+● class-validator 
+● class-transformer 
+● ORM (choose one): 
+○ TypeORM 
+○ Prisma 
+○ Sequelize 
+○ MikroORM 
+● @nestjs/cache-manager 
+● cache-manager 
+● multer 
+● cookie-parser 
+● @nestjs/axios 
+● axios 
+● @nestjs/swagger 
+● amqplib 
+● amqp-connection-manager 
+● @nestjs/swagger 
+PR and Features Roadmap (Base 
+implementation) 
+This document outlines the recommended sequence of Pull Requests and 
+features for implementing the Innogram social media application. Each PR should 
+be testable and reviewable. 
+Here you can check Gantt chart for the current PRs plan: 
+Branch Strategy 
+● main: Production-ready code 
+● dev: Development integration branch 
+● feature/INO-XXX: Feature branches (e.g., feature/INO-1, feature/INO-2) 
+PR Sequence 
+Phase 1: Project Foundation (PRs 1-3) 
+PR #1: Project Setup and Infrastructure 
+Branch: feature/INO-1Title: "Setup: Initialize monorepo structure and 
+development environment" 
+Features: 
+● Initialize Git repository and monorepo structure 
+● Set up Turbo/NX monorepo with ESLint and TypeScript 
+● Create basic folder structure for all services 
+● Set up GitHub Actions workflows 
+● Create Dockerfiles and docker-compose.yml 
+● Add .gitignore and .env.example files 
+● Configure development scripts and package.json 
+● Set up basic CI/CD pipeline 
+Acceptance Criteria: 
+● [ ] Monorepo structure is properly configured 
+● [ ] ESLint and TypeScript are working 
+● [ ] GitHub Actions workflows are working 
+● [ ] Docker containers build successfully 
+● [ ] All services can be started independently 
+● [ ] Environment variables are properly configured 
+PR #2: Core Microservice Foundation 
+For better PR review experience, please, separate this PR plan into smaller PRs 
+(written after each feature) 
+Branch: feature/INO-2Title: "Core: Setup NestJS application with database 
+entities and Code First migrations" 
+Features: 
+● Initialize NestJS application (PR 2.1) 
+● Configure TypeORM/Prisma for database access (PR 2.1) 
+● Set up PostgreSQL database connection (PR 2.1) 
+● Create database schemas (auth, main, notification) (PR 2.1) 
+● Create database migrations through Code First approach (PR 2.1) 
+● Implement all core entities (User, Account, Profile, Post, Comment, Asset, 
+Chat, Message, Notification) (PR 2.2) 
+● Implement many-to-many relationship entities (PostAsset, ProfileFollow, 
+ChatParticipant, MessageAsset, PostLike, CommentLike, 
+ProfileToProfileConfiguration) (PR 2.2) 
+● Set up basic modules (Auth, Users, Posts, Comments, Chats, Notifications) 
+(PR 2.2) 
+● Implement basic CRUD operations (PR 2.3) 
+● Add Swagger documentation (PR 2.3) 
+● Set up validation pipes and DTOs (PR 2.3) 
+● Configure CORS and security middleware (PR 2.3) 
+● Add error handling and logging (PR 2.3) 
+Acceptance Criteria: 
+● [ ] NestJS application starts successfully 
+● [ ] Database connection is working 
+● [ ] Database schemas are created 
+● [ ] All core entities are properly defined 
+● [ ] All many-to-many relationship entities are implemented 
+● [ ] Database relationships are correctly established 
+● [ ] Migrations run successfully 
+● [ ] Basic CRUD endpoints are functional 
+● [ ] Swagger documentation is accessible 
+● [ ] Input validation is working 
+● [ ] Error handling is implemented 
+PR #3: Authentication Microservice 
+Branch: feature/INO-3Title: "Auth: Complete authentication system with 
+Redis and OAuth integration" 
+Features: 
+● Initialize Express.js application with TypeScript 
+● Set up Redis connection and configuration 
+● Implement email/password authentication 
+● Set up OAuth 2.0 providers (Google) 
+● Configure JWT token generation and validation 
+● Implement password hashing with bcrypt 
+● Create Redis token storage and session management 
+● Add token refresh mechanism and logout functionality 
+● Set up HTTP communication with Core Microservice 
+● Implement authentication guards and protected routes 
+● Add CORS and security middleware 
+Acceptance Criteria: 
+● [ ] Express.js application starts successfully 
+● [ ] Redis connection is working 
+● [ ] Email/password authentication works 
+● [ ] OAuth providers are functional 
+● [ ] JWT tokens are generated and validated correctly 
+● [ ] Token refresh and logout work properly 
+● [ ] Core microservice validates tokens 
+● [ ] Protected routes are working 
+● [ ] User context is available in requests 
+Phase 2: Core Features (PRs 4-7) 
+PR #4: Posts Management System (Backend) 
+Branch: feature/INO-4Title: "Posts: Implement post CRUD, file upload, and 
+feed generation" 
+Features: 
+● Create post creation, editing, and deletion endpoints 
+● Implement file upload for images/videos 
+● Create asset management system 
+● Implement post archiving functionality 
+● Create feed generation logic based on user follows 
+● Add post sorting and pagination 
+● Implement post search functionality 
+● Add post validation and error handling 
+Acceptance Criteria: 
+● [ ] Users can create posts with content and media 
+● [ ] File uploads work correctly 
+● [ ] Posts can be edited, deleted, and archived 
+● [ ] Feed shows posts from followed users 
+● [ ] Post sorting and pagination work properly 
+● [ ] Search functionality is working 
+● [ ] Asset management is functional 
+PR #5: User Interactions and Following (Backend) 
+Branch: feature/INO-5Title: "Users: Implement following system, post 
+interactions, and private profiles" 
+Features: 
+● Create follow/unfollow functionality 
+● Implement private profile system with approval workflow 
+● Add follow request handling and notifications 
+● Create followers/following lists 
+● Implement post liking and unliking system 
+● Add comment functionality with nested comments 
+● Create user mention functionality (@username) 
+● Add comment editing, deletion, and likes 
+● Implement profile visibility controls 
+Acceptance Criteria: 
+● [ ] Users can follow/unfollow others 
+● [ ] Private profiles require approval 
+● [ ] Follow requests are handled correctly 
+● [ ] Post likes and comments work properly 
+● [ ] Nested comments and mentions are functional 
+● [ ] Followers/following lists are accurate 
+● [ ] Profile visibility is controlled correctly 
+PR #6: Real-time Features (Backend) 
+Branch: feature/INO-6Title: "Real-time: Implement WebSocket, chat system, 
+and notifications" 
+Features: 
+● Set up Socket.IO integration for real-time communication 
+● Implement connection management and authentication 
+● Create chat entities and relationships 
+● Implement private and group chat functionality 
+● Add real-time message delivery and typing indicators 
+● Set up message editing, deletion, and file attachments 
+Acceptance Criteria: 
+● [ ] WebSocket connections are established and secure 
+● [ ] Private and group chats work correctly 
+● [ ] Messages are delivered in real-time 
+● [ ] Message editing/deletion and file attachments work 
+PR #7: Client Application Foundation 
+Branch: feature/INO-7Title: "Client: Setup Next.js application with 
+authentication and basic UI" 
+Features: 
+● Initialize Next.js with TypeScript 
+● Set up routing, layout, and state management 
+● Configure styling 
+● Implement authentication context and protected routes 
+● Create login/signup pages with OAuth integration 
+● Add user profile management 
+● Set up API client and error handling 
+● Create basic UI components and form validation 
+Acceptance Criteria: 
+● [ ] Next.js application starts successfully 
+● [ ] Authentication context and protected routes work 
+● [ ] Login/signup pages are functional 
+● [ ] OAuth integration works correctly 
+● [ ] Profile management is working 
+● [ ] API client is configured 
+● [ ] Basic UI components are created 
+Phase 3: Client Features (PRs 8-10) 
+PR #8: Feed and Posts UI 
+Branch: feature/INO-8Title: "Client: Implement feed page and post 
+management interface" 
+Features: 
+● Create feed page layout with post display 
+● Implement post creation interface with file upload 
+● Add post editing and deletion functionality 
+● Create post interaction buttons (like, comment, share) 
+● Add file upload interface for images/videos 
+● Implement post media display and gallery 
+● Add post sorting and filtering options 
+● Create post search interface 
+Acceptance Criteria: 
+● [ ] Feed page displays posts correctly 
+● [ ] Post creation interface is functional 
+● [ ] Post interactions work properly 
+● [ ] File uploads are working 
+● [ ] Media is displayed correctly 
+● [ ] Post sorting and filtering work 
+● [ ] Search interface is functional 
+PR #9: User Profiles and Social Features 
+Branch: feature/INO-9Title: "Client: Implement user profiles, following 
+system, and social interactions" 
+Features: 
+● Create user profile pages with posts and information 
+● Implement follow/unfollow buttons and functionality 
+● Add followers/following lists and management 
+● Create profile editing interface 
+● Add private profile management and follow requests 
+● Implement comment system with nested comments 
+● Add user mention functionality (@username) 
+● Create comment editing, deletion, and likes 
+● Add notification center and preferences 
+Acceptance Criteria: 
+● [ ] User profiles are displayed correctly 
+● [ ] Follow/unfollow functionality works 
+● [ ] Profile editing is functional 
+● [ ] Private profile features work 
+● [ ] Comment system is working 
+● [ ] User mentions are functional 
+● [ ] Notification center works properly 
+PR #10: Chat and Real-time UI 
+Branch: feature/INO-10Title: "Client: Implement chat interface and real-time 
+features" 
+Features: 
+● Create chat interface with message display 
+● Implement real-time messaging with Socket.IO 
+● Add message composition with file attachments 
+● Create chat participant management 
+● Implement group chat creation and management 
+Acceptance Criteria: 
+● [ ] Chat interface is functional 
+● [ ] Real-time messaging works 
+● [ ] File attachments work in chat 
+● [ ] Chat management is working 
+● [ ] Group chats work properly 
+Phase 4: Testing and Polish (PRs 11-12) 
+PR #11: Testing and Quality Assurance 
+Branch: feature/INO-11Title: "Testing: Add comprehensive test coverage and 
+performance optimization" 
+Features: 
+● Write unit tests for some (1-2) services and components (Jest) 
+● Add integration tests for API endpoints 
+● Write some E2E tests using Playwright/Selenium 
+● Set up test coverage reporting 
+● Add performance tests and monitoring 
+● Implement database query optimization 
+● Add caching strategies 
+● Optimize file upload handling 
+● Implement pagination improvements 
+● Add performance monitoring 
+Acceptance Criteria: 
+● [ ] Integration tests pass 
+● [ ] E2E tests cover some main flows 
+● [ ] Performance tests are passing 
+● [ ] Database queries are optimized 
+● [ ] Caching is implemented 
+● [ ] File uploads are efficient 
+● [ ] Performance metrics are good 
+PR #12: Documentation and Deployment 
+Branch: feature/INO-12 Title: "Docs: Complete documentation, deployment 
+setup, and final polish" 
+Features: 
+● Complete API documentation with Swagger 
+● Update README files for all services 
+● Add deployment guides and Docker configuration 
+● Set up monitoring, logging, and error tracking 
+● Add environment management 
+● Final code review and cleanup 
+Acceptance Criteria: 
+● [ ] All documentation is complete and accurate 
+● [ ] Deployment guides are working 
+● [ ] Monitoring and logging are configured 
+● [ ] Environment management is proper 
+PR Review Guidelines 
+For Each PR: 
+1. Code Quality: Ensure code follows best practices and is well-structu 
+2. Documentation: Check that relevant documentation is updated 
+3. Functionality: Test that the feature works as expected 
+PR Template: 
+None
+# Description 
+Brief description of changes 
+# Type of Change - [ ] Bug fix - [ ] New feature - [ ] Breaking change - [ ] Documentation update 
+# Checklist - [ ] Code follows project style guidelines 
+- [ ] Self-review completed - [ ] Documentation updated - [ ] No breaking changes (or documented) 
+<aside> 
+⚠
+ 
+Remember: Each PR should be focused, testable, and reviewable. Don't try to 
+implement too many features in a single PR. 
+</aside> 
+Functional Requirements (BASE 
+IMPLEMENTATION) 
+Processes 
+The following functional requirements are applied to USER role users. 
+Authentication 
+Sign up 
+1. User must be able to sign up using email and password; 
+2. User must be able to sign up using user identity provider (at least ONE, for 
+example, Google); 
+3. User must be able to add image to the profile, required username, required 
+date of birth, required display name (Name Surname or other); 
+4. Password field must be secure. 
+Sign In 
+1. User must be able to sign in into account using email or password; 
+2. User must be able to sign in into account using user identity provider. 
+Sign out 
+1. User must be able to sign out of account within profile page. 
+Posts 
+Posts management 
+1. User must be able to create their posts: 
+1. Add 1-10 images or videos; 
+2. Add content (text caption). 
+2. User must be able to edit their posts: 
+1. Remove or add images or videos; 
+2. Edit content (text caption). 
+3. User must be able to delete their posts; 
+4. User must be able to archive their posts: 
+1. Archived posts must be not accessible by other users; 
+2. Archived posts must be not accessible on a feed page. 
+5. User must be able to observe list of their posts; 
+Feed management 
+1. User must be able to observe list of posts within feed page: 
+1. List of posts is formed based on users follows; 
+2. Posts are ordered depending on their update date (update date === 
+creation date right after creation). 
+2. User must be able to like, comment post. Liked posts must be marked with 
+‘like’ highlighted icon; 
+3. User must be able to come to profile of user posted post by clicking on 
+profile avatar near post. 
+4. Users must be able to observe their commented posts and their liked post 
+on separate lists on separate pages 
+Following / Followers 
+Followers management 
+1. User must be able to remove other user from followers; 
+2. User must be able to enable private profile. That’s how it works for private 
+profiles: 
+1. User must be able to accept follow request. Another profile follow is 
+ACCEPTED = TRUE; 
+2. User must be able to ignore follow request. Another profile follow is 
+ACCEPTED = FALSE; 
+3. User must be able to reject follow request (profile follow is removed); 
+4. User must be able to observer list of follow requests for their profile. 
+3. User must be able to observe list of their followers; 
+Following other users 
+1. User must be able to follow other users; 
+2. User must be able to observe list of their follows; 
+3. User must be able to send requests to other user’s private profiles; 
+4. User must be able to observe list of their sent follow requests to other 
+user’s private profiles. 
+Comments 
+Comments management 
+1. User must be able to comment posts (others and their personal); 
+2. User must be able to comment other comments; 
+3. User must be able to delete their comments; 
+4. User must be able to add mentions in comments (@username, highlighted 
+with other user’s profile link); 
+5. User must be able to observe list of commented posts. 
+Profile 
+Profile management 
+1. User must be able to observe their profile information; 
+2. User must be able to edit their profile information: 
+1. Bio is editable; 
+2. Image of profile is editable; 
+3. Display name is editable; 
+4. Is public value is editable (changing this value makes users posts 
+visible only for their followers); 
+5. Username is not editable; 
+6. Birthday is editable. 
+3. User must be able to delete their profile (soft delete with the option to 
+recover within one month, after which recovery is not possible). 
+Chat 
+Chat management 
+1. User must be able to observe list of chats; 
+2. User must be able to initiate chat with one or several users: 
+1. Private chat is named over user conversation partner name. 
+Group chat management 
+1. User with ADMIN chat role must be able to add other users to GROUP chat 
+with already more than 2 participants; 
+2. User with ADMIN chat role must be able to remove other GROUP chat 
+participants from GROUP chat; 
+3. User with MEMBER chat role must be able to leave GROUP chat; 
+4. ADMIN chat user, leaving GROUP chat, must transfer ADMIN role to 
+another chat participant by selecting another chat participant; 
+5. ADMIN chat user must be able to add/edit required title and not required 
+description of chat/ 
+Messages management 
+1. User must be able to create and send messages: 
+1. User must be able to attach assets (images and videos) to THEIR 
+messages (max. value - 10 assets). Assets must be ordered; 
+2. Users must be able to add text content to THEIR messages. 
+2. User must be able to edit THEIR message (text and assets). Edited 
+message must be marked as edited on UI side. 
+3. User must be able to reply to other message within same chat; 
+4. User must be able to delete THEIR message: 
+1. Soft delete is applied to message; 
+2. Message replies must have empty replied message content; 
+3. Deleted messages are marked as deleted, shown within chat and 
+have empty content. 
+5. User must be able to observe their and other participants messages in a 
+chat right after being sent, deleted or edited. 

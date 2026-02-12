@@ -11,7 +11,7 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { PostsModule } from './posts/posts.module';
 import { AssetsModule } from './assets/assets.module';
 import { CommentsModule } from './comments/comments.module';
-import { ChatsModule } from './chats/chats.module'; // Путь теперь верный
+import { ChatsModule } from './chats/chats.module';
 
 @Module({
   imports: [
@@ -32,7 +32,7 @@ import { ChatsModule } from './chats/chats.module'; // Путь теперь в�
         database: configService.get<string>('POSTGRES_DB', 'innogram'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: false,
       }),
     }),
 

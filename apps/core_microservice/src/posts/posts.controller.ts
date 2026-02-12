@@ -23,7 +23,7 @@ import { PostsService } from './posts.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import {
   CurrentUser,
-  CurrentUser as CurrentUserType,
+  CurrentUserData,
 } from '../decorators/current-user.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -38,7 +38,7 @@ export class PostsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new post' })
   async create(
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Body() dto: CreatePostDto,
   ) {
     return await this.postsService.create(user.id, dto);
@@ -51,7 +51,7 @@ export class PostsController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getFeed(
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
@@ -59,20 +59,20 @@ export class PostsController {
   }
 
   @Get('user/:username')
-  @UseGuards(JwtAuthGuard) // Добавляем Guard, чтобы получить ID текущего пользователя
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get posts by user profile' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getUserPosts(
     @Param('username') username: string,
-    @CurrentUser() user: CurrentUserType, // Получаем юзера для проверки лайков
+    @CurrentUser() user: CurrentUserData,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
   ) {
     return await this.postsService.getPostsByUsername(
       username,
-      user?.id, // Передаем ID, если пользователь авторизован
+      user?.id,
       page,
       limit,
     );
@@ -84,7 +84,7 @@ export class PostsController {
   @ApiOperation({ summary: 'Get single post details' })
   async getOne(
     @Param('id') id: string,
-    @CurrentUser() user: CurrentUserType, // Получаем юзера
+    @CurrentUser() user: CurrentUserData,
   ) {
     return await this.postsService.findOne(id, user?.id);
   }
@@ -95,7 +95,7 @@ export class PostsController {
   @ApiOperation({ summary: 'Update post content or assets' })
   async update(
     @Param('id') id: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Body() dto: UpdatePostDto,
   ) {
     return await this.postsService.update(id, user.id, dto);
@@ -105,11 +105,10 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete post' })
-  async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
+  async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     return await this.postsService.remove(id, user.id);
   }
 
-  // --- НОВЫЙ МЕТОД ДЛЯ ЛАЙКОВ ---
   @Post(':id/like')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -117,7 +116,7 @@ export class PostsController {
   @ApiOperation({ summary: 'Toggle like on post' })
   async toggleLike(
     @Param('id') id: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
   ) {
     return await this.postsService.toggleLike(user.id, id);
   }

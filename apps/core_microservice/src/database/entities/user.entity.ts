@@ -22,11 +22,20 @@ export class User {
   @Column({ default: 'User' })
   role: string;
 
+  @Column({ default: false })
+  disabled: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy: string;
+
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy: string;
 
   @OneToOne(() => Profile, (profile: Profile) => profile.user)
   profile: Profile;

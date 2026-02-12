@@ -45,7 +45,6 @@ export class PostsService {
     await queryRunner.startTransaction();
 
     try {
-      // Исправлено: используем content вместо caption
       const post = this.postRepository.create({
         content: dto.content,
         profile: profile,
@@ -53,13 +52,12 @@ export class PostsService {
         updatedBy: userId,
       });
 
-      // Сохраняем пост. Типизация Post гарантирует, что вернется один объект.
       const savedPost = await queryRunner.manager.save(Post, post);
 
       if (dto.fileIds && dto.fileIds.length > 0) {
         const postAssets: PostAsset[] = dto.fileIds.map((assetId, index) => {
           return this.postAssetRepository.create({
-            postId: savedPost.id, // Теперь TS видит .id, так как savedPost корректно типизирован
+            postId: savedPost.id,
             assetId: assetId,
             orderIndex: index,
             createdBy: userId,
@@ -71,11 +69,8 @@ export class PostsService {
 
       await queryRunner.commitTransaction();
 
-      // Уведомление о создании поста (опционально)
-      // this.notificationsClient.emit('post_created', { postId: savedPost.id, userId });
-
       return this.findOne(savedPost.id, userId);
-    } catch (err: any) {
+    } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
     } finally {
@@ -102,14 +97,12 @@ export class PostsService {
     const currentProfile =
       await this.profilesService.getProfileByUserId(userId);
 
-    // Получаем список ID тех, на кого подписан пользователь
     const follows = await this.followRepository.find({
-      where: { followerId: currentProfile.id },
+      where: { followerId: currentProfile.id, accepted: true },
       select: ['followingId'],
     });
 
     const followingIds = follows.map((f) => f.followingId);
-    // В ленту добавляем свои посты и посты подписок
     const feedProfileIds = [currentProfile.id, ...followingIds];
 
     const [posts, total] = await this.postRepository.findAndCount({
@@ -167,16 +160,12 @@ export class PostsService {
     if (post.createdBy !== userId)
       throw new ForbiddenException('You are not allowed to edit this post');
 
-    // Исправлено: используем content вместо caption
     if (dto.content !== undefined) post.content = dto.content;
     if (dto.isArchived !== undefined) post.isArchived = dto.isArchived;
 
     post.updatedBy = userId;
 
-    // Обновляем файлы, если переданы
     if (dto.fileIds) {
-      // Логика обновления файлов требует транзакции, упростим здесь:
-      // В реальном проекте лучше обернуть это в транзакцию как в create
       await this.postAssetRepository.delete({ postId });
 
       const newAssets = dto.fileIds.map((assetId, index) =>
@@ -252,7 +241,6 @@ export class PostsService {
     }
   }
 
-  // Helper для проверки лайка текущим юзером
   private async enrichPostWithLikeStatus(post: Post, userId?: string) {
     const likesCount = await this.postLikeRepository.count({
       where: { postId: post.id },

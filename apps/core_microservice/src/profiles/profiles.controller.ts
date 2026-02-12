@@ -1,113 +1,185 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
-  Delete,
+  UploadedFile,
   UseGuards,
-  Query,
-  DefaultValuePipe,
-  ParseIntPipe,
+  UseInterceptors,
+  NotFoundException,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { ProfilesService } from './profiles.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import {
   CurrentUser,
-  CurrentUser as CurrentUserType,
+  CurrentUserData,
 } from '../decorators/current-user.decorator';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @ApiTags('Profiles')
 @Controller('profiles')
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 
-  @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get my profile' })
-  async getMyProfile(@CurrentUser() user: CurrentUserType) {
+  @Get('me')
+  async getMyProfile(@CurrentUser() user: CurrentUserData) {
     return this.profilesService.getProfileByUserId(user.id);
   }
 
-  @Patch('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update my profile' })
-  async updateMyProfile(
-    @CurrentUser() user: CurrentUserType,
-    @Body() dto: UpdateProfileDto,
+  @Patch('me')
+  async updateProfile(
+    @CurrentUser() user: CurrentUserData,
+    @Body() updateProfileDto: UpdateProfileDto,
   ) {
-    return this.profilesService.updateProfile(user.id, dto);
+    return this.profilesService.updateProfile(user.id, updateProfileDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Patch('me/avatar')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  async uploadAvatar(
+    @CurrentUser() user: CurrentUserData,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    const avatarUrl = `/uploads/${file.filename}`;
+    return this.profilesService.updateAvatar(user.id, avatarUrl);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('me/followers')
+  async getMyFollowers(@CurrentUser() user: CurrentUserData) {
+    return await this.profilesService.getFollowers(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('me/following')
+  async getMyFollowing(@CurrentUser() user: CurrentUserData) {
+    return await this.profilesService.getFollowing(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('me/follow-requests')
+  async getFollowRequests(@CurrentUser() user: CurrentUserData) {
+    return await this.profilesService.getFollowRequests(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post(':username/follow')
+  async followUser(
+    @CurrentUser() user: CurrentUserData,
+    @Param('username') username: string,
+  ) {
+    return await this.profilesService.followUser(user.id, username);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Delete(':username/follow')
+  async unfollowUser(
+    @CurrentUser() user: CurrentUserData,
+    @Param('username') username: string,
+  ) {
+    return await this.profilesService.unfollowUser(user.id, username);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Delete('me/followers/:username')
+  async removeFollower(
+    @CurrentUser() user: CurrentUserData,
+    @Param('username') username: string,
+  ) {
+    return await this.profilesService.removeFollower(user.id, username);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('follow-requests/:username/accept')
+  async acceptFollowRequest(
+    @CurrentUser() user: CurrentUserData,
+    @Param('username') username: string,
+  ) {
+    return await this.profilesService.acceptFollowRequest(user.id, username);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Delete('follow-requests/:username')
+  async rejectFollowRequest(
+    @CurrentUser() user: CurrentUserData,
+    @Param('username') username: string,
+  ) {
+    return await this.profilesService.rejectFollowRequest(user.id, username);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Delete('me')
+  async deleteProfile(@CurrentUser() user: CurrentUserData) {
+    return await this.profilesService.softDeleteProfile(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('me/restore')
+  async restoreProfile(@CurrentUser() user: CurrentUserData) {
+    return await this.profilesService.restoreProfile(user.id);
   }
 
   @Get(':username')
-  @ApiOperation({ summary: 'Get profile by username' })
-  @ApiBearerAuth()
-  async getProfile(
-    @Param('username') username: string,
-    // Делаем Guard опциональным или извлекаем юзера вручную, если хотим public access
-    // Но для простоты используем Guard, если токен передан.
-    // В NestJS это требует Custom Guard, но пока предположим, что endpoint публичный,
-    // но если клиент передает хедер, мы его парсим.
-    // Для базовой версии: просто метод публичный, isFollowing будет false, если нет токена.
-    // Если нужно строго проверять подписку - лучше требовать авторизацию.
-  ) {
-    // В данном случае передаем undefined как ID текущего юзера для публичного доступа
-    // Либо реализуем логику "Optional Auth".
-    // Оставим пока без проверки isFollowing для анонимов.
-    return this.profilesService.getProfileByUsername(username);
-  }
-
-  // --- Follow Endpoints ---
-
-  @Post(':username/follow')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Follow a user' })
-  async followUser(
-    @Param('username') username: string,
-    @CurrentUser() user: CurrentUserType,
-  ) {
-    return this.profilesService.followUser(user.id, username);
-  }
-
-  @Delete(':username/follow')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Unfollow a user' })
-  async unfollowUser(
-    @Param('username') username: string,
-    @CurrentUser() user: CurrentUserType,
-  ) {
-    return this.profilesService.unfollowUser(user.id, username);
+  async getProfileByUsername(@Param('username') username: string) {
+    const profile = await this.profilesService.getProfileByUsername(username);
+    if (!profile) throw new NotFoundException('Profile not found');
+    return profile;
   }
 
   @Get(':username/followers')
-  @ApiOperation({ summary: 'Get user followers' })
-  @ApiQuery({ name: 'page', required: false })
-  async getFollowers(
-    @Param('username') username: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-  ) {
-    return this.profilesService.getFollowers(username, page);
+  async getProfileFollowers(@Param('username') username: string) {
+    return await this.profilesService.getFollowersByUsername(username);
   }
 
   @Get(':username/following')
-  @ApiOperation({ summary: 'Get who user is following' })
-  @ApiQuery({ name: 'page', required: false })
-  async getFollowing(
-    @Param('username') username: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-  ) {
-    return this.profilesService.getFollowing(username, page);
+  async getProfileFollowing(@Param('username') username: string) {
+    return await this.profilesService.getFollowingByUsername(username);
   }
 }

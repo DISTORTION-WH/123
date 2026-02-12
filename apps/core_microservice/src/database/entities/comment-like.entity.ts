@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
   Unique,
@@ -10,8 +11,8 @@ import {
 import { Comment } from './comment.entity';
 import { Profile } from './profile.entity';
 
-@Entity('comment_likes')
-@Unique(['commentId', 'profileId']) // Один юзер - один лайк на коммент
+@Entity('comments_likes')
+@Unique(['commentId', 'profileId'])
 export class CommentLike {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -32,4 +33,13 @@ export class CommentLike {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @Column({ name: 'created_by', type: 'uuid' })
+  createdBy: string;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy: string;
 }

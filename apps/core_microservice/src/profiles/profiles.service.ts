@@ -1,213 +1,255 @@
 import {
   BadRequestException,
   ConflictException,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices';
 import { Profile } from '../database/entities/profile.entity';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
-import { UpdateProfileDto } from './dto/update-profile.dto';
 import { User } from '../database/entities/user.entity';
-import { NOTIFICATIONS_SERVICE } from '../constants/services';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class ProfilesService {
   constructor(
     @InjectRepository(Profile)
-    private readonly profilesRepository: Repository<Profile>,
+    private readonly profileRepository: Repository<Profile>,
     @InjectRepository(ProfileFollow)
-    private readonly followsRepository: Repository<ProfileFollow>,
-    @Inject(NOTIFICATIONS_SERVICE)
-    private readonly notificationsClient: ClientProxy,
+    private readonly followRepository: Repository<ProfileFollow>,
   ) {}
 
-  async createProfile(user: User) {
-    const profile = this.profilesRepository.create({
-      user: user,
-      username: `user_${user.id.substring(0, 8)}`,
-      displayName: user.email.split('@')[0],
+  async createProfile(user: User): Promise<Profile> {
+    const profile = this.profileRepository.create({
+      userId: user.id,
+      username: user.username,
+      displayName: user.username,
       createdBy: user.id,
-      updatedBy: user.id,
-    }); // Теперь TypeScript должен пропустить это без 'as unknown'
-
-    return await this.profilesRepository.save(profile);
+    });
+    return this.profileRepository.save(profile);
   }
 
-  async getProfileByUserId(userId: string) {
-    const profile = await this.profilesRepository.findOne({
-      where: { user: { id: userId } },
-    });
-    if (!profile) throw new NotFoundException('Profile not found');
-    return profile;
-  }
-
-  async getProfileByUsername(username: string, currentUserId?: string) {
-    const profile = await this.profilesRepository.findOne({
-      where: { username },
-    });
-
-    if (!profile) throw new NotFoundException('Profile not found');
-
-    let isFollowing = false;
-    if (currentUserId) {
-      try {
-        const currentUserProfile = await this.getProfileByUserId(currentUserId);
-        const follow = await this.followsRepository.findOne({
-          where: {
-            follower: { id: currentUserProfile.id },
-            following: { id: profile.id },
-          },
-        });
-        isFollowing = !!follow;
-      } catch {
-        // Убрали (e), теперь линтер не будет ругаться
-        isFollowing = false;
-      }
-    }
-
-    return { ...profile, isFollowing };
-  }
-
-  async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const profile = await this.getProfileByUserId(userId);
-
-    if (dto.username && dto.username !== profile.username) {
-      const existing = await this.profilesRepository.findOne({
-        where: { username: dto.username },
-      });
-      if (existing) {
-        throw new BadRequestException('Username is already taken');
-      }
-      profile.username = dto.username;
-    }
-
-    // Теперь это поле существует в Entity
-    if (dto.displayName) profile.displayName = dto.displayName;
-
-    if (dto.bio) profile.bio = dto.bio;
-    if (dto.avatarUrl) profile.avatarUrl = dto.avatarUrl;
-
-    profile.updatedBy = userId;
-
-    return await this.profilesRepository.save(profile);
-  }
-
-  // --- FOLLOW LOGIC ---
-
-  async followUser(currentUserId: string, targetUsername: string) {
-    const follower = await this.getProfileByUserId(currentUserId);
-    const target = await this.profilesRepository.findOne({
-      where: { username: targetUsername },
-    });
-
-    if (!target) throw new NotFoundException('User to follow not found');
-
-    if (follower.id === target.id) {
-      throw new BadRequestException('You cannot follow yourself');
-    }
-
-    const existingFollow = await this.followsRepository.findOne({
-      where: {
-        follower: { id: follower.id },
-        following: { id: target.id },
-      },
-    });
-
-    if (existingFollow) {
-      throw new ConflictException('Already following');
-    }
-
-    const follow = this.followsRepository.create({
-      follower: follower,
-      following: target,
-      createdBy: currentUserId,
-    } as unknown as ProfileFollow);
-
-    await this.followsRepository.save(follow);
-
-    const targetWithUser = await this.profilesRepository.findOne({
-      where: { id: target.id },
+  async getProfileByUserId(userId: string): Promise<Profile> {
+    const profile = await this.profileRepository.findOne({
+      where: { userId },
       relations: ['user'],
     });
 
-    if (targetWithUser && targetWithUser.user) {
-      this.notificationsClient.emit('user_followed', {
-        actorId: currentUserId,
-        targetUserId: targetWithUser.user.id,
-        timestamp: new Date(),
-      });
+    if (!profile) {
+      throw new NotFoundException('Profile not found');
     }
-
-    return { message: `You are now following ${targetUsername}` };
+    return profile;
   }
 
-  async unfollowUser(currentUserId: string, targetUsername: string) {
-    const follower = await this.getProfileByUserId(currentUserId);
-    const target = await this.profilesRepository.findOne({
-      where: { username: targetUsername },
+  async getProfileByUsername(username: string): Promise<Profile | null> {
+    return this.profileRepository.findOne({
+      where: { username },
+    });
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<Profile> {
+    const profile = await this.getProfileByUserId(userId);
+    Object.assign(profile, dto);
+    return this.profileRepository.save(profile);
+  }
+
+  async updateAvatar(userId: string, avatarUrl: string): Promise<Profile> {
+    const profile = await this.getProfileByUserId(userId);
+    profile.avatarUrl = avatarUrl;
+    return this.profileRepository.save(profile);
+  }
+
+  async followUser(userId: string, targetUsername: string) {
+    const myProfile = await this.getProfileByUserId(userId);
+    const targetProfile = await this.getProfileByUsername(targetUsername);
+
+    if (!targetProfile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    if (myProfile.id === targetProfile.id) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+
+    const existing = await this.followRepository.findOne({
+      where: {
+        followerId: myProfile.id,
+        followingId: targetProfile.id,
+      },
     });
 
-    if (!target) throw new NotFoundException('User to unfollow not found');
+    if (existing) {
+      throw new ConflictException('Already following or request pending');
+    }
 
-    const follow = await this.followsRepository.findOne({
+    const follow = this.followRepository.create({
+      followerId: myProfile.id,
+      followingId: targetProfile.id,
+      accepted: targetProfile.isPublic ? true : null,
+      createdBy: userId,
+    });
+
+    return this.followRepository.save(follow);
+  }
+
+  async unfollowUser(userId: string, targetUsername: string) {
+    const myProfile = await this.getProfileByUserId(userId);
+    const targetProfile = await this.getProfileByUsername(targetUsername);
+
+    if (!targetProfile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    const follow = await this.followRepository.findOne({
       where: {
-        follower: { id: follower.id },
-        following: { id: target.id },
+        followerId: myProfile.id,
+        followingId: targetProfile.id,
       },
     });
 
     if (!follow) {
-      throw new BadRequestException('You are not following this user');
+      throw new NotFoundException('Not following this user');
     }
 
-    await this.followsRepository.remove(follow);
-
-    return { message: `You unfollowed ${targetUsername}` };
+    await this.followRepository.remove(follow);
+    return { message: 'Unfollowed successfully' };
   }
 
-  async getFollowers(username: string, page: number = 1, limit: number = 10) {
-    const targetProfile = await this.profilesRepository.findOne({
-      where: { username },
-    });
-    if (!targetProfile) throw new NotFoundException('Profile not found');
+  async removeFollower(userId: string, followerUsername: string) {
+    const myProfile = await this.getProfileByUserId(userId);
+    const followerProfile = await this.getProfileByUsername(followerUsername);
 
-    const [follows, count] = await this.followsRepository.findAndCount({
-      where: { following: { id: targetProfile.id } },
+    if (!followerProfile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    const follow = await this.followRepository.findOne({
+      where: {
+        followerId: followerProfile.id,
+        followingId: myProfile.id,
+      },
+    });
+
+    if (!follow) {
+      throw new NotFoundException('This user is not following you');
+    }
+
+    await this.followRepository.remove(follow);
+    return { message: 'Follower removed' };
+  }
+
+  async getFollowers(userId: string) {
+    const profile = await this.getProfileByUserId(userId);
+    return this.followRepository.find({
+      where: { followingId: profile.id, accepted: true },
       relations: ['follower'],
-      take: limit,
-      skip: (page - 1) * limit,
     });
-
-    const profiles = follows.map((f) => f.follower);
-
-    return {
-      data: profiles,
-      meta: { total: count, page, limit, totalPages: Math.ceil(count / limit) },
-    };
   }
 
-  async getFollowing(username: string, page: number = 1, limit: number = 10) {
-    const targetProfile = await this.profilesRepository.findOne({
-      where: { username },
-    });
-    if (!targetProfile) throw new NotFoundException('Profile not found');
-
-    const [follows, count] = await this.followsRepository.findAndCount({
-      where: { follower: { id: targetProfile.id } },
+  async getFollowing(userId: string) {
+    const profile = await this.getProfileByUserId(userId);
+    return this.followRepository.find({
+      where: { followerId: profile.id, accepted: true },
       relations: ['following'],
-      take: limit,
-      skip: (page - 1) * limit,
+    });
+  }
+
+  async getFollowRequests(userId: string) {
+    const profile = await this.getProfileByUserId(userId);
+    return this.followRepository.find({
+      where: { followingId: profile.id, accepted: null },
+      relations: ['follower'],
+    });
+  }
+
+  async acceptFollowRequest(userId: string, followerUsername: string) {
+    const myProfile = await this.getProfileByUserId(userId);
+    const followerProfile = await this.getProfileByUsername(followerUsername);
+
+    if (!followerProfile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    const follow = await this.followRepository.findOne({
+      where: {
+        followerId: followerProfile.id,
+        followingId: myProfile.id,
+        accepted: null,
+      },
     });
 
-    const profiles = follows.map((f) => f.following);
+    if (!follow) {
+      throw new NotFoundException('No pending follow request');
+    }
 
-    return {
-      data: profiles,
-      meta: { total: count, page, limit, totalPages: Math.ceil(count / limit) },
-    };
+    follow.accepted = true;
+    follow.updatedBy = userId;
+    return this.followRepository.save(follow);
+  }
+
+  async rejectFollowRequest(userId: string, followerUsername: string) {
+    const myProfile = await this.getProfileByUserId(userId);
+    const followerProfile = await this.getProfileByUsername(followerUsername);
+
+    if (!followerProfile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    const follow = await this.followRepository.findOne({
+      where: {
+        followerId: followerProfile.id,
+        followingId: myProfile.id,
+        accepted: null,
+      },
+    });
+
+    if (!follow) {
+      throw new NotFoundException('No pending follow request');
+    }
+
+    await this.followRepository.remove(follow);
+    return { message: 'Follow request rejected' };
+  }
+
+  async softDeleteProfile(userId: string) {
+    const profile = await this.getProfileByUserId(userId);
+    profile.deleted = true;
+    profile.updatedBy = userId;
+    return this.profileRepository.save(profile);
+  }
+
+  async restoreProfile(userId: string) {
+    const profile = await this.profileRepository.findOne({
+      where: { userId, deleted: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundException('Deleted profile not found');
+    }
+
+    profile.deleted = false;
+    profile.updatedBy = userId;
+    return this.profileRepository.save(profile);
+  }
+
+  async getFollowersByUsername(username: string) {
+    const profile = await this.getProfileByUsername(username);
+    if (!profile) throw new NotFoundException('Profile not found');
+
+    return this.followRepository.find({
+      where: { followingId: profile.id, accepted: true },
+      relations: ['follower'],
+    });
+  }
+
+  async getFollowingByUsername(username: string) {
+    const profile = await this.getProfileByUsername(username);
+    if (!profile) throw new NotFoundException('Profile not found');
+
+    return this.followRepository.find({
+      where: { followerId: profile.id, accepted: true },
+      relations: ['following'],
+    });
   }
 }

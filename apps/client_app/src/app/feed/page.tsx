@@ -17,11 +17,11 @@ export default function FeedPage() {
       try {
         const response = await api.get('/posts/feed');
         setPosts(response.data.data);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) { //i know i know
+      } catch (error) {
         console.error('Failed to fetch feed', error);
-        if (error.response?.status === 401) {
-            router.push('/auth/login');
+        const err = error as { response?: { status?: number } };
+        if (err.response?.status === 401) {
+          router.push('/auth/login');
         }
       } finally {
         setLoading(false);

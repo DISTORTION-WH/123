@@ -18,7 +18,7 @@ async function bootstrap() {
         ],
         queue: 'notifications_queue',
         queueOptions: {
-          durable: false,
+          durable: true,
         },
       },
     });

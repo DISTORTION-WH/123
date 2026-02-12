@@ -20,7 +20,7 @@ export class Chat {
   id: string;
 
   @Column({ nullable: true })
-  name: string; // Для групповых чатов
+  name: string;
 
   @Column({ type: 'text', nullable: true })
   description: string;

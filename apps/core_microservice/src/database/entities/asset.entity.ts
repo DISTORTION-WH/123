@@ -23,6 +23,9 @@ export class Asset {
   @Column({ name: 'file_size', type: 'int' })
   fileSize: number;
 
+  @Column({ name: 'order_index', type: 'int', default: 0 })
+  orderIndex: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

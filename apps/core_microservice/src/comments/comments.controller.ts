@@ -20,7 +20,7 @@ import { CommentsService } from './comments.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import {
   CurrentUser,
-  CurrentUser as CurrentUserType,
+  CurrentUserData,
 } from '../decorators/current-user.decorator';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
@@ -34,25 +34,24 @@ export class CommentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add a comment to a post' })
   async create(
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Body() dto: CreateCommentDto,
   ) {
     return this.commentsService.create(user.id, dto);
   }
 
   @Get('post/:postId')
-  @UseGuards(JwtAuthGuard) // Опционально, чтобы видеть isLiked
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get comments for a post' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getByPost(
     @Param('postId') postId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
-    // Если user не авторизован (в зависимости от гарда), user будет undefined или null
     return this.commentsService.getCommentsByPost(
       postId,
       user?.id,
@@ -65,7 +64,7 @@ export class CommentsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete comment' })
-  async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
+  async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     return this.commentsService.delete(id, user.id);
   }
 
@@ -75,7 +74,7 @@ export class CommentsController {
   @ApiOperation({ summary: 'Toggle like on comment' })
   async toggleLike(
     @Param('id') id: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentUserData,
   ) {
     return this.commentsService.toggleLike(user.id, id);
   }

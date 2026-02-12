@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit';
 import dbConnection from './config/db';
 import authController from './controllers/auth.controller';
 import { env } from './config/env';
-import { rabbitMQService } from './services/rabbitmq.service'; // Импорт сервиса
+import { rabbitMQService } from './services/rabbitmq.service';
 
 const app = express();
 
@@ -22,10 +22,8 @@ app
   .use(express.json())
   .use(limiter);
 
-// Подключаемся к БД
 dbConnection();
 
-// Подключаемся к RabbitMQ
 rabbitMQService.connect().catch((err) => {
   console.error('Failed to connect to RabbitMQ on startup:', err);
 });
@@ -44,5 +42,5 @@ app
     res.status(404).json({ error: 'Route not found' });
   })
   .listen(env.PORT, () => {
-    console.log(`аус воркает ${env.PORT}`);
+    console.log(`Auth service running on port ${env.PORT}`);
   });

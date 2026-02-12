@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ChatsService } from './chats.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -8,6 +17,9 @@ import {
 } from '../decorators/current-user.decorator';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
+import { ChatType } from '../database/entities/chat.entity';
+import { UpdateChatDto } from './dto/update-chat.dto';
+import { AddParticipantDto } from './dto/add-participant.dto';
 
 @ApiTags('Chats')
 @Controller('chats')
@@ -16,13 +28,16 @@ import { SendMessageDto } from './dto/send-message.dto';
 export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
-  @Post('private')
-  @ApiOperation({ summary: 'Create or get existing private chat' })
-  async createPrivateChat(
+  @Post()
+  @ApiOperation({ summary: 'Create private or group chat' })
+  async createChat(
     @CurrentUser() user: CurrentUserType,
     @Body() dto: CreateChatDto,
   ) {
-    // Для базовой версии поддерживаем только targetUsername для приватных чатов
+    if (dto.type === ChatType.GROUP) {
+      return this.chatsService.createGroupChat(user.id, dto);
+    }
+    // Default to private
     if (!dto.targetUsername) {
       throw new Error('Target username is required for private chat');
     }
@@ -33,6 +48,45 @@ export class ChatsController {
   @ApiOperation({ summary: 'Get list of my chats' })
   async getMyChats(@CurrentUser() user: CurrentUserType) {
     return this.chatsService.getUserChats(user.id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update group chat info (Admin only)' })
+  async updateChat(
+    @Param('id') chatId: string,
+    @CurrentUser() user: CurrentUserType,
+    @Body() dto: UpdateChatDto,
+  ) {
+    return this.chatsService.updateGroupChat(chatId, user.id, dto);
+  }
+
+  @Post(':id/participants')
+  @ApiOperation({ summary: 'Add participant to group (Admin only)' })
+  async addParticipant(
+    @Param('id') chatId: string,
+    @CurrentUser() user: CurrentUserType,
+    @Body() dto: AddParticipantDto,
+  ) {
+    return this.chatsService.addParticipant(chatId, user.id, dto.username);
+  }
+
+  @Delete(':id/participants/:profileId')
+  @ApiOperation({ summary: 'Remove participant from group (Admin only)' })
+  async removeParticipant(
+    @Param('id') chatId: string,
+    @Param('profileId') profileId: string,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    return this.chatsService.removeParticipant(chatId, user.id, profileId);
+  }
+
+  @Post(':id/leave')
+  @ApiOperation({ summary: 'Leave group chat' })
+  async leaveChat(
+    @Param('id') chatId: string,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    return this.chatsService.leaveChat(chatId, user.id);
   }
 
   @Get(':id/messages')

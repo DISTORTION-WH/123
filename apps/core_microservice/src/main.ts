@@ -11,7 +11,18 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Настройка статики
-  app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
+  // In development: __dirname = src, so we go up to app root then to uploads
+  // In production: __dirname = dist/src, so we need to go up 2 levels then to uploads
+  let uploadsPath: string;
+  if (__dirname.includes('dist')) {
+    // Production build
+    uploadsPath = join(__dirname, '..', '..', 'uploads');
+  } else {
+    // Development (ts-node)
+    uploadsPath = join(__dirname, '..', 'uploads');
+  }
+  console.log(`Static assets path: ${uploadsPath}`);
+  app.useStaticAssets(uploadsPath, {
     prefix: '/uploads/',
   });
 

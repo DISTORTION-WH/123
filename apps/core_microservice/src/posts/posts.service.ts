@@ -10,6 +10,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Post } from '../database/entities/post.entity';
 import { PostAsset } from '../database/entities/post-asset.entity';
 import { Profile } from '../database/entities/profile.entity';
+import { Comment } from '../database/entities/comment.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostLike } from '../database/entities/post-like.entity';
@@ -28,6 +29,8 @@ export class PostsService {
     private readonly postAssetRepository: Repository<PostAsset>,
     @InjectRepository(PostLike)
     private readonly postLikeRepository: Repository<PostLike>,
+    @InjectRepository(Comment)
+    private readonly commentRepository: Repository<Comment>,
     @InjectRepository(ProfileFollow)
     private readonly followRepository: Repository<ProfileFollow>,
     private readonly dataSource: DataSource,
@@ -142,6 +145,18 @@ export class PostsService {
       skip: (page - 1) * limit,
     });
 
+    // Debug logging
+    if (posts.length > 0) {
+      const firstPost = posts[0];
+      console.log('Posts.service.getPostsByUsername - First post ID:', firstPost.id);
+      console.log('Posts.service.getPostsByUsername - First post content:', firstPost.content);
+      console.log('Posts.service.getPostsByUsername - Assets array:', firstPost.assets);
+      if (firstPost.assets && firstPost.assets.length > 0) {
+        console.log('Posts.service.getPostsByUsername - First asset item:', JSON.stringify(firstPost.assets[0], null, 2));
+        console.log('Posts.service.getPostsByUsername - First asset.asset:', JSON.stringify((firstPost.assets[0] as any).asset, null, 2));
+      }
+    }
+
     const enrichedPosts = await Promise.all(
       posts.map((post) => this.enrichPostWithLikeStatus(post, currentUserId)),
     );
@@ -246,6 +261,11 @@ export class PostsService {
     const likesCount = await this.postLikeRepository.count({
       where: { postId: post.id },
     });
+
+    const commentsCount = await this.commentRepository.count({
+      where: { postId: post.id },
+    });
+
     let isLiked = false;
 
     if (userId) {
@@ -258,6 +278,6 @@ export class PostsService {
       }
     }
 
-    return { ...post, likesCount, isLiked };
+    return { ...post, likesCount, commentsCount, isLiked };
   }
 }

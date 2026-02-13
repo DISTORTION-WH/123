@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import Navbar from '@/components/Navbar';
+import { useEffect, useState, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { CreatePostWidget } from '@/components/feed/CreatePostWidget';
 import { PostCard } from '@/components/feed/PostCard';
 import { Post, PaginationMeta } from '@/types';
 import { api } from '@/lib/axios';
 
 export default function FeedPage() {
+  const { user, profile } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -86,17 +87,15 @@ export default function FeedPage() {
   const hasMore = meta ? page < meta.totalPages : false;
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-    >
-      <Navbar />
+    <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
+      <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
+        <CreatePostWidget
+          onPostCreated={handlePostCreated}
+          userAvatar={profile?.avatarUrl}
+          userName={profile?.displayName || user?.email || 'User'}
+        />
 
-      <main className="max-w-xl mx-auto pt-6 px-4 pb-16 md:pl-[72px]">
-        <div className="md:ml-0">
-          <CreatePostWidget onPostCreated={handlePostCreated} />
-
-          {loading ? (
+        {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div
                 className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
@@ -194,7 +193,6 @@ export default function FeedPage() {
               )}
             </div>
           )}
-        </div>
       </main>
     </div>
   );

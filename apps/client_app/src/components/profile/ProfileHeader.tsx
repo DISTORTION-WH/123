@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { api } from '@/lib/axios';
+import { getAvatarUrl } from '@/lib/url-helper';
 import { Profile } from '@/types';
 import { EditProfileModal } from './EditProfileModal';
 
@@ -27,9 +27,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
-  const avatarUrl = profile.avatarUrl
-    ? `${process.env.NEXT_PUBLIC_API_URL}${profile.avatarUrl}`
-    : null;
+  const avatarUrl = getAvatarUrl(profile.avatarUrl);
 
   const handleFollowAction = async () => {
     if (followLoading) return;
@@ -62,13 +60,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         }}
       >
         {avatarUrl ? (
-          <Image
+          <img
             src={avatarUrl}
             alt={profile.username}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 128px, 160px"
-            priority
+            className="w-full h-full object-cover"
           />
         ) : (
           <div

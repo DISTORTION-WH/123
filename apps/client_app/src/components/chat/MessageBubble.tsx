@@ -4,6 +4,7 @@ import React from 'react';
 import { Message } from '@/types';
 import { format } from 'date-fns';
 import { api } from '@/lib/axios';
+import { getAssetUrl } from '@/lib/url-helper';
 
 interface MessageBubbleProps {
   message: Message;
@@ -23,9 +24,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMyMessa
   };
 
   // URL картинки для превью поста
-  const sharedAssetUrl = message.sharedPost?.assets?.[0]?.asset?.url
-    ? `${process.env.NEXT_PUBLIC_API_URL}${message.sharedPost.assets[0].asset.url}`
-    : null;
+  const sharedAssetUrl = getAssetUrl(
+    message.sharedPost?.assets?.[0]?.asset?.url
+  );
 
   return (
     <div className={`flex flex-col mb-6 group ${isMyMessage ? 'items-end' : 'items-start'}`}>

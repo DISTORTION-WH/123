@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Image from 'next/image';
 import { AxiosError } from 'axios';
 import { api } from '@/lib/axios';
+import { getAvatarUrl } from '@/lib/url-helper';
 import { Profile } from '@/types';
 
 interface EditProfileModalProps {
@@ -13,9 +13,9 @@ interface EditProfileModalProps {
 }
 
 interface UpdateProfileDto {
-  displayName: string;
-  bio: string;
-  isPublic: boolean;
+  displayName?: string;
+  bio?: string;
+  isPublic?: boolean;
   avatarId?: string;
 }
 
@@ -28,16 +28,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     profile.displayName || '',
   );
   const [bio, setBio] = useState(profile.bio || '');
-  const [isPublic, setIsPublic] = useState(profile.isPublic);
+  const [isPublic, setIsPublic] = useState(profile.isPublic ?? true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
-    profile.avatarUrl
-      ? `${process.env.NEXT_PUBLIC_API_URL}${profile.avatarUrl}`
-      : null,
+    getAvatarUrl(profile.avatarUrl),
   );
 
   const handleFileChange = (
@@ -66,9 +64,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       if (selectedFile) {
         const formData = new FormData();
         formData.append('file', selectedFile);
-        await api.patch('/profiles/me/avatar', formData, {
+        console.log('Uploading avatar file:', selectedFile.name, selectedFile.size);
+        const avatarRes = await api.patch('/profiles/me/avatar', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+        console.log('Avatar upload response:', avatarRes.data);
+        console.log('Avatar URL from response:', avatarRes.data.avatarUrl);
       }
 
       // Update profile data
@@ -78,17 +79,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         isPublic,
       };
 
-      await api.patch('/profiles/me', updateData);
+      console.log('Updating profile data:', updateData);
+      const profileRes = await api.patch('/profiles/me', updateData);
+      console.log('Profile update response:', profileRes.data);
+      console.log('Updated avatarUrl:', profileRes.data.avatarUrl);
 
+      // Important: Call onUpdate to refresh the profile in parent component
       onUpdate();
       onClose();
     } catch (err) {
       console.error('Failed to update profile:', err);
       const axiosError = err as AxiosError<{ message: string }>;
-      setError(
+      const errorMsg =
         axiosError.response?.data?.message ||
-          'Failed to update profile. Please try again.',
-      );
+        (axiosError.message ? axiosError.message : 'Failed to update profile. Please try again.');
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -150,12 +155,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               onClick={() => fileInputRef.current?.click()}
             >
               {previewUrl ? (
-                <Image
+                <img
                   src={previewUrl}
                   alt="Avatar preview"
-                  fill
-                  className="object-cover"
-                  sizes="96px"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div

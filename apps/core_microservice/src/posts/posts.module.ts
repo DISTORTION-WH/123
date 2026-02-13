@@ -6,6 +6,7 @@ import { PostsController } from './posts.controller';
 import { Post } from '../database/entities/post.entity';
 import { PostAsset } from '../database/entities/post-asset.entity';
 import { PostLike } from '../database/entities/post-like.entity';
+import { Comment } from '../database/entities/comment.entity';
 import { Profile } from '../database/entities/profile.entity';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { User } from '../database/entities/user.entity';
@@ -18,6 +19,7 @@ import { ProfilesModule } from '../profiles/profiles.module'; // <-- Импор�
       Post,
       PostAsset,
       PostLike,
+      Comment,
       Profile,
       ProfileFollow,
       User,

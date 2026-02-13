@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Post } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { api } from '@/lib/axios';
+import { getAssetUrl } from '@/lib/url-helper';
 import { CommentSection } from './CommentSection';
 
 interface PostCardProps {
@@ -17,15 +18,22 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle }) => {
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
   const lastTapRef = useRef<number>(0);
 
-  const assetUrl = post.assets[0]?.asset?.filePath
-    ? `${process.env.NEXT_PUBLIC_API_URL}${
-        post.assets[0].asset.url || post.assets[0].asset.filePath
-      }`
-    : null;
+  // Debug: log post assets
+  React.useEffect(() => {
+    if (post.assets.length > 0) {
+      console.log('Post assets:', post.assets);
+      console.log('First asset:', post.assets[0]);
+      console.log('First asset.asset:', post.assets[0]?.asset);
+    }
+  }, [post.assets]);
 
-  const avatarUrl = post.profile.avatarUrl
-    ? `${process.env.NEXT_PUBLIC_API_URL}${post.profile.avatarUrl}`
-    : null;
+  const assetUrl = getAssetUrl(
+    post.assets[0]?.asset?.url || post.assets[0]?.asset?.filePath
+  );
+
+  console.log('Computed assetUrl:', assetUrl, 'from post:', post.id);
+
+  const avatarUrl = getAssetUrl(post.profile.avatarUrl);
 
   const handleLike = useCallback(async () => {
     try {
@@ -75,7 +83,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle }) => {
       className="rounded-xl overflow-hidden mb-4"
       style={{ background: 'var(--bg-card)' }}
     >
-      {/* Image area with overlay */}
+      {/* Image/Video area with overlay */}
       <div
         className="relative w-full overflow-hidden"
         style={{
@@ -85,12 +93,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle }) => {
         onClick={handleDoubleTap}
       >
         {assetUrl && (
-          <img
-            src={assetUrl}
-            alt="Post content"
-            className="w-full h-full object-cover"
-            style={{ maxHeight: '600px' }}
-          />
+          <>
+            {assetUrl.match(/\.(mp4|webm|mov|avi|mkv)$/i) ? (
+              <video
+                src={assetUrl}
+                controls
+                className="w-full h-full object-cover"
+                style={{ maxHeight: '600px' }}
+              />
+            ) : (
+              <img
+                src={assetUrl}
+                alt="Post content"
+                className="w-full h-full object-cover"
+                style={{ maxHeight: '600px' }}
+              />
+            )}
+          </>
         )}
 
         {/* Double-tap like animation */}

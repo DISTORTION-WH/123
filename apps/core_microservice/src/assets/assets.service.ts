@@ -11,9 +11,12 @@ export class AssetsService {
   ) {}
 
   async createAsset(file: Express.Multer.File, userId: string): Promise<Asset> {
+    // Store just the filename, not the full path
+    const filePath = `/uploads/${file.filename}`;
+
     const newAsset = this.assetsRepository.create({
       fileName: file.filename,
-      filePath: file.path,
+      filePath,
       fileType: file.mimetype,
       fileSize: file.size,
       createdBy: userId,

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { getAssetUrl } from '@/lib/url-helper';
 import { Post } from '@/types';
 
 interface PostsGridProps {
@@ -11,6 +11,15 @@ interface PostsGridProps {
 
 export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
   const router = useRouter();
+
+  // Debug logging
+  if (posts.length > 0) {
+    console.log('PostsGrid - First post assets:', posts[0].assets);
+    if (posts[0].assets && posts[0].assets.length > 0) {
+      console.log('PostsGrid - First asset item:', posts[0].assets[0]);
+      console.log('PostsGrid - First asset object:', (posts[0].assets[0] as any).asset);
+    }
+  }
 
   if (posts.length === 0) {
     return (
@@ -54,12 +63,19 @@ export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
       style={{ borderTop: '1px solid var(--border)' }}
     >
       {posts.map((post) => {
-        const firstAsset = post.assets?.[0]?.asset;
-        const assetUrl = firstAsset?.filePath
-          ? `${process.env.NEXT_PUBLIC_API_URL}${firstAsset.filePath}`
-          : firstAsset?.url
-            ? `${process.env.NEXT_PUBLIC_API_URL}${firstAsset.url}`
-            : null;
+        // Get asset from post assets array
+        let assetUrl: string | null = null;
+
+        if (post.assets && Array.isArray(post.assets) && post.assets.length > 0) {
+          const firstAssetItem = post.assets[0];
+          // Asset is nested as { id, orderIndex, asset: { filePath, url, ... } }
+          if (firstAssetItem && typeof firstAssetItem === 'object' && 'asset' in firstAssetItem) {
+            const asset = (firstAssetItem as any).asset;
+            if (asset && (asset.filePath || asset.url)) {
+              assetUrl = getAssetUrl(asset.filePath || asset.url);
+            }
+          }
+        }
 
         return (
           <div
@@ -69,21 +85,29 @@ export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
             onClick={() => router.push(`/posts/${post.id}`)}
           >
             {assetUrl ? (
-              <Image
+              <img
                 src={assetUrl}
                 alt="Post"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 33vw, 300px"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error(`Failed to load image: ${assetUrl}`, e);
+                }}
               />
             ) : (
               <div
                 className="w-full h-full flex items-center justify-center p-3"
                 style={{ color: 'var(--text-muted)' }}
               >
-                <p className="text-xs text-center line-clamp-4">
-                  {post.content}
-                </p>
+                <div className="text-center">
+                  <p className="text-xs text-center line-clamp-4 mb-2">
+                    {post.content || 'Post'}
+                  </p>
+                  {post.assets && post.assets.length > 0 && (
+                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      📸 {post.assets.length} asset(s)
+                    </p>
+                  )}
+                </div>
               </div>
             )}
             {/* Hover overlay */}

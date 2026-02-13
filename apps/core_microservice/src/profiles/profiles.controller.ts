@@ -30,7 +30,7 @@ import {
   CurrentUserData,
 } from '../decorators/current-user.decorator';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
 
 @ApiTags('Profiles')
 @Controller('profiles')
@@ -60,7 +60,7 @@ export class ProfilesController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads',
+        destination: join(__dirname, '..', '..', 'uploads'),
         filename: (req, file, cb) => {
           const randomName = Array(32)
             .fill(null)

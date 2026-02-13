@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import type { Router as ExpressRouter } from 'express';
 import { ZodError } from 'zod';
 import { AuthService } from '../services/auth.service';
 import {
@@ -11,7 +12,7 @@ import {
   ResetPasswordEntity
 } from '../dtos/auth.dto';
 
-const router = Router();
+const router: ExpressRouter = Router();
 const authService = new AuthService();
 
 const handleControllerError = (res: Response, error: any) => {

@@ -1,90 +1,301 @@
-// apps/client_app/src/components/feed/CreatePostWidget.tsx
+'use client';
 
 import React, { useState, useRef } from 'react';
 import { api } from '@/lib/axios';
+import { getAssetUrl } from '@/lib/url-helper';
 
 interface CreatePostWidgetProps {
   onPostCreated: () => void;
+  userAvatar?: string | null;
+  userName?: string;
 }
 
-export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({ onPostCreated }) => {
-  const [caption, setCaption] = useState('');
+export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
+  onPostCreated,
+  userAvatar,
+  userName = 'You',
+}) => {
+  const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [charCount, setCharCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file) return;
+  const MAX_CONTENT_LENGTH = 2200;
 
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append('caption', caption);
-    formData.append('files', file); // Важно: имя поля 'files' должно совпадать с бэкендом (FilesInterceptor)
-
-    try {
-      await api.post('/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      // Сброс формы
-      setCaption('');
-      setFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      onPostCreated(); // Обновляем ленту
-    } catch (error) {
-      console.error('Failed to create post', error);
-      alert('Error creating post');
-    } finally {
-      setIsUploading(false);
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    if (text.length <= MAX_CONTENT_LENGTH) {
+      setContent(text);
+      setCharCount(text.length);
     }
   };
 
+  const handleFileSelect = (selectedFile: File | null) => {
+    if (!selectedFile) {
+      setFile(null);
+      setPreview(null);
+      setError(null);
+      return;
+    }
+
+    // Validate file type (images and videos)
+    const isImage = selectedFile.type.match(/image\/(jpg|jpeg|png|gif|webp)/);
+    const isVideo = selectedFile.type.match(/video\/(mp4|quicktime|x-msvideo|x-matroska)/);
+
+    if (!isImage && !isVideo) {
+      setError('Only image and video files are allowed (JPG, PNG, GIF, WebP, MP4, MOV, AVI, MKV)');
+      return;
+    }
+
+    // Validate file size (max 500MB for videos, 50MB for images)
+    const maxSize = isVideo ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
+    if (selectedFile.size > maxSize) {
+      const maxSizeMB = maxSize / (1024 * 1024);
+      setError(`File size must be less than ${maxSizeMB}MB`);
+      return;
+    }
+
+    setFile(selectedFile);
+    setError(null);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(selectedFile);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!content.trim()) {
+      setError('Post content cannot be empty');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      let fileIds: string[] = [];
+
+      // Upload file if selected
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+          const uploadResponse = await api.post('/assets/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          fileIds = [uploadResponse.data.id];
+          console.log('File uploaded successfully:', uploadResponse.data.id);
+        } catch (uploadError: any) {
+          console.error('Failed to upload file', uploadError);
+          const errorMsg =
+            uploadError.response?.data?.message ||
+            'Failed to upload image. Please try again.';
+          setError(errorMsg);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Create post with optional file IDs
+      const postData = {
+        content: content.trim(),
+        ...(fileIds.length > 0 && { fileIds }),
+      };
+
+      const response = await api.post('/posts', postData);
+      console.log('Post created successfully:', response.data);
+
+      // Reset form
+      setContent('');
+      setFile(null);
+      setPreview(null);
+      setCharCount(0);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (textareaRef.current) textareaRef.current.focus();
+
+      onPostCreated();
+    } catch (err: any) {
+      console.error('Failed to create post:', err);
+      const errorMsg =
+        err.response?.data?.message ||
+        'Failed to create post. Please try again.';
+      setError(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const avatarUrl = userAvatar ? getAssetUrl(userAvatar) : null;
+
   return (
-    <div className="bg-white border rounded-xl p-4 mb-6 shadow-sm">
-      <form onSubmit={handleSubmit}>
-        <div className="flex gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0"></div>
-          <textarea
-            className="w-full bg-gray-50 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-            placeholder="What's on your mind?"
-            rows={2}
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-          />
-        </div>
-        
-        {file && (
-            <div className="mb-3 p-2 bg-gray-100 rounded text-xs flex justify-between items-center">
-                <span>Selected: {file.name}</span>
-                <button type="button" onClick={() => setFile(null)} className="text-red-500">✕</button>
+    <div
+      className="w-full max-w-2xl mx-auto rounded-2xl overflow-hidden animate-fade-in"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        {/* Top section with avatar and textarea */}
+        <div className="p-5 flex gap-4">
+          {/* Avatar */}
+          <div className="shrink-0">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={userName}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
+                style={{ background: 'var(--accent)', color: 'white' }}
+              >
+                {userName.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+
+          {/* Input area */}
+          <div className="flex-1">
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={handleContentChange}
+              placeholder="What's on your mind?"
+              className="w-full text-lg resize-none focus:outline-none bg-transparent"
+              style={{ color: 'var(--text-primary)' }}
+              rows={3}
+              maxLength={MAX_CONTENT_LENGTH}
+            />
+            <div
+              className="text-xs mt-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {charCount}/{MAX_CONTENT_LENGTH}
             </div>
+          </div>
+        </div>
+
+        {/* Image preview */}
+        {preview && (
+          <div className="px-5 pb-4">
+            <div className="relative rounded-lg overflow-hidden bg-black/5">
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-full h-auto max-h-96 object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => handleFileSelect(null)}
+                className="absolute top-2 right-2 p-2 rounded-full"
+                style={{ background: 'rgba(0,0,0,0.7)' }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
         )}
 
-        <div className="flex justify-between items-center pt-2 border-t">
-          <div className="flex gap-2">
-            <button 
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-blue-500 text-sm hover:bg-blue-50 px-3 py-1 rounded-md transition"
-            >
-              📷 Photo
-            </button>
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={(e) => setFile(e.target.files?.[0] || null)} 
-                className="hidden" 
-                accept="image/*"
-            />
+        {/* Error message */}
+        {error && (
+          <div
+            className="mx-5 p-3 rounded-lg text-sm"
+            style={{
+              background: 'rgba(255, 59, 48, 0.1)',
+              color: 'var(--error)',
+              border: '1px solid rgba(255, 59, 48, 0.2)',
+            }}
+          >
+            {error}
           </div>
+        )}
+
+        {/* Actions */}
+        <div
+          className="px-5 py-4 flex items-center justify-between border-t"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
+            style={{
+              color: 'var(--accent)',
+              background: 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background =
+                'var(--bg-elevated)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background =
+                'transparent';
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <span className="text-sm font-medium">Photo/Video</span>
+          </button>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
+            className="hidden"
+            accept="image/*,video/*"
+          />
+
           <button
             type="submit"
-            disabled={!file || isUploading}
-            className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+            disabled={!content.trim() || isLoading}
+            className="px-6 py-2 rounded-full font-semibold text-sm transition-opacity disabled:opacity-50 flex items-center gap-2"
+            style={{
+              background: 'var(--accent)',
+              color: '#fff',
+            }}
           >
-            {isUploading ? 'Posting...' : 'Post'}
+            {isLoading && (
+              <div
+                className="w-4 h-4 border-2 rounded-full animate-spin"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  borderTopColor: '#fff',
+                }}
+              />
+            )}
+            {isLoading ? 'Posting...' : 'Post'}
           </button>
         </div>
       </form>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/axios';
+import { getAssetUrl } from '@/lib/url-helper';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Comment {
@@ -62,9 +63,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
           <div key={comment.id} className="text-sm flex gap-2 items-start">
              <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden shrink-0 mt-0.5">
                 {comment.profile.avatarUrl && (
-                  <img 
-                    src={`${process.env.NEXT_PUBLIC_API_URL}${comment.profile.avatarUrl}`} 
-                    className="w-full h-full object-cover" 
+                  <img
+                    src={getAssetUrl(comment.profile.avatarUrl) || ''}
+                    className="w-full h-full object-cover"
                     alt={comment.profile.username}
                   />
                 )}

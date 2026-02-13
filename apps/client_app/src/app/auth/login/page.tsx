@@ -1,361 +1,125 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
-import { api } from '@/lib/axios';
-import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
-interface LoginFormData {
-  email: string;
-  password: string;
-}
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
+  const [errorMsg, setErrorMsg] = useState('');
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>();
-  const [errorMsg, setErrorMsg] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
     setErrorMsg('');
     try {
-      const response = await api.post('/auth/login', data);
-      const { accessToken } = response.data;
-      localStorage.setItem('accessToken', accessToken);
+      await login(data.email, data.password);
+      // Small delay to ensure auth state updates before redirect
+      await new Promise(resolve => setTimeout(resolve, 100));
       router.push('/feed');
-    } catch (err) {
-      const error = err as {
-        response?: { data?: { message?: string | string[] } };
-      };
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string | string[] } } };
       const message = error.response?.data?.message;
       setErrorMsg(
         Array.isArray(message)
           ? message.join(', ')
-          : message || 'Invalid email or password',
+          : typeof message === 'string' ? message : 'Invalid email or password',
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        '--bg-primary': '#000',
-        '--bg-secondary': '#121212',
-        '--bg-card': '#1e1e1e',
-        '--bg-elevated': '#2a2a2a',
-        '--bg-input': '#1a1a1a',
-        '--text-primary': '#fff',
-        '--text-secondary': '#a0a0a0',
-        '--text-muted': '#666',
-        '--accent': '#FE2C55',
-        '--accent-hover': '#ff4d73',
-        '--border': '#2a2a2a',
-        '--link': '#69C9D0',
-      } as React.CSSProperties}
-    >
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'var(--bg-primary)',
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          padding: '24px',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '400px',
-          }}
-        >
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <Link
-              href="/"
-              style={{
-                textDecoration: 'none',
-                fontSize: '28px',
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                letterSpacing: '-1px',
-              }}
-            >
-              Inno<span style={{ color: 'var(--accent)' }}>gram</span>
-            </Link>
-            <h1
-              style={{
-                fontSize: '24px',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                marginTop: '24px',
-                marginBottom: '8px',
-              }}
-            >
-              Log in
-            </h1>
-            <p
-              style={{
-                fontSize: '14px',
-                color: 'var(--text-secondary)',
-                margin: 0,
-              }}
-            >
-              Welcome back! Enter your credentials.
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg-primary)]">
+      {/* Left side - Branding (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] items-center justify-center p-8">
+        <div className="text-center text-white">
+          <h1 className="text-5xl font-bold mb-4">Innogram</h1>
+          <p className="text-2xl opacity-90">Connect with millions of creators</p>
+        </div>
+      </div>
+
+      {/* Right side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
+              Welcome Back
+            </h2>
+            <p className="text-[var(--text-secondary)]">
+              Sign in to your account
             </p>
           </div>
 
-          {/* Form Card */}
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              borderRadius: '8px',
-              padding: '24px',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <form onSubmit={handleSubmit(onSubmit)}>
-              {/* Email */}
-              <div style={{ marginBottom: '16px' }}>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: 'var(--text-secondary)',
-                    marginBottom: '6px',
-                  }}
-                >
-                  Email
-                </label>
-                <input
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value:
-                        /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
-                    },
-                  })}
-                  type="email"
-                  placeholder="Enter your email"
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    backgroundColor: 'var(--bg-input)',
-                    border: errors.email
-                      ? '1px solid var(--accent)'
-                      : '1px solid var(--border)',
-                    borderRadius: '4px',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    color: 'var(--text-primary)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s ease',
-                  }}
-                  onFocus={(e) => {
-                    if (!errors.email) {
-                      e.currentTarget.style.borderColor =
-                        'var(--text-muted)';
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (!errors.email) {
-                      e.currentTarget.style.borderColor =
-                        'var(--border)';
-                    }
-                  }}
-                />
-                {errors.email && (
-                  <p
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--accent)',
-                      marginTop: '4px',
-                      margin: '4px 0 0 0',
-                    }}
-                  >
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
+          {errorMsg && (
+            <div className="mb-6 p-4 bg-[var(--error)] bg-opacity-10 border border-[var(--error)] rounded-lg">
+              <p className="text-[var(--error)] text-sm">{errorMsg}</p>
+            </div>
+          )}
 
-              {/* Password */}
-              <div style={{ marginBottom: '16px' }}>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: 'var(--text-secondary)',
-                    marginBottom: '6px',
-                  }}
-                >
-                  Password
-                </label>
-                <input
-                  {...register('password', {
-                    required: 'Password is required',
-                  })}
-                  type="password"
-                  placeholder="Enter your password"
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    backgroundColor: 'var(--bg-input)',
-                    border: errors.password
-                      ? '1px solid var(--accent)'
-                      : '1px solid var(--border)',
-                    borderRadius: '4px',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    color: 'var(--text-primary)',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s ease',
-                  }}
-                  onFocus={(e) => {
-                    if (!errors.password) {
-                      e.currentTarget.style.borderColor =
-                        'var(--text-muted)';
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (!errors.password) {
-                      e.currentTarget.style.borderColor =
-                        'var(--border)';
-                    }
-                  }}
-                />
-                {errors.password && (
-                  <p
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--accent)',
-                      marginTop: '4px',
-                      margin: '4px 0 0 0',
-                    }}
-                  >
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Input
+              label="Email"
+              type="email"
+              placeholder="your@email.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
 
-              {/* Forgot Password Link */}
-              <div
-                style={{
-                  textAlign: 'right',
-                  marginBottom: '20px',
-                }}
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              error={errors.password?.message}
+              {...register('password')}
+            />
+
+            <div className="text-right mb-6">
+              <Link
+                href="/auth/forgot-password"
+                className="text-[var(--link)] hover:text-[var(--accent)] text-sm font-medium transition-colors"
               >
-                <Link
-                  href="/auth/forgot-password"
-                  style={{
-                    fontSize: '12px',
-                    color: 'var(--link)',
-                    textDecoration: 'none',
-                  }}
-                >
-                  Forgot password?
-                </Link>
-              </div>
+                Forgot password?
+              </Link>
+            </div>
 
-              {/* Error Message */}
-              {errorMsg && (
-                <div
-                  style={{
-                    backgroundColor: 'rgba(254, 44, 85, 0.1)',
-                    border: '1px solid rgba(254, 44, 85, 0.3)',
-                    borderRadius: '4px',
-                    padding: '10px 12px',
-                    marginBottom: '16px',
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: '13px',
-                      color: 'var(--accent)',
-                      margin: 0,
-                      textAlign: 'center',
-                    }}
-                  >
-                    {errorMsg}
-                  </p>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                style={{
-                  width: '100%',
-                  height: '44px',
-                  backgroundColor: isLoading
-                    ? 'rgba(254, 44, 85, 0.6)'
-                    : 'var(--accent)',
-                  color: 'var(--text-primary)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  transition: 'background-color 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading) {
-                    e.currentTarget.style.backgroundColor =
-                      'var(--accent-hover)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLoading) {
-                    e.currentTarget.style.backgroundColor =
-                      'var(--accent)';
-                  }
-                }}
-              >
-                {isLoading ? 'Logging in...' : 'Log in'}
-              </button>
-            </form>
-          </div>
-
-          {/* Sign Up Link */}
-          <div
-            style={{
-              textAlign: 'center',
-              marginTop: '20px',
-            }}
-          >
-            <p
-              style={{
-                fontSize: '14px',
-                color: 'var(--text-secondary)',
-                margin: 0,
-              }}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              isLoading={isSubmitting}
             >
+              Sign In
+            </Button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-[var(--text-secondary)]">
               Don&#39;t have an account?{' '}
               <Link
                 href="/auth/signup"
-                style={{
-                  color: 'var(--accent)',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                }}
+                className="text-[var(--accent)] hover:text-[var(--accent-hover)] font-semibold transition-colors"
               >
-                Sign up
+                Create one
               </Link>
             </p>
           </div>

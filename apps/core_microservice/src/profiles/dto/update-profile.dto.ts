@@ -5,6 +5,7 @@ import {
   MaxLength,
   Matches,
   IsDateString,
+  IsBoolean,
 } from 'class-validator';
 
 export class UpdateProfileDto {
@@ -44,4 +45,12 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsDateString()
   birthDate?: Date;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Whether the profile is public',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 }

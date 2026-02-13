@@ -90,6 +90,14 @@ export default function FeedPage() {
     );
   };
 
+  const handlePostUpdate = (updatedPost: any) => {
+    setPosts((currentPosts) =>
+      currentPosts.map((post) =>
+        post.id === updatedPost.id ? updatedPost : post
+      )
+    );
+  };
+
   const hasMore = meta ? page < meta.totalPages : false;
 
   return (
@@ -122,6 +130,7 @@ export default function FeedPage() {
                   post={post}
                   onLikeToggle={handleLikeToggle}
                   onDelete={handlePostDelete}
+                  onUpdate={handlePostUpdate}
                   isAuthor={user?.id === post.profile.userId}
                 />
               ))}

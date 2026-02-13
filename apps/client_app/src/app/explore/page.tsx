@@ -53,6 +53,14 @@ export default function ExplorePage() {
     );
   };
 
+  const handlePostUpdate = (updatedPost: any) => {
+    setPosts((currentPosts) =>
+      currentPosts.map((post) =>
+        post.id === updatedPost.id ? updatedPost : post
+      )
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
       <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
@@ -175,6 +183,7 @@ export default function ExplorePage() {
                   post={post}
                   onLikeToggle={handleLikeToggle}
                   onDelete={handlePostDelete}
+                  onUpdate={handlePostUpdate}
                   isAuthor={user?.id === post.profile.userId}
                 />
               ))}

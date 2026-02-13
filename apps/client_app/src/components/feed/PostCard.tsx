@@ -7,17 +7,20 @@ import { formatDistanceToNow } from 'date-fns';
 import { api } from '@/lib/axios';
 import { getAssetUrl } from '@/lib/url-helper';
 import { CommentSection } from './CommentSection';
+import { EditPostModal } from './EditPostModal';
 
 interface PostCardProps {
   post: Post;
   onLikeToggle: (postId: string, newStatus: boolean) => void;
   onDelete?: (postId: string) => Promise<void>;
+  onUpdate?: (updatedPost: Post) => void;
   isAuthor?: boolean;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete, isAuthor }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete, onUpdate, isAuthor }) => {
   const [showComments, setShowComments] = useState(false);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const lastTapRef = useRef<number>(0);
 
   const assetUrl = getAssetUrl(
@@ -293,41 +296,76 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
           </button>
 
           {isAuthor && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
-              }}
-              className="flex flex-col items-center gap-1 transition-transform active:scale-125"
-            >
-              <div
-                className="w-11 h-11 rounded-full flex items-center justify-center"
-                style={{
-                  background: 'rgba(255,0,0,0.5)',
-                  backdropFilter: 'blur(4px)',
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowEditModal(true);
                 }}
+                className="flex flex-col items-center gap-1 transition-transform active:scale-125"
               >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
+                <div
+                  className="w-11 h-11 rounded-full flex items-center justify-center"
+                  style={{
+                    background: 'rgba(0,150,255,0.5)',
+                    backdropFilter: 'blur(4px)',
+                  }}
                 >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                  <line x1="10" y1="11" x2="10" y2="17" />
-                  <line x1="14" y1="11" x2="14" y2="17" />
-                </svg>
-              </div>
-              <span
-                className="text-xs font-semibold"
-                style={{ color: 'var(--text-primary)' }}
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                  >
+                    <path d="M3 12a9 9 0 010-18 9 9 0 010 18zm0 0a9 9 0 0018 0 9 9 0 00-18 0z" />
+                    <path d="M9 15l6-6m0 6l-6-6" />
+                  </svg>
+                </div>
+                <span
+                  className="text-xs font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  Edit
+                </span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+                className="flex flex-col items-center gap-1 transition-transform active:scale-125"
               >
-                Delete
-              </span>
-            </button>
+                <div
+                  className="w-11 h-11 rounded-full flex items-center justify-center"
+                  style={{
+                    background: 'rgba(255,0,0,0.5)',
+                    backdropFilter: 'blur(4px)',
+                  }}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                </div>
+                <span
+                  className="text-xs font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  Delete
+                </span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -449,6 +487,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
           <CommentSection postId={post.id} />
         </div>
       )}
+
+      <EditPostModal
+        post={post}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={(updatedPost) => {
+          if (onUpdate) onUpdate(updatedPost);
+        }}
+      />
     </div>
   );
 };

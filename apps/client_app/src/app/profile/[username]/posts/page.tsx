@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/axios';
 import { Post } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 
 export default function UserPostsPage() {
   const params = useParams();
+  const { user } = useAuth();
   const username = params?.username as string;
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -67,6 +69,12 @@ export default function UserPostsPage() {
     );
   };
 
+  const handlePostDelete = async (postId: string) => {
+    setPosts((currentPosts) =>
+      currentPosts.filter((post) => post.id !== postId)
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
       <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
@@ -122,6 +130,8 @@ export default function UserPostsPage() {
                   key={post.id}
                   post={post}
                   onLikeToggle={handleLikeToggle}
+                  onDelete={handlePostDelete}
+                  isAuthor={user?.id === post.profile.userId}
                 />
               ))}
             </div>

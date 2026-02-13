@@ -84,6 +84,12 @@ export default function FeedPage() {
     fetchPosts(1);
   };
 
+  const handlePostDelete = async (postId: string) => {
+    setPosts((currentPosts) =>
+      currentPosts.filter((post) => post.id !== postId)
+    );
+  };
+
   const hasMore = meta ? page < meta.totalPages : false;
 
   return (
@@ -115,6 +121,8 @@ export default function FeedPage() {
                   key={post.id}
                   post={post}
                   onLikeToggle={handleLikeToggle}
+                  onDelete={handlePostDelete}
+                  isAuthor={user?.id === post.profile.userId}
                 />
               ))}
 

@@ -23,6 +23,7 @@ export interface Asset {
   filePath: string;
   fileType: string;
   fileSize: number;
+  thumbnailPath?: string;
   url?: string;
 }
 

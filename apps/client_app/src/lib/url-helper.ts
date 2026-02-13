@@ -19,9 +19,8 @@ export const getAssetUrl = (path: string | null | undefined): string | null => {
     filename = path.substring(1);
   }
 
-  // Try to use /uploads/ path directly first (from static assets middleware)
-  // Fall back to /assets/ if that doesn't work
-  return `${apiUrl}/uploads/${filename}`;
+  // Use /assets/ endpoint that serves files from the uploads directory
+  return `${apiUrl}/assets/${filename}`;
 };
 
 /**

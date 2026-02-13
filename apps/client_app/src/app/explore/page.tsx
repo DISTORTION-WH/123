@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { PostCard } from '@/components/feed/PostCard';
 import { Post } from '@/types';
 import { api } from '@/lib/axios';
 
 export default function ExplorePage() {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +44,12 @@ export default function ExplorePage() {
         }
         return post;
       }),
+    );
+  };
+
+  const handlePostDelete = async (postId: string) => {
+    setPosts((currentPosts) =>
+      currentPosts.filter((post) => post.id !== postId)
     );
   };
 
@@ -166,6 +174,8 @@ export default function ExplorePage() {
                   key={post.id}
                   post={post}
                   onLikeToggle={handleLikeToggle}
+                  onDelete={handlePostDelete}
+                  isAuthor={user?.id === post.profile.userId}
                 />
               ))}
             </div>

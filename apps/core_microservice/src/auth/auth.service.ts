@@ -55,6 +55,9 @@ export class AuthService {
   }
 
   async handleSignUp(signUpDto: SignUpDto): Promise<AuthResponse> {
+    // 1. Сначала делаем запрос к Auth Service.
+    // Если он упадет — мы сразу вернем ошибку, так как регистрации не произошло.
+    let authResponse: AuthResponse;
     try {
       const { data } = await lastValueFrom(
         this.httpService.post<AuthResponse>(
@@ -62,54 +65,60 @@ export class AuthService {
           signUpDto,
         ),
       );
+      authResponse = data;
+    } catch (error) {
+      this.handleHttpError(error);
+    }
 
+    // 2. Теперь пытаемся сохранить пользователя локально.
+    // Оборачиваем в отдельный try/catch, чтобы ошибка БД не ломала ответ клиенту.
+    try {
       const existingUser = await this.userRepository.findOne({
-        where: { id: data.user.id },
+        where: { id: authResponse.user.id },
       });
 
       if (!existingUser) {
         const user = this.userRepository.create({
-          id: data.user.id,
-          email: data.user.email,
-          username: data.user.username,
-          role: data.user.role,
+          id: authResponse.user.id,
+          email: authResponse.user.email,
+          username: authResponse.user.username,
+          role: authResponse.user.role,
         });
 
         await this.userRepository.save(user);
 
-        // Исправление: убрали 'user' (достаточно userId) и 'firstName' -> 'first_name' (предполагая структуру БД)
-        // Если в Profile entity поле называется displayName, используйте его.
+        // Используем displayName (согласно вашей последней миграции), а не first_name
         const profileData: any = {
           userId: user.id,
-          username: data.user.username,
-          // Используем first_name вместо firstName для соответствия ошибке "property does not exist"
-          // Или displayName, если так в сущности.
-          first_name: signUpDto.displayName || signUpDto.username,
+          username: authResponse.user.username,
+          displayName: signUpDto.displayName || signUpDto.username,
           bio: signUpDto.bio,
           birthDate: signUpDto.birthday
             ? new Date(signUpDto.birthday)
             : undefined,
         };
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const profile = this.profileRepository.create(profileData);
-
         await this.profileRepository.save(profile);
         this.logger.log(`User ${user.id} synced to Core DB synchronously.`);
       }
-
-      return data;
-    } catch (error: unknown) {
-      const dbError = error as { code?: string };
-      if (dbError?.code === '23505') {
+    } catch (error: any) {
+      // Если ошибка "Duplicate key" (23505) — это НОРМАЛЬНО.
+      // Значит, RabbitMQ успел создать пользователя раньше нас.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error?.code === '23505') {
         this.logger.warn(
-          'User duplicate detected during sync in Core, proceeding...',
+          `User duplicate detected during sync in Core (id: ${authResponse.user.id}), proceeding...`,
         );
       } else {
-        this.handleHttpError(error);
+        // Если другая ошибка БД — логируем, но не крашим запрос,
+        // так как пользователь фактически уже зарегистрирован.
+        this.logger.error('Error syncing user to Core DB:', error);
       }
-      throw error;
     }
+
+    // Возвращаем успешный ответ от Auth Service в любом случае
+    return authResponse;
   }
 
   async handleLogin(credentials: LoginDto): Promise<AuthResponse> {

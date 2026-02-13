@@ -58,7 +58,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMyMessa
                 )}
                 <div className={`p-2 text-xs ${isMyMessage ? 'text-white' : 'text-black'}`}>
                     <p className="font-bold">@{message.sharedPost.profile?.username}</p>
-                    <p className="truncate opacity-80">{message.sharedPost.caption || 'Post'}</p>
+                    <p className="truncate opacity-80">{message.sharedPost.content || 'Post'}</p>
                 </div>
             </div>
         )}

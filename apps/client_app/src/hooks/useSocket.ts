@@ -1,9 +1,7 @@
-// apps/client_app/src/hooks/useSocket.ts
-
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
@@ -12,7 +10,6 @@ export const useSocket = () => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    // Подключение к неймспейсу /chats (как в Gateway)
     socketRef.current = io(`${SOCKET_URL}/chats`, {
       transportOptions: {
         polling: {
@@ -22,7 +19,7 @@ export const useSocket = () => {
         },
       },
       auth: {
-        token: `Bearer ${token}`, // Передаем токен для Guard
+        token: `Bearer ${token}`,
       },
     });
 

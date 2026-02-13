@@ -1,9 +1,8 @@
-// apps/client_app/src/types/index.ts
-
 export interface User {
   id: string;
   email: string;
   username: string;
+  role?: string;
 }
 
 export interface Profile {
@@ -14,25 +13,28 @@ export interface Profile {
   bio: string | null;
   avatarUrl: string | null;
   isPublic: boolean;
+  birthDate?: string;
+  deleted?: boolean;
 }
 
 export interface Asset {
   id: string;
-  url: string;
-  mimeType: string;
+  fileName: string;
+  filePath: string;
+  fileType: string;
+  fileSize: number;
+  url?: string;
 }
 
-// --- Chat Types ---
-
 export enum ChatType {
-  PRIVATE = 'PRIVATE',
-  GROUP = 'GROUP',
+  PRIVATE = 'private',
+  GROUP = 'group',
 }
 
 export interface ChatParticipant {
   id: string;
   profileId: string;
-  role: 'ADMIN' | 'MEMBER';
+  role: 'admin' | 'member';
   profile: Profile;
 }
 
@@ -40,6 +42,7 @@ export interface Chat {
   id: string;
   type: ChatType;
   name?: string;
+  description?: string;
   participants: ChatParticipant[];
   lastMessage?: Message;
   updatedAt: string;
@@ -53,11 +56,12 @@ export interface Message {
   createdAt: string;
   isRead: boolean;
   isEdited: boolean;
+  isDeleted?: boolean;
   profile: Profile;
   assets?: { id: string; asset: Asset }[];
   reactions?: MessageReaction[];
   replyTo?: Message;
-  sharedPost?: Post; // Если есть тип Post
+  sharedPost?: Post;
 }
 
 export interface MessageReaction {
@@ -68,16 +72,60 @@ export interface MessageReaction {
 
 export interface Post {
   id: string;
-  caption?: string;
-  assets: { id: string; asset: Asset }[];
+  content: string;
+  isArchived?: boolean;
+  assets: { id: string; orderIndex: number; asset: Asset }[];
   profile: Profile;
   createdAt: string;
+  updatedAt?: string;
   likesCount: number;
   commentsCount: number;
-  isLiked: boolean; // Флаг, лайкнул ли я этот пост
+  isLiked: boolean;
 }
 
-export interface CreatePostDto {
-  caption?: string;
-  files: File[];
+export interface Comment {
+  id: string;
+  content: string;
+  postId: string;
+  profileId: string;
+  parentId?: string;
+  createdAt: string;
+  profile: Profile;
+  replies?: Comment[];
+  likesCount?: number;
+  isLiked?: boolean;
+}
+
+export interface Notification {
+  id: string;
+  type: 'like' | 'comment' | 'follow' | 'subscription' | 'system';
+  title: string;
+  message: string;
+  targetUserId: string;
+  data?: Record<string, unknown>;
+  isRead: boolean;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface ProfileFollow {
+  id: string;
+  followerId: string;
+  followingId: string;
+  accepted: boolean | null;
+  follower: Profile;
+  following: Profile;
+  createdAt: string;
+}
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
 }

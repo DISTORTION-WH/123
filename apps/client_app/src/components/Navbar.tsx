@@ -1,98 +1,138 @@
-// apps/client_app/src/components/Navbar.tsx
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react'; // 1. Импортируем useState
+import { useRouter, usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Navbar() {
   const router = useRouter();
-  const [search, setSearch] = useState(''); // 2. Состояние для поиска
+  const pathname = usePathname();
+  const [search, setSearch] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     router.push('/auth/login');
   };
 
-  // 3. Обработчик поиска
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (search.trim()) {
-      // Переходим на профиль пользователя по введенному юзернейму
       router.push(`/profile/${search.trim()}`);
-      setSearch(''); // Очищаем поле
+      setSearch('');
+      setShowSearch(false);
     }
   };
 
+  const isActive = (path: string) => pathname === path;
+
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          {/* Логотип */}
-          <div className="flex items-center shrink-0">
-            <Link href="/feed" className="text-2xl font-bold text-indigo-600">
-              Innogram
-            </Link>
-          </div>
-          
-          {/* 4. Поле поиска (по центру) */}
-          <form onSubmit={handleSearch} className="hidden md:block mx-8 flex-1 max-w-md">
-            <div className="relative">
-                <input
-                    type="text"
-                    placeholder="Search users (enter username)..."
-                    className="w-full bg-gray-100 border-none rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-                <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500">
-                    🔍
-                </button>
-            </div>
-          </form>
-
-          {/* Меню справа */}
-          <div className="flex items-center space-x-6">
-             {/* Ссылка на Ленту */}
-             <Link 
-              href="/feed"
-              className="text-gray-600 hover:text-indigo-600 font-medium text-xl"
-              title="Feed"
-            >
-              🏠
-            </Link>
-
-            {/* Ссылка на Чат (Добавлено) */}
-            <Link 
-              href="/chat"
-              className="text-gray-600 hover:text-indigo-600 font-medium text-xl"
-              title="Messages"
-            >
-              💬
-            </Link>
-            <Link 
-  href="/notifications"
-  className="text-gray-600 hover:text-indigo-600 font-medium text-xl"
-  title="Notifications"
->
-  🔔
-</Link>
-            <Link 
-              href="/profile/me"
-              className="text-gray-600 hover:text-indigo-600 font-medium"
-            >
-              Profile
-            </Link>
-
-            <button
-              onClick={handleLogout}
-              className="text-gray-500 hover:text-red-500 text-sm font-medium border-l pl-4 ml-2"
-            >
-              Logout
-            </button>
+    <>
+      {showSearch && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20"
+          style={{ background: 'rgba(0,0,0,0.85)' }}>
+          <div className="w-full max-w-md px-4 animate-slide-down">
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                placeholder="Search users..."
+                autoFocus
+                className="w-full rounded-xl border border-[var(--border)] px-5 py-3.5 text-base"
+                style={{ background: 'var(--bg-card)' }}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button type="button"
+                onClick={() => setShowSearch(false)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm"
+                style={{ color: 'var(--text-muted)' }}>
+                Cancel
+              </button>
+            </form>
           </div>
         </div>
-      </div>
-    </nav>
+      )}
+
+      {/* Desktop sidebar */}
+      <nav className="hidden md:flex fixed left-0 top-0 h-full w-[72px] flex-col items-center py-6 z-40 border-r"
+        style={{ background: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+        <Link href="/feed" className="mb-8 text-2xl font-black"
+          style={{ color: 'var(--accent)' }}>
+          I
+        </Link>
+
+        <div className="flex-1 flex flex-col items-center gap-2">
+          <NavItem href="/feed" icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          } active={isActive('/feed')} label="Home" />
+
+          <button onClick={() => setShowSearch(true)}
+            className="flex flex-col items-center gap-1 p-3 rounded-xl transition-colors hover:bg-[var(--bg-elevated)]"
+            style={{ color: 'var(--text-muted)' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span className="text-[10px]">Search</span>
+          </button>
+
+          <NavItem href="/posts/create" icon={
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg font-bold"
+              style={{ background: 'var(--accent)', color: 'white' }}>+</div>
+          } active={isActive('/posts/create')} label="Create" />
+
+          <NavItem href="/chat" icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          } active={isActive('/chat')} label="Chat" />
+
+          <NavItem href="/notifications" icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          } active={isActive('/notifications')} label="Alerts" />
+
+          <NavItem href="/profile/me" icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          } active={pathname.startsWith('/profile')} label="Profile" />
+        </div>
+
+        <button onClick={handleLogout}
+          className="p-3 rounded-xl transition-colors hover:bg-[var(--bg-elevated)]"
+          style={{ color: 'var(--text-muted)' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </nav>
+
+      {/* Mobile bottom bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around py-2 border-t"
+        style={{ background: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+        <MobileNavItem href="/feed" active={isActive('/feed')} icon={
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={isActive('/feed') ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        } />
+        <button onClick={() => setShowSearch(true)} className="p-2" style={{ color: 'var(--text-muted)' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+        <Link href="/posts/create" className="w-10 h-8 rounded-lg flex items-center justify-center text-white font-bold" style={{ background: 'var(--accent)' }}>+</Link>
+        <MobileNavItem href="/chat" active={isActive('/chat')} icon={
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={isActive('/chat') ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        } />
+        <MobileNavItem href="/profile/me" active={pathname.startsWith('/profile')} icon={
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={pathname.startsWith('/profile') ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        } />
+      </nav>
+    </>
+  );
+}
+
+function NavItem({ href, icon, active, label }: { href: string; icon: React.ReactNode; active: boolean; label: string }) {
+  return (
+    <Link href={href} className="flex flex-col items-center gap-1 p-3 rounded-xl transition-colors"
+      style={{ color: active ? 'var(--accent)' : 'var(--text-muted)', background: active ? 'var(--accent-light)' : 'transparent' }}>
+      {icon}
+      <span className="text-[10px]">{label}</span>
+    </Link>
+  );
+}
+
+function MobileNavItem({ href, active, icon }: { href: string; active: boolean; icon: React.ReactNode }) {
+  return (
+    <Link href={href} className="p-2" style={{ color: active ? 'white' : 'var(--text-muted)' }}>
+      {icon}
+    </Link>
   );
 }

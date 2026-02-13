@@ -1,51 +1,185 @@
+'use client';
+
 import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-white text-gray-900">
-      <div className="z-10 max-w-5xl w-full items-center justify-center font-mono text-sm flex mb-10">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl lg:static lg:w-auto lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4">
-          Welcome to&nbsp;
-          <code className="font-mono font-bold">Innogram</code>
-        </p>
-      </div>
+    <main
+      style={{
+        '--bg-primary': '#000',
+        '--bg-secondary': '#121212',
+        '--bg-card': '#1e1e1e',
+        '--bg-elevated': '#2a2a2a',
+        '--bg-input': '#1a1a1a',
+        '--text-primary': '#fff',
+        '--text-secondary': '#a0a0a0',
+        '--text-muted': '#666',
+        '--accent': '#FE2C55',
+        '--accent-hover': '#ff4d73',
+        '--border': '#2a2a2a',
+        '--link': '#69C9D0',
+      } as React.CSSProperties}
+    >
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background:
+            'linear-gradient(135deg, var(--bg-primary) 0%, #0a0a0a 40%, #120a10 60%, var(--bg-primary) 100%)',
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          padding: '24px',
+        }}
+      >
+        {/* Decorative gradient orbs */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '10%',
+            left: '15%',
+            width: '300px',
+            height: '300px',
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle, rgba(254,44,85,0.15) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '15%',
+            right: '10%',
+            width: '350px',
+            height: '350px',
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle, rgba(105,201,208,0.12) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+            pointerEvents: 'none',
+          }}
+        />
 
-      <div className="relative flex place-items-center mb-16">
-        <h1 className="text-6xl font-bold text-center tracking-tight">
-          Share your <span className="text-blue-600">moments</span>
-        </h1>
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-2 lg:text-left gap-8">
-        <Link
-          href="/auth/login"
-          className="group rounded-lg border border-gray-200 px-5 py-4 transition-colors hover:border-blue-400 hover:bg-blue-50"
+        {/* Logo */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            textAlign: 'center',
+          }}
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Login{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-60`}>
-            Already have an account? Sign in to check your feed.
-          </p>
-        </Link>
+          <h1
+            style={{
+              fontSize: '64px',
+              fontWeight: 800,
+              color: 'var(--text-primary)',
+              margin: 0,
+              letterSpacing: '-2px',
+              lineHeight: 1.1,
+            }}
+          >
+            Inno
+            <span style={{ color: 'var(--accent)' }}>gram</span>
+          </h1>
 
-        <Link
-          href="/auth/signup"
-          className="group rounded-lg border border-gray-200 px-5 py-4 transition-colors hover:border-green-400 hover:bg-green-50"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Sign Up{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-60`}>
-            New here? Create an account and join the community.
+          <p
+            style={{
+              fontSize: '18px',
+              color: 'var(--text-secondary)',
+              marginTop: '16px',
+              marginBottom: '48px',
+              maxWidth: '400px',
+              lineHeight: 1.6,
+            }}
+          >
+            Share your moments. Connect with creators.
+            Discover what&#39;s trending.
           </p>
-        </Link>
+
+          {/* Buttons */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              width: '100%',
+              maxWidth: '320px',
+              margin: '0 auto',
+            }}
+          >
+            <Link
+              href="/auth/login"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '48px',
+                borderRadius: '4px',
+                backgroundColor: 'var(--accent)',
+                color: 'var(--text-primary)',
+                fontSize: '16px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                transition: 'background-color 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget.style.backgroundColor =
+                  'var(--accent-hover)');
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget.style.backgroundColor =
+                  'var(--accent)');
+              }}
+            >
+              Log in
+            </Link>
+
+            <Link
+              href="/auth/signup"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '48px',
+                borderRadius: '4px',
+                backgroundColor: 'transparent',
+                color: 'var(--text-primary)',
+                fontSize: '16px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                border: '1px solid var(--border)',
+                transition: 'border-color 0.2s ease, background-color 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--text-secondary)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-elevated)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              Sign up
+            </Link>
+          </div>
+
+          {/* Footer text */}
+          <p
+            style={{
+              fontSize: '12px',
+              color: 'var(--text-muted)',
+              marginTop: '48px',
+              lineHeight: 1.5,
+            }}
+          >
+            By continuing, you agree to Innogram&#39;s Terms of
+            Service and Privacy Policy.
+          </p>
+        </div>
       </div>
     </main>
   );

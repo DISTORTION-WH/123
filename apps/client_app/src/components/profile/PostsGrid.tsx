@@ -101,6 +101,7 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
             const firstAssetItem = post.assets[0];
             // Asset is nested as { id, orderIndex, asset: { filePath, url, ... } }
             if (firstAssetItem && typeof firstAssetItem === 'object' && 'asset' in firstAssetItem) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const asset = (firstAssetItem as any).asset;
               if (asset && (asset.filePath || asset.url)) {
                 const assetPath = asset.filePath || asset.url;
@@ -177,11 +178,15 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
                     </div>
                   </div>
                 )}
+                
+                {/* FIX: Removed onClick={(e) => e.stopPropagation()} from the stats overlay.
+                  Now clicking on the stats/overlay will bubble up to the parent div
+                  and trigger the router.push logic.
+                */}
                 {/* Hover overlay with stats */}
                 <div
                   className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-5"
                   style={{ background: 'rgba(0, 0, 0, 0.5)' }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <span className="flex items-center gap-1.5 text-white font-bold text-sm">
                     <svg

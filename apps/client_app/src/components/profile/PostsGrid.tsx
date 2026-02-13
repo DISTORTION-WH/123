@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { getAssetUrl } from '@/lib/url-helper';
 import { Post } from '@/types';
+import { VideoThumbnail } from './VideoThumbnail';
 
 interface PostsGridProps {
   posts: Post[];
@@ -56,7 +57,6 @@ export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
       {posts.map((post) => {
         // Get asset from post assets array
         let assetUrl: string | null = null;
-        let thumbnailUrl: string | null = null;
         let isVideo = false;
 
         if (post.assets && Array.isArray(post.assets) && post.assets.length > 0) {
@@ -69,21 +69,9 @@ export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
               assetUrl = getAssetUrl(assetPath);
               // Check if it's a video file
               isVideo = /\.(mp4|webm|mov|avi|mkv)$/i.test(assetPath);
-              // Get thumbnail for video
-              if (isVideo && asset.thumbnailPath) {
-                thumbnailUrl = getAssetUrl(asset.thumbnailPath);
-              } else if (isVideo) {
-                // For videos without thumbnail, still show something instead of fallback text
-                // Try using the video file itself as a display (browsers may show first frame)
-                // But for now, show placeholder
-              }
             }
           }
         }
-
-        // Use thumbnail for videos, actual image for photos
-        // For videos without thumbnail, fall back to showing video icon with darker background
-        const displayUrl = !isVideo ? assetUrl : (thumbnailUrl || null);
 
         return (
           <div
@@ -92,42 +80,19 @@ export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
             style={{ background: 'var(--bg-elevated)' }}
             onClick={() => router.push(`/posts/${post.id}`)}
           >
-            {displayUrl && !isVideo ? (
+            {!isVideo && assetUrl ? (
               <img
-                src={displayUrl}
+                src={assetUrl}
                 alt="Post"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  console.error(`Failed to load image: ${displayUrl}`, e);
+                  console.error(`Failed to load image: ${assetUrl}`, e);
                 }}
               />
-            ) : isVideo && !displayUrl ? (
-              <div
-                className="w-full h-full flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' }}
-              >
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="white"
-                  style={{ opacity: 0.8 }}
-                >
-                  <path d="M23 7l-7 5 7 5V7z" />
-                  <rect x="1" y="5" width="15" height="14" rx="2" fill="none" stroke="white" strokeWidth="2" />
-                </svg>
-              </div>
-            ) : displayUrl && isVideo ? (
+            ) : isVideo && assetUrl ? (
               <div className="relative w-full h-full">
-                <img
-                  src={displayUrl}
-                  alt="Post"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    console.error(`Failed to load thumbnail: ${displayUrl}`, e);
-                  }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0, 0, 0, 0.3)' }}>
+                <VideoThumbnail videoUrl={assetUrl} />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'rgba(0, 0, 0, 0.3)' }}>
                   <svg
                     width="48"
                     height="48"

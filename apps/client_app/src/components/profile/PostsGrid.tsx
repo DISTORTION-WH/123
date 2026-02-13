@@ -12,15 +12,6 @@ interface PostsGridProps {
 export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
   const router = useRouter();
 
-  // Debug logging
-  if (posts.length > 0) {
-    console.log('PostsGrid - First post assets:', posts[0].assets);
-    if (posts[0].assets && posts[0].assets.length > 0) {
-      console.log('PostsGrid - First asset item:', posts[0].assets[0]);
-      console.log('PostsGrid - First asset object:', (posts[0].assets[0] as any).asset);
-    }
-  }
-
   if (posts.length === 0) {
     return (
       <div

@@ -145,17 +145,6 @@ export class PostsService {
       skip: (page - 1) * limit,
     });
 
-    // Debug logging
-    if (posts.length > 0) {
-      const firstPost = posts[0];
-      console.log('Posts.service.getPostsByUsername - First post ID:', firstPost.id);
-      console.log('Posts.service.getPostsByUsername - First post content:', firstPost.content);
-      console.log('Posts.service.getPostsByUsername - Assets array:', firstPost.assets);
-      if (firstPost.assets && firstPost.assets.length > 0) {
-        console.log('Posts.service.getPostsByUsername - First asset item:', JSON.stringify(firstPost.assets[0], null, 2));
-        console.log('Posts.service.getPostsByUsername - First asset.asset:', JSON.stringify((firstPost.assets[0] as any).asset, null, 2));
-      }
-    }
 
     const enrichedPosts = await Promise.all(
       posts.map((post) => this.enrichPostWithLikeStatus(post, currentUserId)),
@@ -278,6 +267,13 @@ export class PostsService {
       }
     }
 
-    return { ...post, likesCount, commentsCount, isLiked };
+    // Ensure assets are included in the response
+    return {
+      ...post,
+      assets: post.assets || [],
+      likesCount,
+      commentsCount,
+      isLiked,
+    };
   }
 }

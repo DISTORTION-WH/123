@@ -49,13 +49,6 @@ export default function ProfilePage() {
       const postsData = Array.isArray(postsRes.data)
         ? postsRes.data
         : postsRes.data.data;
-
-      // Debug logging
-      if (postsData && postsData.length > 0) {
-        console.log('Profile page - First post from API:', postsData[0]);
-        console.log('Profile page - First post assets:', postsData[0].assets);
-      }
-
       setPosts(postsData);
 
       const followersList = Array.isArray(followersRes.data)

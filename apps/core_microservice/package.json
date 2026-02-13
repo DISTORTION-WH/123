@@ -21,7 +21,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:migrate": "npm run build && typeorm migration:run -d ./dist/database/data-source.js",
     "db:migrate:generate": "typeorm migration:generate -d ./dist/database/data-source.js",
-    "db:revert": "npm run build && typeorm migration:revert -d ./dist/database/data-source.js"
+    "db:revert": "npm run build && typeorm migration:revert -d ./dist/database/data-source.js",
+    "thumbnails:generate": "npm run build && ts-node -r tsconfig-paths/register src/scripts/generate-missing-thumbnails.ts"
   },
   "dependencies": {
     "@nestjs/axios": "4.0.0",

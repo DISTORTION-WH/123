@@ -25,13 +25,19 @@ export class AssetsService {
     outputPath: string,
   ): Promise<boolean> {
     try {
-      // Extract thumbnail from 1 second into the video
-      await execAsync(
-        `ffmpeg -i "${videoPath}" -ss 00:00:01 -vframes 1 "${outputPath}" -y`,
-      );
-      return existsSync(outputPath);
+      console.log(`Generating thumbnail for: ${videoPath}`);
+      console.log(`Output path: ${outputPath}`);
+
+      // Try to generate thumbnail - be more lenient with command
+      const command = `ffmpeg -i "${videoPath}" -ss 00:00:01 -vframes 1 "${outputPath}" -y 2>&1`;
+      await execAsync(command);
+
+      const exists = existsSync(outputPath);
+      console.log(`Thumbnail generation ${exists ? 'succeeded' : 'failed'}: ${outputPath}`);
+      return exists;
     } catch (error) {
-      console.error('Failed to generate thumbnail:', error);
+      console.warn('Failed to generate thumbnail (non-critical):', error);
+      // Return false but don't throw - video upload should still work
       return false;
     }
   }

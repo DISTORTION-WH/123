@@ -72,13 +72,18 @@ export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
               // Get thumbnail for video
               if (isVideo && asset.thumbnailPath) {
                 thumbnailUrl = getAssetUrl(asset.thumbnailPath);
+              } else if (isVideo) {
+                // For videos without thumbnail, still show something instead of fallback text
+                // Try using the video file itself as a display (browsers may show first frame)
+                // But for now, show placeholder
               }
             }
           }
         }
 
         // Use thumbnail for videos, actual image for photos
-        const displayUrl = isVideo && thumbnailUrl ? thumbnailUrl : assetUrl;
+        // For videos without thumbnail, fall back to showing video icon with darker background
+        const displayUrl = !isVideo ? assetUrl : (thumbnailUrl || null);
 
         return (
           <div
@@ -96,6 +101,22 @@ export const PostsGrid: React.FC<PostsGridProps> = ({ posts }) => {
                   console.error(`Failed to load image: ${displayUrl}`, e);
                 }}
               />
+            ) : isVideo && !displayUrl ? (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' }}
+              >
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="white"
+                  style={{ opacity: 0.8 }}
+                >
+                  <path d="M23 7l-7 5 7 5V7z" />
+                  <rect x="1" y="5" width="15" height="14" rx="2" fill="none" stroke="white" strokeWidth="2" />
+                </svg>
+              </div>
             ) : displayUrl && isVideo ? (
               <div className="relative w-full h-full">
                 <img

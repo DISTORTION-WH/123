@@ -7,7 +7,11 @@
       "Bash(netstat:*)",
       "Bash(taskkill:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(findstr:*)",
+      "Bash(Get-Process -Id 18124)",
+      "Bash(Stop-Process -Force)",
+      "Bash(kill:*)"
     ]
   }
 }

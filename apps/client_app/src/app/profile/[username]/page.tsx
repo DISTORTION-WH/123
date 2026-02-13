@@ -49,7 +49,15 @@ export default function ProfilePage() {
       const postsData = Array.isArray(postsRes.data)
         ? postsRes.data
         : postsRes.data.data;
-      setPosts(postsData);
+      // Enrich posts with user ID from profile
+      const enrichedPosts = postsData.map((post: any) => ({
+        ...post,
+        profile: {
+          ...post.profile,
+          userId: profileRes.data.userId,
+        },
+      }));
+      setPosts(enrichedPosts);
 
       const followersList = Array.isArray(followersRes.data)
         ? followersRes.data
@@ -135,7 +143,22 @@ export default function ProfilePage() {
             }));
           }}
         />
-        <PostsGrid posts={posts} />
+        <PostsGrid
+          posts={posts}
+          currentUserId={myProfile?.userId}
+          onPostDelete={(postId) => {
+            setPosts((prev) => prev.filter((p) => p.id !== postId));
+            setStats((prev) => ({
+              ...prev,
+              posts: prev.posts - 1,
+            }));
+          }}
+          onPostUpdate={(updatedPost) => {
+            setPosts((prev) =>
+              prev.map((p) => (p.id === updatedPost.id ? updatedPost : p))
+            );
+          }}
+        />
       </main>
     </div>
   );

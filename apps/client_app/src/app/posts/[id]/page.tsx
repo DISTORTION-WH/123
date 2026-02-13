@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/axios';
 import { Post } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
@@ -9,6 +10,7 @@ import { PostCard } from '@/components/feed/PostCard';
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const postId = params?.id as string;
 
   const [post, setPost] = useState<Post | null>(null);
@@ -42,6 +44,14 @@ export default function PostDetailPage() {
         likesCount: newStatus ? post.likesCount + 1 : post.likesCount - 1,
       });
     }
+  };
+
+  const handlePostDelete = async () => {
+    router.back();
+  };
+
+  const handlePostUpdate = (updatedPost: Post) => {
+    setPost(updatedPost);
   };
 
   if (loading) {
@@ -109,7 +119,13 @@ export default function PostDetailPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
       <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
-        <PostCard post={post} onLikeToggle={handleLikeToggle} />
+        <PostCard
+          post={post}
+          onLikeToggle={handleLikeToggle}
+          onDelete={handlePostDelete}
+          onUpdate={handlePostUpdate}
+          isAuthor={user?.id === post.profile.userId}
+        />
       </main>
     </div>
   );

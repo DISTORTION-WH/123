@@ -45,6 +45,24 @@ export class AssetsController {
   ) {
     try {
       const filePath = join(__dirname, '..', '..', 'uploads', filename);
+
+      // Determine content type based on file extension
+      let contentType = 'application/octet-stream';
+      if (filename.endsWith('.mp4')) contentType = 'video/mp4';
+      else if (filename.endsWith('.webm')) contentType = 'video/webm';
+      else if (filename.endsWith('.mov')) contentType = 'video/quicktime';
+      else if (filename.endsWith('.avi')) contentType = 'video/x-msvideo';
+      else if (filename.endsWith('.mkv')) contentType = 'video/x-matroska';
+      else if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) contentType = 'image/jpeg';
+      else if (filename.endsWith('.png')) contentType = 'image/png';
+      else if (filename.endsWith('.gif')) contentType = 'image/gif';
+      else if (filename.endsWith('.webp')) contentType = 'image/webp';
+
+      res.set('Content-Type', contentType);
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
       const stream = createReadStream(filePath);
       stream.pipe(res);
       stream.on('error', () => {

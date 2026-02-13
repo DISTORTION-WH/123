@@ -5,7 +5,9 @@
       "Bash(npm run db:migrate:*)",
       "Bash(curl:*)",
       "Bash(netstat:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

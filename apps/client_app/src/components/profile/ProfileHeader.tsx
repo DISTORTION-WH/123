@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { getAvatarUrl } from '@/lib/url-helper';
 import { Profile } from '@/types';
@@ -24,10 +25,34 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onFollowToggle,
   onProfileUpdate,
 }) => {
+  const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [messageLoading, setMessageLoading] = useState(false);
 
   const avatarUrl = getAvatarUrl(profile.avatarUrl);
+
+  const handleMessageClick = async () => {
+    if (messageLoading) return;
+    setMessageLoading(true);
+    try {
+      // Try to create or get existing chat
+      const response = await api.post('/chats', {
+        type: 'private',
+        targetUsername: profile.username,
+      });
+      // Redirect to the chat
+      router.push(`/chat?chatId=${response.data.id}`);
+    } catch (error: any) {
+      // If error, show message or redirect to chat creation page
+      const errorMessage = error.response?.data?.message || 'Cannot start chat';
+      alert(errorMessage);
+      // Still redirect to chat page so user can try creating group chat
+      router.push('/chat');
+    } finally {
+      setMessageLoading(false);
+    }
+  };
 
   const handleFollowAction = async () => {
     if (followLoading) return;
@@ -161,17 +186,18 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   'Follow'
                 )}
               </button>
-              <Link
-                href={`/chat`}
-                className="px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors"
+              <button
+                onClick={handleMessageClick}
+                disabled={messageLoading}
+                className="px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors disabled:opacity-60"
                 style={{
                   background: 'var(--bg-elevated)',
                   color: 'var(--text-primary)',
                   border: '1px solid var(--border)',
                 }}
               >
-                Message
-              </Link>
+                {messageLoading ? 'Loading...' : 'Message'}
+              </button>
             </div>
           )}
         </div>

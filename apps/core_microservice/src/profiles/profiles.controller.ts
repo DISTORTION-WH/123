@@ -107,6 +107,13 @@ export class ProfilesController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Get('me/friends')
+  async getMyFriends(@CurrentUser() user: CurrentUserData) {
+    return await this.profilesService.getFriends(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get('me/follow-requests')
   async getFollowRequests(@CurrentUser() user: CurrentUserData) {
     return await this.profilesService.getFollowRequests(user.id);

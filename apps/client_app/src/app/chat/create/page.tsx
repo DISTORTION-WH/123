@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { ExploreBar } from '@/components/ExploreBar';
@@ -20,18 +20,45 @@ export default function CreateChatPage() {
   const [loading, setLoading] = useState(false);
   const [chatType, setChatType] = useState<'private' | 'group'>('private');
 
+  // Load friends on component mount
+  useEffect(() => {
+    const loadFriends = async () => {
+      try {
+        const res = await api.get('/profiles/me/friends');
+        setSearchResults(res.data || []);
+      } catch (error) {
+        console.error('Failed to load friends:', error);
+      }
+    };
+    loadFriends();
+  }, []);
+
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (query.trim() === '') {
-      setSearchResults([]);
+      // Load all friends when search is empty
+      try {
+        const res = await api.get('/profiles/me/friends');
+        setSearchResults(res.data || []);
+      } catch (error) {
+        console.error('Failed to load friends:', error);
+        setSearchResults([]);
+      }
       return;
     }
 
     try {
-      const res = await api.get('/profiles/search', {
-        params: { query },
-      });
-      setSearchResults(res.data || []);
+      // Search in friends only
+      const res = await api.get('/profiles/me/friends');
+      const allFriends = res.data || [];
+
+      const lowerQuery = query.toLowerCase();
+      const filtered = allFriends.filter((friend: SearchResult) =>
+        friend.username.toLowerCase().includes(lowerQuery) ||
+        (friend.displayName?.toLowerCase().includes(lowerQuery) ?? false)
+      );
+
+      setSearchResults(filtered);
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]);

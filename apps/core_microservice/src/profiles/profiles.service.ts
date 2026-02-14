@@ -210,6 +210,32 @@ export class ProfilesService {
     });
   }
 
+  async getFriends(userId: string) {
+    const profile = await this.getProfileByUserId(userId);
+    // Get mutual follows - where both A→B and B→A exist with accepted: true
+    const friendsAsFollowing = await this.followRepository.find({
+      where: { followerId: profile.id, accepted: true },
+      relations: ['following'],
+    });
+
+    // Filter to only those who also follow back
+    const friendProfiles = [];
+    for (const follow of friendsAsFollowing) {
+      const mutualFollow = await this.followRepository.findOne({
+        where: {
+          followerId: follow.followingId,
+          followingId: profile.id,
+          accepted: true,
+        },
+      });
+      if (mutualFollow) {
+        friendProfiles.push(follow.following);
+      }
+    }
+
+    return friendProfiles;
+  }
+
   async getFollowRequests(userId: string) {
     const profile = await this.getProfileByUserId(userId);
     return this.followRepository.find({

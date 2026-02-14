@@ -5,7 +5,6 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/axios';
 import { Profile } from '@/types';
 import Link from 'next/link';
-import { ExploreBar } from '@/components/ExploreBar';
 import { getAvatarUrl } from '@/lib/url-helper';
 
 interface FriendProfile extends Profile {
@@ -174,9 +173,8 @@ export default function FriendsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <ExploreBar />
-      <main className="max-w-4xl mx-auto px-4 pb-20">
+    <div className="px-4 pb-20" style={{ color: 'var(--text-primary)' }}>
+      <main className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Friends</h1>
 
         {/* Tabs */}

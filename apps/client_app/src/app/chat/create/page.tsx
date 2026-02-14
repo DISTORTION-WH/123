@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
-import { ExploreBar } from '@/components/ExploreBar';
 import Link from 'next/link';
 
 interface SearchResult {
@@ -113,9 +112,8 @@ export default function CreateChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <ExploreBar />
-      <main className="max-w-2xl mx-auto px-4 pb-20">
+    <div className="px-4 pb-20" style={{ color: 'var(--text-primary)' }}>
+      <main className="max-w-2xl mx-auto">
         <div className="mb-8">
           <Link href="/chat" className="text-[var(--accent)] hover:underline flex items-center gap-2">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

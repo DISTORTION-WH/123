@@ -6,7 +6,6 @@ import { api } from '@/lib/axios';
 import { Profile, Post, ProfileFollow } from '@/types';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { PostsGrid } from '@/components/profile/PostsGrid';
-import { ExploreBar } from '@/components/ExploreBar';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -124,9 +123,8 @@ export default function ProfilePage() {
   const isMyProfile = myProfile.id === profile.id;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      <ExploreBar />
-      <main className="max-w-4xl mx-auto px-4 pb-20">
+    <div className="px-4 pb-20">
+      <main className="max-w-4xl mx-auto">
         <ProfileHeader
           profile={profile}
           isMyProfile={isMyProfile}

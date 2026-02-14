@@ -6,7 +6,6 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/axios';
 import { Post } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
-import { ExploreBar } from '@/components/ExploreBar';
 
 export default function UserPostsPage() {
   const params = useParams();
@@ -85,9 +84,8 @@ export default function UserPostsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <ExploreBar />
-      <main className="max-w-2xl mx-auto px-4 pb-16">
+    <div className="px-4 pb-16" style={{ color: 'var(--text-primary)' }}>
+      <main className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Posts by @{username}</h1>
 
         {loading ? (

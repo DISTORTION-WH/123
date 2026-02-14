@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { ExploreBar } from '@/components/ExploreBar';
 
 interface SettingItem {
   label: string;
@@ -68,9 +67,8 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <ExploreBar />
-      <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
+    <div className="pt-6 px-4 pb-16" style={{ color: 'var(--text-primary)' }}>
+      <main className="max-w-2xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Settings</h1>
           <p style={{ color: 'var(--text-secondary)' }}>

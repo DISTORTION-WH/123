@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { PostCard } from '@/components/feed/PostCard';
-import { ExploreBar } from '@/components/ExploreBar';
 import { Post, PaginationMeta } from '@/types';
 import { api } from '@/lib/axios';
 
@@ -97,9 +96,8 @@ export default function ExplorePage() {
   const hasMore = meta ? page < meta.totalPages : false;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <ExploreBar />
-      <main className="max-w-2xl mx-auto px-4 pb-16">
+    <div className="px-4 pb-16">
+      <main className="max-w-2xl mx-auto">
         {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div

@@ -7,7 +7,6 @@ import { api } from '@/lib/axios';
 import { Post, Profile } from '@/types';
 import Link from 'next/link';
 import { PostCard } from '@/components/feed/PostCard';
-import { ExploreBar } from '@/components/ExploreBar';
 import { getAvatarUrl } from '@/lib/url-helper';
 
 export default function SearchPage() {
@@ -107,9 +106,8 @@ export default function SearchPage() {
 
   if (!query.trim()) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)]">
-        <ExploreBar />
-        <main className="max-w-4xl mx-auto px-4 py-8 pb-20">
+      <div className="px-4 py-8 pb-20">
+        <main className="max-w-4xl mx-auto">
           <div className="text-center py-20">
             <svg
               width="64"
@@ -137,9 +135,8 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      <ExploreBar />
-      <main className="max-w-4xl mx-auto px-4 py-8 pb-20">
+    <div className="px-4 py-8 pb-20">
+      <main className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--text-primary)' }}>
           Results for &quot;{query}&quot;
         </h1>

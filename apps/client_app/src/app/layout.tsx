@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export const metadata: Metadata = {
   title: 'Innogram',
@@ -16,7 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body suppressHydrationWarning={true} className="antialiased">
         <AuthProvider>
-          {children}
+          <AppLayout>{children}</AppLayout>
         </AuthProvider>
       </body>
     </html>

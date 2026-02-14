@@ -5,7 +5,6 @@ import { api } from '@/lib/axios';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { Notification } from '@/types';
-import { ExploreBar } from '@/components/ExploreBar';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -73,9 +72,8 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      <ExploreBar />
-      <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
+    <div className="pt-6 px-4 pb-16">
+      <main className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-8">
           Notifications
         </h1>

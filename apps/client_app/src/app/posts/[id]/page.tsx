@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/axios';
 import { Post } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
+import { ExploreBar } from '@/components/ExploreBar';
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -57,6 +58,7 @@ export default function PostDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
+        <ExploreBar />
         <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
           <div className="flex flex-col items-center justify-center py-20">
             <div
@@ -78,6 +80,7 @@ export default function PostDetailPage() {
   if (error || !post) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
+        <ExploreBar />
         <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
           <div className="text-center py-20">
             <svg
@@ -118,6 +121,7 @@ export default function PostDetailPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
+      <ExploreBar />
       <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
         <PostCard
           post={post}

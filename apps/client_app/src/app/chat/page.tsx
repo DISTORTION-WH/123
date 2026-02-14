@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { useSocket } from '@/hooks/useSocket';
 import { Chat, Profile } from '@/types';
@@ -10,12 +11,14 @@ import { ExploreBar } from '@/components/ExploreBar';
 import Link from 'next/link';
 
 export default function ChatPage() {
+  const searchParams = useSearchParams();
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const socket = useSocket();
 
+  // Load chats data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -23,7 +26,17 @@ export default function ChatPage() {
         setMyProfile(profileRes.data);
 
         const chatsRes = await api.get('/chats');
-        setChats(chatsRes.data.data || []);
+        const loadedChats = chatsRes.data.data || [];
+        setChats(loadedChats);
+
+        // If chatId is in URL, find and set it as active
+        const chatId = searchParams.get('chatId');
+        if (chatId) {
+          const chat = loadedChats.find((c: Chat) => c.id === chatId);
+          if (chat) {
+            setActiveChat(chat);
+          }
+        }
       } catch (err) {
         console.error('Failed to load chat data', err);
       } finally {
@@ -32,7 +45,7 @@ export default function ChatPage() {
     };
 
     fetchData();
-  }, []);
+  }, [searchParams]);
 
   const handleSelectChat = (chatId: string) => {
     const chat = chats.find((c) => c.id === chatId);

@@ -103,13 +103,10 @@ export default function CreateChatPage() {
 
       // Redirect to chat
       router.push(`/chat?chatId=${response.data.id}`);
-    } catch (error) {
-      if (error instanceof Error && 'response' in error) {
-        const err = error as { response?: { data?: { message?: string } } };
-        alert(err.response?.data?.message || 'Failed to create chat');
-      } else {
-        alert('Failed to create chat');
-      }
+    } catch (error: any) {
+      console.error('Chat creation error:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create chat';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

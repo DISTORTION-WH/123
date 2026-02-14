@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/axios';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { PostCard } from '@/components/feed/PostCard';
 import { getAvatarUrl } from '@/lib/url-helper';
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const query = searchParams.get('q') || '';
@@ -90,7 +90,7 @@ export default function SearchPage() {
     }));
   };
 
-  const handlePostDelete = (postId: string) => {
+  const handlePostDelete = async (postId: string) => {
     setResults((prev) => ({
       ...prev,
       posts: prev.posts.filter((p) => p.id !== postId),
@@ -281,5 +281,13 @@ export default function SearchPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="px-4 py-8 pb-20"><div className="text-center py-20"><div className="w-10 h-10 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin mx-auto" /></div></div>}>
+      <SearchPageContent />
+    </Suspense>
   );
 }

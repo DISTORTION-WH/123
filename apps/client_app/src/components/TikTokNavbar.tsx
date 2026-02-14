@@ -117,7 +117,7 @@ export const TikTokNavbar = () => {
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-input)] border border-[var(--border)] focus-within:border-[var(--accent)] transition-colors">
             {React.cloneElement(
               (getIcon('search') as React.ReactElement),
-              { width: 20, height: 20 }
+              { width: 20, height: 20 } as any
             )}
             <input
               type="text"

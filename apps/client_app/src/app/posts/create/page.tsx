@@ -14,8 +14,7 @@ export default function CreatePostPage() {
   };
 
   return (
-    <div className="px-4 pb-16" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto" style={{ color: 'var(--text-primary)' }}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Create Post</h1>
           <p style={{ color: 'var(--text-secondary)' }}>
@@ -40,7 +39,6 @@ export default function CreatePostPage() {
             <li>💬 Engage with comments to build community</li>
           </ul>
         </div>
-      </main>
     </div>
   );
 }

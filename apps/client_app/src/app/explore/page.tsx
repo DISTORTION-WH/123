@@ -96,8 +96,7 @@ export default function ExplorePage() {
   const hasMore = meta ? page < meta.totalPages : false;
 
   return (
-    <div className="px-4 pb-16">
-      <main className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto">
         {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div
@@ -199,7 +198,6 @@ export default function ExplorePage() {
               )}
             </div>
           )}
-      </main>
     </div>
   );
 }

@@ -84,8 +84,7 @@ export default function UserPostsPage() {
   };
 
   return (
-    <div className="px-4 pb-16" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto" style={{ color: 'var(--text-primary)' }}>
         <h1 className="text-3xl font-bold mb-8">Posts by @{username}</h1>
 
         {loading ? (
@@ -161,7 +160,6 @@ export default function UserPostsPage() {
             )}
           </>
         )}
-      </main>
     </div>
   );
 }

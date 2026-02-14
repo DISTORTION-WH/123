@@ -173,8 +173,7 @@ export default function FriendsPage() {
   }
 
   return (
-    <div className="px-4 pb-20" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto" style={{ color: 'var(--text-primary)' }}>
         <h1 className="text-3xl font-bold mb-8">Friends</h1>
 
         {/* Tabs */}
@@ -215,7 +214,6 @@ export default function FriendsPage() {
         {activeTab === 'friends' && renderUserList(friends)}
         {activeTab === 'followers' && renderUserList(followers)}
         {activeTab === 'following' && renderUserList(following)}
-      </main>
     </div>
   );
 }

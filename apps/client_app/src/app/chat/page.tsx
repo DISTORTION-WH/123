@@ -60,7 +60,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-96px)] flex flex-col md:flex-row">
+    <div className="h-[calc(100vh-200px)] flex flex-col md:flex-row">
         {/* Left Sidebar - Chat List */}
         <div className="w-full md:w-80 border-r border-[var(--border)] flex flex-col bg-[var(--bg-secondary)]">
           <div className="p-6 border-b border-[var(--border)]">

@@ -106,8 +106,7 @@ function SearchPageContent() {
 
   if (!query.trim()) {
     return (
-      <div className="px-4 py-8 pb-20">
-        <main className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto">
           <div className="text-center py-20">
             <svg
               width="64"
@@ -129,14 +128,12 @@ function SearchPageContent() {
               Use the search bar to find posts, creators, and more
             </p>
           </div>
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-8 pb-20">
-      <main className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--text-primary)' }}>
           Results for &quot;{query}&quot;
         </h1>
@@ -279,7 +276,6 @@ function SearchPageContent() {
             )}
           </>
         )}
-      </main>
     </div>
   );
 }

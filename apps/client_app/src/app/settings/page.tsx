@@ -67,8 +67,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="pt-6 px-4 pb-16" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto" style={{ color: 'var(--text-primary)' }}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Settings</h1>
           <p style={{ color: 'var(--text-secondary)' }}>
@@ -174,7 +173,6 @@ export default function SettingsPage() {
           <p>Innogram v1.0.0</p>
           <p className="mt-2">© 2026 Innogram. All rights reserved.</p>
         </div>
-      </main>
     </div>
   );
 }

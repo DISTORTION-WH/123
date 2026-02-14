@@ -72,8 +72,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="pt-6 px-4 pb-16">
-      <main className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-8">
           Notifications
         </h1>
@@ -173,7 +172,6 @@ export default function NotificationsPage() {
             ))}
           </div>
         )}
-      </main>
     </div>
   );
 }

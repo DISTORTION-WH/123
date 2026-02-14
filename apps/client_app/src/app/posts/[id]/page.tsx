@@ -56,8 +56,7 @@ export default function PostDetailPage() {
 
   if (loading) {
     return (
-      <div className="pt-6 px-4 pb-16" style={{ color: 'var(--text-primary)' }}>
-        <main className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto" style={{ color: 'var(--text-primary)' }}>
           <div className="flex flex-col items-center justify-center py-20">
             <div
               className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
@@ -70,15 +69,13 @@ export default function PostDetailPage() {
               Loading post...
             </p>
           </div>
-        </main>
       </div>
     );
   }
 
   if (error || !post) {
     return (
-      <div className="pt-6 px-4 pb-16" style={{ color: 'var(--text-primary)' }}>
-        <main className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto" style={{ color: 'var(--text-primary)' }}>
           <div className="text-center py-20">
             <svg
               width="48"
@@ -111,14 +108,12 @@ export default function PostDetailPage() {
               Go Back
             </button>
           </div>
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="pt-6 px-4 pb-16" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto" style={{ color: 'var(--text-primary)' }}>
         <PostCard
           post={post}
           onLikeToggle={handleLikeToggle}
@@ -126,7 +121,6 @@ export default function PostDetailPage() {
           onUpdate={handlePostUpdate}
           isAuthor={user?.id === post.profile.userId}
         />
-      </main>
     </div>
   );
 }

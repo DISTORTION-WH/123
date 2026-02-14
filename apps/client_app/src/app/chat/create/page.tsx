@@ -112,8 +112,7 @@ export default function CreateChatPage() {
   };
 
   return (
-    <div className="px-4 pb-20" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto" style={{ color: 'var(--text-primary)' }}>
         <div className="mb-8">
           <Link href="/chat" className="text-[var(--accent)] hover:underline flex items-center gap-2">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -267,7 +266,6 @@ export default function CreateChatPage() {
             {loading ? 'Creating...' : 'Create Chat'}
           </button>
         </div>
-      </main>
     </div>
   );
 }

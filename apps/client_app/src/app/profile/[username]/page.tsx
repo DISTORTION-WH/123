@@ -123,8 +123,7 @@ export default function ProfilePage() {
   const isMyProfile = myProfile.id === profile.id;
 
   return (
-    <div className="px-4 pb-20">
-      <main className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
         <ProfileHeader
           profile={profile}
           isMyProfile={isMyProfile}
@@ -159,7 +158,6 @@ export default function ProfilePage() {
             );
           }}
         />
-      </main>
     </div>
   );
 }

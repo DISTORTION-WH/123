@@ -60,7 +60,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64">
+      <main className="flex-1 ml-64 bg-[var(--bg-primary)]">
         <div className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--border)]">
           {/* Search Bar */}
           <div className="max-w-7xl mx-auto px-6 py-4">
@@ -92,8 +92,10 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
 
-        {/* Page Content */}
-        <div className="max-w-7xl mx-auto">{children}</div>
+        {/* Page Content - Remove outer padding from children */}
+        <div className="max-w-7xl mx-auto px-4 pb-20" style={{ color: 'var(--text-primary)' }}>
+          {children}
+        </div>
       </main>
     </div>
   );

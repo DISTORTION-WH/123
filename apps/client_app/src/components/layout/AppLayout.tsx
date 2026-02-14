@@ -17,7 +17,12 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   // Определяем активный элемент
-  const isActive = (href: string) => pathname === href;
+  const isActive = (href: string) => {
+    if (href === '/profile/me') {
+      return pathname?.startsWith('/profile');
+    }
+    return pathname === href;
+  };
 
   return (
     <div className="flex min-h-screen bg-[var(--bg-primary)]">
@@ -39,6 +44,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
             { href: '/explore', label: 'Explore', icon: '🔍' },
             { href: '/chat', label: 'Messages', icon: '💬' },
             { href: '/notifications', label: 'Notifications', icon: '🔔' },
+            { href: '/posts/create', label: 'Create', icon: '➕' },
             { href: '/friends', label: 'Friends', icon: '👥' },
             { href: '/profile/me', label: 'Profile', icon: '👤' },
             { href: '/settings', label: 'Settings', icon: '⚙️' },

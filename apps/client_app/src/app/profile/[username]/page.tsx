@@ -91,7 +91,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
+      <div className="flex items-center justify-center py-20">
         <div className="w-10 h-10 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
       </div>
     );
@@ -99,7 +99,7 @@ export default function ProfilePage() {
 
   if (!profile || !myProfile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-primary)]">
+      <div className="flex flex-col items-center justify-center py-20">
         <svg
           width="48"
           height="48"

@@ -15,6 +15,7 @@ export interface Profile {
   isPublic: boolean;
   birthDate?: string;
   deleted?: boolean;
+  isFollowing?: boolean;
 }
 
 export interface Asset {
@@ -23,7 +24,6 @@ export interface Asset {
   filePath: string;
   fileType: string;
   fileSize: number;
-  thumbnailPath?: string;
   url?: string;
 }
 

@@ -33,7 +33,9 @@ export class AssetsService {
       await execAsync(command);
 
       const exists = existsSync(outputPath);
-      console.log(`Thumbnail generation ${exists ? 'succeeded' : 'failed'}: ${outputPath}`);
+      console.log(
+        `Thumbnail generation ${exists ? 'succeeded' : 'failed'}: ${outputPath}`,
+      );
       return exists;
     } catch (error) {
       console.warn('Failed to generate thumbnail (non-critical):', error);
@@ -52,7 +54,13 @@ export class AssetsService {
       const ext = file.filename.split('.').pop();
       const thumbnailFilename = `${file.filename.replace(`.${ext}`, '')}_thumb.jpg`;
       const videoPath = join(__dirname, '..', '..', 'uploads', file.filename);
-      const outputPath = join(__dirname, '..', '..', 'uploads', thumbnailFilename);
+      const outputPath = join(
+        __dirname,
+        '..',
+        '..',
+        'uploads',
+        thumbnailFilename,
+      );
 
       const success = await this.generateVideoThumbnail(videoPath, outputPath);
       if (success) {

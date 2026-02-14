@@ -64,21 +64,28 @@ router
       .post('/validate', async (req: Request, res: Response) => {
   try {
     const { accessToken } = ValidateTokenEntity.validate(req.body);
-    
+
     const payload = await authService.validateToken(accessToken);
-    
+
     if (!payload) {
-      return res.status(200).json({ valid: false, error: 'Invalid or expired token' });
+      console.log('[Validate] Invalid or expired token');
+      return res.status(200).json({
+        isValid: false,
+        valid: false,
+        error: 'Invalid or expired token'
+      });
     }
-    
-    return res.status(200).json({ 
-        isValid: true, 
+
+    console.log('[Validate] Token valid for user:', payload.userId);
+    return res.status(200).json({
+        isValid: true,
         valid: true,
-        userId: payload.userId, 
+        userId: payload.userId,
         email: payload.email,
-        role: payload.role 
+        role: payload.role
     });
   } catch (error: any) {
+    console.log('[Validate] Error:', error.message || error);
     if (error instanceof ZodError) return handleControllerError(res, error);
     return res.status(500).json({ error: 'Internal server error' });
   }

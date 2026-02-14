@@ -44,6 +44,22 @@ export class PostsController {
     return await this.postsService.create(user.id, dto);
   }
 
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Search posts by content' })
+  @ApiQuery({ name: 'q', required: true })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  async searchPosts(
+    @CurrentUser() user: CurrentUserData,
+    @Query('q') query: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return await this.postsService.searchPosts(query, user?.id, page, limit);
+  }
+
   @Get('feed')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -82,10 +98,7 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get single post details' })
-  async getOne(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async getOne(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     return await this.postsService.findOne(id, user?.id);
   }
 

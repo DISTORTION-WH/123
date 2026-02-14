@@ -34,7 +34,13 @@ async function generateMissingThumbnails() {
         const thumbnailFilename = `${filename.replace(`.${ext}`, '')}_thumb.jpg`;
 
         const videoPath = join(__dirname, '..', '..', 'uploads', filename);
-        const outputPath = join(__dirname, '..', '..', 'uploads', thumbnailFilename);
+        const outputPath = join(
+          __dirname,
+          '..',
+          '..',
+          'uploads',
+          thumbnailFilename,
+        );
 
         console.log(`Generating thumbnail for: ${filename}`);
 

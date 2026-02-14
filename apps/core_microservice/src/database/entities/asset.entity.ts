@@ -23,7 +23,12 @@ export class Asset {
   @Column({ name: 'file_size', type: 'int' })
   fileSize: number;
 
-  @Column({ name: 'thumbnail_path', type: 'varchar', length: 500, nullable: true })
+  @Column({
+    name: 'thumbnail_path',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
   thumbnailPath?: string;
 
   @Column({ name: 'order_index', type: 'int', default: 0 })

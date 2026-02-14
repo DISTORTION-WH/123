@@ -35,22 +35,36 @@ export class ProfilesService {
     return this.profileRepository.save(profile);
   }
   async searchProfiles(query: string, currentUserId: string) {
-    if (!query) return [];
+    if (!query || !query.trim()) return [];
 
+    // Get current user's profile once
+    const currentUserProfile = await this.getProfileByUserId(currentUserId);
+
+    const lowerQuery = query.toLowerCase();
     const profiles = await this.profileRepository.find({
       where: [
         { username: Like(`%${query}%`) },
         { displayName: Like(`%${query}%`) },
+        { bio: Like(`%${query}%`) },
       ],
-      take: 10,
+      take: 20,
     });
+
+    // Filter out current user and apply case-insensitive search
+    const filtered = profiles.filter(
+      (p) =>
+        p.userId !== currentUserId &&
+        (p.username.toLowerCase().includes(lowerQuery) ||
+          (p.displayName && p.displayName.toLowerCase().includes(lowerQuery)) ||
+          (p.bio && p.bio.toLowerCase().includes(lowerQuery)))
+    );
 
     // Обогащаем данными: подписан ли я на них?
     const results = await Promise.all(
-      profiles.map(async (profile) => {
+      filtered.map(async (profile) => {
         const isFollowing = await this.followRepository.findOne({
           where: {
-            followerId: (await this.getProfileByUserId(currentUserId)).id,
+            followerId: currentUserProfile.id,
             followingId: profile.id,
             accepted: true,
           },

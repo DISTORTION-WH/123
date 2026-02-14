@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { CreatePostWidget } from '@/components/feed/CreatePostWidget';
 import { PostCard } from '@/components/feed/PostCard';
+import { ExploreBar } from '@/components/ExploreBar';
 import { Post, PaginationMeta } from '@/types';
 import { api } from '@/lib/axios';
 
 export default function FeedPage() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -80,17 +80,13 @@ export default function FeedPage() {
     );
   };
 
-  const handlePostCreated = () => {
-    fetchPosts(1);
-  };
-
   const handlePostDelete = async (postId: string) => {
     setPosts((currentPosts) =>
       currentPosts.filter((post) => post.id !== postId)
     );
   };
 
-  const handlePostUpdate = (updatedPost: any) => {
+  const handlePostUpdate = (updatedPost: Post) => {
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
         post.id === updatedPost.id ? updatedPost : post
@@ -102,13 +98,8 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
-        <CreatePostWidget
-          onPostCreated={handlePostCreated}
-          userAvatar={profile?.avatarUrl}
-          userName={profile?.displayName || user?.email || 'User'}
-        />
-
+      <ExploreBar />
+      <main className="max-w-2xl mx-auto px-4 pb-16">
         {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div

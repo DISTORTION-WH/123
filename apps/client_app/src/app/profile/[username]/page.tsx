@@ -6,6 +6,7 @@ import { api } from '@/lib/axios';
 import { Profile, Post, ProfileFollow } from '@/types';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { PostsGrid } from '@/components/profile/PostsGrid';
+import { ExploreBar } from '@/components/ExploreBar';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -50,7 +51,7 @@ export default function ProfilePage() {
         ? postsRes.data
         : postsRes.data.data;
       // Enrich posts with user ID from profile
-      const enrichedPosts = postsData.map((post: any) => ({
+      const enrichedPosts = postsData.map((post: Post) => ({
         ...post,
         profile: {
           ...post.profile,
@@ -124,7 +125,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
-      <main className="max-w-4xl mx-auto pt-8 px-4 pb-20">
+      <ExploreBar />
+      <main className="max-w-4xl mx-auto px-4 pb-20">
         <ProfileHeader
           profile={profile}
           isMyProfile={isMyProfile}

@@ -86,7 +86,7 @@ export async function generateVideoThumbnail(
       console.error('Error loading video for thumbnail:', {
         url: videoUrl,
         videoError: video.error,
-        errorCode: (e as any)?.target?.error?.code,
+        errorCode: (e.target as HTMLVideoElement)?.error?.code,
       });
       resolve(null);
     });

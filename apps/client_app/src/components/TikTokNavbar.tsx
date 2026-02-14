@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -8,7 +8,7 @@ import { Avatar } from '@/components/ui/Avatar';
 
 const navItems = [
   { href: '/feed', label: 'Home', icon: 'home' },
-  { href: '/explore', label: 'Explore', icon: 'search' },
+  { href: '/friends', label: 'Friends', icon: 'people' },
   { href: '/chat', label: 'Messages', icon: 'message' },
   { href: '/notifications', label: 'Notifications', icon: 'bell' },
 ];
@@ -17,6 +17,15 @@ export const TikTokNavbar = () => {
   const { profile, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery('');
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -76,6 +85,14 @@ export const TikTokNavbar = () => {
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
       ),
+      people: (
+        <svg {...iconProps}>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
     };
 
     return icons[iconType] || null;
@@ -94,6 +111,23 @@ export const TikTokNavbar = () => {
         >
           Innogram
         </Link>
+
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="hidden lg:block">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-input)] border border-[var(--border)] focus-within:border-[var(--accent)] transition-colors">
+            {React.cloneElement(
+              (getIcon('search') as React.ReactElement),
+              { width: 20, height: 20 }
+            )}
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none text-sm"
+            />
+          </div>
+        </form>
 
         {/* Nav Items */}
         <div className="flex lg:flex-col gap-4">

@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/axios';
 import { Post } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
+import { ExploreBar } from '@/components/ExploreBar';
 
 export default function UserPostsPage() {
   const params = useParams();
@@ -75,7 +76,7 @@ export default function UserPostsPage() {
     );
   };
 
-  const handlePostUpdate = (updatedPost: any) => {
+  const handlePostUpdate = (updatedPost: Post) => {
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
         post.id === updatedPost.id ? updatedPost : post
@@ -85,7 +86,8 @@ export default function UserPostsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
+      <ExploreBar />
+      <main className="max-w-2xl mx-auto px-4 pb-16">
         <h1 className="text-3xl font-bold mb-8">Posts by @{username}</h1>
 
         {loading ? (
@@ -127,7 +129,7 @@ export default function UserPostsPage() {
               className="text-sm"
               style={{ color: 'var(--text-muted)' }}
             >
-              @{username} hasn't posted anything yet
+              @{username} hasn&apos;t posted anything yet
             </p>
           </div>
         ) : (

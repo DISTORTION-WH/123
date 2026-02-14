@@ -1,148 +1,371 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class SyncUserSchema1770940051001 implements MigrationInterface {
-    name = 'SyncUserSchema1770940051001'
+  name = 'SyncUserSchema1770940051001';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP CONSTRAINT "FK_722f4fb48096271c96380c6278c"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP CONSTRAINT "FK_90bd341302feb51c5eaa57aab32"`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP CONSTRAINT "FK_9e432b7df0d182f8d292902d1a2"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP CONSTRAINT "UQ_32580493d46f0f04500d87560ee"`);
-        await queryRunner.query(`CREATE TABLE "assets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "file_name" character varying(255) NOT NULL, "file_path" character varying(500) NOT NULL, "file_type" character varying(100) NOT NULL, "file_size" integer NOT NULL, "order_index" integer NOT NULL DEFAULT '0', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_da96729a8b113377cfb6a62439c" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "posts_assets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "post_id" uuid NOT NULL, "asset_id" uuid NOT NULL, "order_index" integer NOT NULL DEFAULT '0', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_1188729b8baab72f24202b316ea" UNIQUE ("post_id", "asset_id"), CONSTRAINT "PK_c09218a1fdc5f87ee3dd32a8562" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "comments_likes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "comment_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_9a8c3cd3bd75b88739122a8ad59" UNIQUE ("comment_id", "profile_id"), CONSTRAINT "PK_76e988dd40034228052b54157cb" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "comments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "content" text NOT NULL, "post_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "parent_id" uuid, "created_by" uuid NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_8bf68bc960f2b69e818bdb90dcb" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "posts_likes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "post_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_327119983a4164ea0c937df1f43" UNIQUE ("post_id", "profile_id"), CONSTRAINT "PK_2038d34048d51b766bca272ff5e" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "posts" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "profile_id" uuid NOT NULL, "content" text, "is_archived" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_2829ac61eff60fcec60d7274b9e" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "messages_assets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "message_id" uuid NOT NULL, "asset_id" uuid NOT NULL, "order_index" integer NOT NULL DEFAULT '0', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_92ea43d89895e77cb318982e49b" UNIQUE ("message_id", "asset_id"), CONSTRAINT "PK_4d47a1f95626bec47fa39c0bdd9" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "message_reactions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "message_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "reaction" character varying(10) NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_7afadbaffa91c6b19bce1ac9f5f" UNIQUE ("message_id", "profile_id"), CONSTRAINT "PK_654a9f0059ff93a8f156be66a5b" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "messages" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "content" text, "is_edited" boolean NOT NULL DEFAULT false, "is_deleted" boolean NOT NULL DEFAULT false, "shared_post_id" uuid, "is_read" boolean NOT NULL DEFAULT false, "read_at" TIMESTAMP, "reply_to_message_id" uuid, "created_by" uuid NOT NULL, "updated_by" uuid, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_18325f38ae6de43878487eff986" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."chats_type_enum" AS ENUM('private', 'group')`);
-        await queryRunner.query(`CREATE TABLE "chats" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying, "description" text, "type" "public"."chats_type_enum" NOT NULL DEFAULT 'private', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_0117647b3c4a4e5ff198aeb6206" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."chats_participants_role_enum" AS ENUM('admin', 'member')`);
-        await queryRunner.query(`CREATE TABLE "chats_participants" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "role" "public"."chats_participants_role_enum" NOT NULL DEFAULT 'member', "joined_at" TIMESTAMP NOT NULL DEFAULT now(), "left_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_e35913d87eff79d4430313e0b1b" UNIQUE ("chat_id", "profile_id"), CONSTRAINT "PK_bb39212ca0dee99682bd6904cdd" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "profile_blocks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blocker_id" uuid NOT NULL, "blocked_id" uuid NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_030e958160cd404fcb2a53b6e04" UNIQUE ("blocker_id", "blocked_id"), CONSTRAINT "CHK_f070afddea05593e2dc3801c67" CHECK ("blocker_id" != "blocked_id"), CONSTRAINT "PK_05524710ea70b9c0d0e3191d1fb" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "notifications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" character varying(20) NOT NULL, "title" character varying(255) NOT NULL, "message" text NOT NULL, "target_user_id" character varying NOT NULL, "data" jsonb, "is_read" boolean NOT NULL DEFAULT false, "read_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_6a72c3c0f683f6462415e653c3a" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP COLUMN "follower_profile_id"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP COLUMN "followed_profile_id"`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "first_name"`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "last_name"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD "follower_id" uuid NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD "following_id" uuid NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD "display_name" character varying`);
-        await queryRunner.query(`ALTER TABLE "users" ADD "email" character varying NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "users" ADD CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email")`);
-        await queryRunner.query(`ALTER TABLE "users" ADD "username" character varying NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "users" ADD CONSTRAINT "UQ_fe0bb3f6520ee0469504521e710" UNIQUE ("username")`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD CONSTRAINT "UQ_9e432b7df0d182f8d292902d1a2" UNIQUE ("user_id")`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP CONSTRAINT "UQ_d1ea35db5be7c08520d70dc03f8"`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "username"`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD "username" character varying NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD CONSTRAINT "UQ_d1ea35db5be7c08520d70dc03f8" UNIQUE ("username")`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "avatar_url"`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD "avatar_url" character varying`);
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "role"`);
-        await queryRunner.query(`ALTER TABLE "users" ADD "role" character varying NOT NULL DEFAULT 'User'`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD CONSTRAINT "CHK_2d151542cc138642b4b12aced9" CHECK ("follower_id" != "following_id")`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD CONSTRAINT "UQ_00453870041ae7e68235a5d8755" UNIQUE ("follower_id", "following_id")`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD CONSTRAINT "FK_d0f58692b99b28dd497fbf36765" FOREIGN KEY ("follower_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD CONSTRAINT "FK_0a07653dafdde983c05bad76c00" FOREIGN KEY ("following_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "posts_assets" ADD CONSTRAINT "FK_af7c44cddba02664bdd375707c4" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "posts_assets" ADD CONSTRAINT "FK_e14e8b24da991d85f9ba90465b8" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "comments_likes" ADD CONSTRAINT "FK_fab744c7db7ccbe1ded65166d73" FOREIGN KEY ("comment_id") REFERENCES "comments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "comments_likes" ADD CONSTRAINT "FK_1e3f43ccd0f517f3d248b952834" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "comments" ADD CONSTRAINT "FK_259bf9825d9d198608d1b46b0b5" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "comments" ADD CONSTRAINT "FK_6b5b121879fe056a71e8e0915c2" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "comments" ADD CONSTRAINT "FK_d6f93329801a93536da4241e386" FOREIGN KEY ("parent_id") REFERENCES "comments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "posts_likes" ADD CONSTRAINT "FK_6faf9115f9ab73dd332d218e9ba" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "posts_likes" ADD CONSTRAINT "FK_87047bfd925f32570f16d9ceec0" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "posts" ADD CONSTRAINT "FK_9dbc2524c6f46641f5e7d107da1" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "messages_assets" ADD CONSTRAINT "FK_d8d48ea4985e94a520b2159f3af" FOREIGN KEY ("message_id") REFERENCES "messages"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "messages_assets" ADD CONSTRAINT "FK_27f4e06be67fbe5888840b5ab39" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "message_reactions" ADD CONSTRAINT "FK_ce61e365d81a9dfc15cd36513b0" FOREIGN KEY ("message_id") REFERENCES "messages"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "message_reactions" ADD CONSTRAINT "FK_da49fde5fe274467fff777a8bb3" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "messages" ADD CONSTRAINT "FK_7540635fef1922f0b156b9ef74f" FOREIGN KEY ("chat_id") REFERENCES "chats"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "messages" ADD CONSTRAINT "FK_f027d31c266699d0dae4366252b" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "messages" ADD CONSTRAINT "FK_cbea4ae5d43ac78856420f5158b" FOREIGN KEY ("shared_post_id") REFERENCES "posts"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "messages" ADD CONSTRAINT "FK_7f87cbb925b1267778a7f4c5d67" FOREIGN KEY ("reply_to_message_id") REFERENCES "messages"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "messages" ADD CONSTRAINT "FK_4d025b3431171ff016586ba81ad" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "messages" ADD CONSTRAINT "FK_bd66b84a312d9bf0e64b2e81902" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "chats_participants" ADD CONSTRAINT "FK_1511c4daef0688dfba61bbc2021" FOREIGN KEY ("chat_id") REFERENCES "chats"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "chats_participants" ADD CONSTRAINT "FK_68021766bd3dd7f7fb71c3273bc" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD CONSTRAINT "FK_9e432b7df0d182f8d292902d1a2" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "profile_blocks" ADD CONSTRAINT "FK_074d0134fc87c855f5006cbbc20" FOREIGN KEY ("blocker_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "profile_blocks" ADD CONSTRAINT "FK_2371a015439e6f02e92d9a3f182" FOREIGN KEY ("blocked_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-    }
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP CONSTRAINT "FK_722f4fb48096271c96380c6278c"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP CONSTRAINT "FK_90bd341302feb51c5eaa57aab32"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" DROP CONSTRAINT "FK_9e432b7df0d182f8d292902d1a2"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP CONSTRAINT "UQ_32580493d46f0f04500d87560ee"`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "assets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "file_name" character varying(255) NOT NULL, "file_path" character varying(500) NOT NULL, "file_type" character varying(100) NOT NULL, "file_size" integer NOT NULL, "order_index" integer NOT NULL DEFAULT '0', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_da96729a8b113377cfb6a62439c" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "posts_assets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "post_id" uuid NOT NULL, "asset_id" uuid NOT NULL, "order_index" integer NOT NULL DEFAULT '0', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_1188729b8baab72f24202b316ea" UNIQUE ("post_id", "asset_id"), CONSTRAINT "PK_c09218a1fdc5f87ee3dd32a8562" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "comments_likes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "comment_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_9a8c3cd3bd75b88739122a8ad59" UNIQUE ("comment_id", "profile_id"), CONSTRAINT "PK_76e988dd40034228052b54157cb" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "comments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "content" text NOT NULL, "post_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "parent_id" uuid, "created_by" uuid NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_8bf68bc960f2b69e818bdb90dcb" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "posts_likes" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "post_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_327119983a4164ea0c937df1f43" UNIQUE ("post_id", "profile_id"), CONSTRAINT "PK_2038d34048d51b766bca272ff5e" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "posts" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "profile_id" uuid NOT NULL, "content" text, "is_archived" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_2829ac61eff60fcec60d7274b9e" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "messages_assets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "message_id" uuid NOT NULL, "asset_id" uuid NOT NULL, "order_index" integer NOT NULL DEFAULT '0', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_92ea43d89895e77cb318982e49b" UNIQUE ("message_id", "asset_id"), CONSTRAINT "PK_4d47a1f95626bec47fa39c0bdd9" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "message_reactions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "message_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "reaction" character varying(10) NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_7afadbaffa91c6b19bce1ac9f5f" UNIQUE ("message_id", "profile_id"), CONSTRAINT "PK_654a9f0059ff93a8f156be66a5b" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "messages" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "content" text, "is_edited" boolean NOT NULL DEFAULT false, "is_deleted" boolean NOT NULL DEFAULT false, "shared_post_id" uuid, "is_read" boolean NOT NULL DEFAULT false, "read_at" TIMESTAMP, "reply_to_message_id" uuid, "created_by" uuid NOT NULL, "updated_by" uuid, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_18325f38ae6de43878487eff986" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."chats_type_enum" AS ENUM('private', 'group')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "chats" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying, "description" text, "type" "public"."chats_type_enum" NOT NULL DEFAULT 'private', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_0117647b3c4a4e5ff198aeb6206" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."chats_participants_role_enum" AS ENUM('admin', 'member')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "chats_participants" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "chat_id" uuid NOT NULL, "profile_id" uuid NOT NULL, "role" "public"."chats_participants_role_enum" NOT NULL DEFAULT 'member', "joined_at" TIMESTAMP NOT NULL DEFAULT now(), "left_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "UQ_e35913d87eff79d4430313e0b1b" UNIQUE ("chat_id", "profile_id"), CONSTRAINT "PK_bb39212ca0dee99682bd6904cdd" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "profile_blocks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "blocker_id" uuid NOT NULL, "blocked_id" uuid NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_030e958160cd404fcb2a53b6e04" UNIQUE ("blocker_id", "blocked_id"), CONSTRAINT "CHK_f070afddea05593e2dc3801c67" CHECK ("blocker_id" != "blocked_id"), CONSTRAINT "PK_05524710ea70b9c0d0e3191d1fb" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "notifications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" character varying(20) NOT NULL, "title" character varying(255) NOT NULL, "message" text NOT NULL, "target_user_id" character varying NOT NULL, "data" jsonb, "is_read" boolean NOT NULL DEFAULT false, "read_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" uuid NOT NULL, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_by" uuid, CONSTRAINT "PK_6a72c3c0f683f6462415e653c3a" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP COLUMN "follower_profile_id"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP COLUMN "followed_profile_id"`,
+    );
+    await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "first_name"`);
+    await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "last_name"`);
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD "follower_id" uuid NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD "following_id" uuid NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD "display_name" character varying`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD "email" character varying NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD "username" character varying NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD CONSTRAINT "UQ_fe0bb3f6520ee0469504521e710" UNIQUE ("username")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD CONSTRAINT "UQ_9e432b7df0d182f8d292902d1a2" UNIQUE ("user_id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" DROP CONSTRAINT "UQ_d1ea35db5be7c08520d70dc03f8"`,
+    );
+    await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "username"`);
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD "username" character varying NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD CONSTRAINT "UQ_d1ea35db5be7c08520d70dc03f8" UNIQUE ("username")`,
+    );
+    await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "avatar_url"`);
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD "avatar_url" character varying`,
+    );
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "role"`);
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD "role" character varying NOT NULL DEFAULT 'User'`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD CONSTRAINT "CHK_2d151542cc138642b4b12aced9" CHECK ("follower_id" != "following_id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD CONSTRAINT "UQ_00453870041ae7e68235a5d8755" UNIQUE ("follower_id", "following_id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD CONSTRAINT "FK_d0f58692b99b28dd497fbf36765" FOREIGN KEY ("follower_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD CONSTRAINT "FK_0a07653dafdde983c05bad76c00" FOREIGN KEY ("following_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts_assets" ADD CONSTRAINT "FK_af7c44cddba02664bdd375707c4" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts_assets" ADD CONSTRAINT "FK_e14e8b24da991d85f9ba90465b8" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments_likes" ADD CONSTRAINT "FK_fab744c7db7ccbe1ded65166d73" FOREIGN KEY ("comment_id") REFERENCES "comments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments_likes" ADD CONSTRAINT "FK_1e3f43ccd0f517f3d248b952834" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments" ADD CONSTRAINT "FK_259bf9825d9d198608d1b46b0b5" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments" ADD CONSTRAINT "FK_6b5b121879fe056a71e8e0915c2" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments" ADD CONSTRAINT "FK_d6f93329801a93536da4241e386" FOREIGN KEY ("parent_id") REFERENCES "comments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts_likes" ADD CONSTRAINT "FK_6faf9115f9ab73dd332d218e9ba" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts_likes" ADD CONSTRAINT "FK_87047bfd925f32570f16d9ceec0" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts" ADD CONSTRAINT "FK_9dbc2524c6f46641f5e7d107da1" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages_assets" ADD CONSTRAINT "FK_d8d48ea4985e94a520b2159f3af" FOREIGN KEY ("message_id") REFERENCES "messages"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages_assets" ADD CONSTRAINT "FK_27f4e06be67fbe5888840b5ab39" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "message_reactions" ADD CONSTRAINT "FK_ce61e365d81a9dfc15cd36513b0" FOREIGN KEY ("message_id") REFERENCES "messages"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "message_reactions" ADD CONSTRAINT "FK_da49fde5fe274467fff777a8bb3" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" ADD CONSTRAINT "FK_7540635fef1922f0b156b9ef74f" FOREIGN KEY ("chat_id") REFERENCES "chats"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" ADD CONSTRAINT "FK_f027d31c266699d0dae4366252b" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" ADD CONSTRAINT "FK_cbea4ae5d43ac78856420f5158b" FOREIGN KEY ("shared_post_id") REFERENCES "posts"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" ADD CONSTRAINT "FK_7f87cbb925b1267778a7f4c5d67" FOREIGN KEY ("reply_to_message_id") REFERENCES "messages"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" ADD CONSTRAINT "FK_4d025b3431171ff016586ba81ad" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" ADD CONSTRAINT "FK_bd66b84a312d9bf0e64b2e81902" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "chats_participants" ADD CONSTRAINT "FK_1511c4daef0688dfba61bbc2021" FOREIGN KEY ("chat_id") REFERENCES "chats"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "chats_participants" ADD CONSTRAINT "FK_68021766bd3dd7f7fb71c3273bc" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD CONSTRAINT "FK_9e432b7df0d182f8d292902d1a2" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profile_blocks" ADD CONSTRAINT "FK_074d0134fc87c855f5006cbbc20" FOREIGN KEY ("blocker_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profile_blocks" ADD CONSTRAINT "FK_2371a015439e6f02e92d9a3f182" FOREIGN KEY ("blocked_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "profile_blocks" DROP CONSTRAINT "FK_2371a015439e6f02e92d9a3f182"`);
-        await queryRunner.query(`ALTER TABLE "profile_blocks" DROP CONSTRAINT "FK_074d0134fc87c855f5006cbbc20"`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP CONSTRAINT "FK_9e432b7df0d182f8d292902d1a2"`);
-        await queryRunner.query(`ALTER TABLE "chats_participants" DROP CONSTRAINT "FK_68021766bd3dd7f7fb71c3273bc"`);
-        await queryRunner.query(`ALTER TABLE "chats_participants" DROP CONSTRAINT "FK_1511c4daef0688dfba61bbc2021"`);
-        await queryRunner.query(`ALTER TABLE "messages" DROP CONSTRAINT "FK_bd66b84a312d9bf0e64b2e81902"`);
-        await queryRunner.query(`ALTER TABLE "messages" DROP CONSTRAINT "FK_4d025b3431171ff016586ba81ad"`);
-        await queryRunner.query(`ALTER TABLE "messages" DROP CONSTRAINT "FK_7f87cbb925b1267778a7f4c5d67"`);
-        await queryRunner.query(`ALTER TABLE "messages" DROP CONSTRAINT "FK_cbea4ae5d43ac78856420f5158b"`);
-        await queryRunner.query(`ALTER TABLE "messages" DROP CONSTRAINT "FK_f027d31c266699d0dae4366252b"`);
-        await queryRunner.query(`ALTER TABLE "messages" DROP CONSTRAINT "FK_7540635fef1922f0b156b9ef74f"`);
-        await queryRunner.query(`ALTER TABLE "message_reactions" DROP CONSTRAINT "FK_da49fde5fe274467fff777a8bb3"`);
-        await queryRunner.query(`ALTER TABLE "message_reactions" DROP CONSTRAINT "FK_ce61e365d81a9dfc15cd36513b0"`);
-        await queryRunner.query(`ALTER TABLE "messages_assets" DROP CONSTRAINT "FK_27f4e06be67fbe5888840b5ab39"`);
-        await queryRunner.query(`ALTER TABLE "messages_assets" DROP CONSTRAINT "FK_d8d48ea4985e94a520b2159f3af"`);
-        await queryRunner.query(`ALTER TABLE "posts" DROP CONSTRAINT "FK_9dbc2524c6f46641f5e7d107da1"`);
-        await queryRunner.query(`ALTER TABLE "posts_likes" DROP CONSTRAINT "FK_87047bfd925f32570f16d9ceec0"`);
-        await queryRunner.query(`ALTER TABLE "posts_likes" DROP CONSTRAINT "FK_6faf9115f9ab73dd332d218e9ba"`);
-        await queryRunner.query(`ALTER TABLE "comments" DROP CONSTRAINT "FK_d6f93329801a93536da4241e386"`);
-        await queryRunner.query(`ALTER TABLE "comments" DROP CONSTRAINT "FK_6b5b121879fe056a71e8e0915c2"`);
-        await queryRunner.query(`ALTER TABLE "comments" DROP CONSTRAINT "FK_259bf9825d9d198608d1b46b0b5"`);
-        await queryRunner.query(`ALTER TABLE "comments_likes" DROP CONSTRAINT "FK_1e3f43ccd0f517f3d248b952834"`);
-        await queryRunner.query(`ALTER TABLE "comments_likes" DROP CONSTRAINT "FK_fab744c7db7ccbe1ded65166d73"`);
-        await queryRunner.query(`ALTER TABLE "posts_assets" DROP CONSTRAINT "FK_e14e8b24da991d85f9ba90465b8"`);
-        await queryRunner.query(`ALTER TABLE "posts_assets" DROP CONSTRAINT "FK_af7c44cddba02664bdd375707c4"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP CONSTRAINT "FK_0a07653dafdde983c05bad76c00"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP CONSTRAINT "FK_d0f58692b99b28dd497fbf36765"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP CONSTRAINT "UQ_00453870041ae7e68235a5d8755"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP CONSTRAINT "CHK_2d151542cc138642b4b12aced9"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "role"`);
-        await queryRunner.query(`ALTER TABLE "users" ADD "role" character varying(20) NOT NULL DEFAULT 'User'`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "avatar_url"`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD "avatar_url" character varying(500)`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP CONSTRAINT "UQ_d1ea35db5be7c08520d70dc03f8"`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "username"`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD "username" character varying(50) NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD CONSTRAINT "UQ_d1ea35db5be7c08520d70dc03f8" UNIQUE ("username")`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP CONSTRAINT "UQ_9e432b7df0d182f8d292902d1a2"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "UQ_fe0bb3f6520ee0469504521e710"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "username"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "email"`);
-        await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "display_name"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP COLUMN "following_id"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" DROP COLUMN "follower_id"`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD "last_name" character varying`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD "first_name" character varying`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD "followed_profile_id" uuid NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD "follower_profile_id" uuid NOT NULL`);
-        await queryRunner.query(`DROP TABLE "notifications"`);
-        await queryRunner.query(`DROP TABLE "profile_blocks"`);
-        await queryRunner.query(`DROP TABLE "chats_participants"`);
-        await queryRunner.query(`DROP TYPE "public"."chats_participants_role_enum"`);
-        await queryRunner.query(`DROP TABLE "chats"`);
-        await queryRunner.query(`DROP TYPE "public"."chats_type_enum"`);
-        await queryRunner.query(`DROP TABLE "messages"`);
-        await queryRunner.query(`DROP TABLE "message_reactions"`);
-        await queryRunner.query(`DROP TABLE "messages_assets"`);
-        await queryRunner.query(`DROP TABLE "posts"`);
-        await queryRunner.query(`DROP TABLE "posts_likes"`);
-        await queryRunner.query(`DROP TABLE "comments"`);
-        await queryRunner.query(`DROP TABLE "comments_likes"`);
-        await queryRunner.query(`DROP TABLE "posts_assets"`);
-        await queryRunner.query(`DROP TABLE "assets"`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD CONSTRAINT "UQ_32580493d46f0f04500d87560ee" UNIQUE ("follower_profile_id", "followed_profile_id")`);
-        await queryRunner.query(`ALTER TABLE "profiles" ADD CONSTRAINT "FK_9e432b7df0d182f8d292902d1a2" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD CONSTRAINT "FK_90bd341302feb51c5eaa57aab32" FOREIGN KEY ("followed_profile_id") REFERENCES "profiles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "profiles_follows" ADD CONSTRAINT "FK_722f4fb48096271c96380c6278c" FOREIGN KEY ("follower_profile_id") REFERENCES "profiles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "profile_blocks" DROP CONSTRAINT "FK_2371a015439e6f02e92d9a3f182"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profile_blocks" DROP CONSTRAINT "FK_074d0134fc87c855f5006cbbc20"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" DROP CONSTRAINT "FK_9e432b7df0d182f8d292902d1a2"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "chats_participants" DROP CONSTRAINT "FK_68021766bd3dd7f7fb71c3273bc"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "chats_participants" DROP CONSTRAINT "FK_1511c4daef0688dfba61bbc2021"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" DROP CONSTRAINT "FK_bd66b84a312d9bf0e64b2e81902"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" DROP CONSTRAINT "FK_4d025b3431171ff016586ba81ad"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" DROP CONSTRAINT "FK_7f87cbb925b1267778a7f4c5d67"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" DROP CONSTRAINT "FK_cbea4ae5d43ac78856420f5158b"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" DROP CONSTRAINT "FK_f027d31c266699d0dae4366252b"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages" DROP CONSTRAINT "FK_7540635fef1922f0b156b9ef74f"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "message_reactions" DROP CONSTRAINT "FK_da49fde5fe274467fff777a8bb3"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "message_reactions" DROP CONSTRAINT "FK_ce61e365d81a9dfc15cd36513b0"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages_assets" DROP CONSTRAINT "FK_27f4e06be67fbe5888840b5ab39"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "messages_assets" DROP CONSTRAINT "FK_d8d48ea4985e94a520b2159f3af"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts" DROP CONSTRAINT "FK_9dbc2524c6f46641f5e7d107da1"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts_likes" DROP CONSTRAINT "FK_87047bfd925f32570f16d9ceec0"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts_likes" DROP CONSTRAINT "FK_6faf9115f9ab73dd332d218e9ba"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments" DROP CONSTRAINT "FK_d6f93329801a93536da4241e386"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments" DROP CONSTRAINT "FK_6b5b121879fe056a71e8e0915c2"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments" DROP CONSTRAINT "FK_259bf9825d9d198608d1b46b0b5"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments_likes" DROP CONSTRAINT "FK_1e3f43ccd0f517f3d248b952834"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comments_likes" DROP CONSTRAINT "FK_fab744c7db7ccbe1ded65166d73"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts_assets" DROP CONSTRAINT "FK_e14e8b24da991d85f9ba90465b8"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "posts_assets" DROP CONSTRAINT "FK_af7c44cddba02664bdd375707c4"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP CONSTRAINT "FK_0a07653dafdde983c05bad76c00"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP CONSTRAINT "FK_d0f58692b99b28dd497fbf36765"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP CONSTRAINT "UQ_00453870041ae7e68235a5d8755"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP CONSTRAINT "CHK_2d151542cc138642b4b12aced9"`,
+    );
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "role"`);
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD "role" character varying(20) NOT NULL DEFAULT 'User'`,
+    );
+    await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "avatar_url"`);
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD "avatar_url" character varying(500)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" DROP CONSTRAINT "UQ_d1ea35db5be7c08520d70dc03f8"`,
+    );
+    await queryRunner.query(`ALTER TABLE "profiles" DROP COLUMN "username"`);
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD "username" character varying(50) NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD CONSTRAINT "UQ_d1ea35db5be7c08520d70dc03f8" UNIQUE ("username")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" DROP CONSTRAINT "UQ_9e432b7df0d182f8d292902d1a2"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "users" DROP CONSTRAINT "UQ_fe0bb3f6520ee0469504521e710"`,
+    );
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "username"`);
+    await queryRunner.query(
+      `ALTER TABLE "users" DROP CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3"`,
+    );
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "email"`);
+    await queryRunner.query(
+      `ALTER TABLE "profiles" DROP COLUMN "display_name"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP COLUMN "following_id"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" DROP COLUMN "follower_id"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD "last_name" character varying`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD "first_name" character varying`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD "followed_profile_id" uuid NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD "follower_profile_id" uuid NOT NULL`,
+    );
+    await queryRunner.query(`DROP TABLE "notifications"`);
+    await queryRunner.query(`DROP TABLE "profile_blocks"`);
+    await queryRunner.query(`DROP TABLE "chats_participants"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."chats_participants_role_enum"`,
+    );
+    await queryRunner.query(`DROP TABLE "chats"`);
+    await queryRunner.query(`DROP TYPE "public"."chats_type_enum"`);
+    await queryRunner.query(`DROP TABLE "messages"`);
+    await queryRunner.query(`DROP TABLE "message_reactions"`);
+    await queryRunner.query(`DROP TABLE "messages_assets"`);
+    await queryRunner.query(`DROP TABLE "posts"`);
+    await queryRunner.query(`DROP TABLE "posts_likes"`);
+    await queryRunner.query(`DROP TABLE "comments"`);
+    await queryRunner.query(`DROP TABLE "comments_likes"`);
+    await queryRunner.query(`DROP TABLE "posts_assets"`);
+    await queryRunner.query(`DROP TABLE "assets"`);
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD CONSTRAINT "UQ_32580493d46f0f04500d87560ee" UNIQUE ("follower_profile_id", "followed_profile_id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles" ADD CONSTRAINT "FK_9e432b7df0d182f8d292902d1a2" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD CONSTRAINT "FK_90bd341302feb51c5eaa57aab32" FOREIGN KEY ("followed_profile_id") REFERENCES "profiles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profiles_follows" ADD CONSTRAINT "FK_722f4fb48096271c96380c6278c" FOREIGN KEY ("follower_profile_id") REFERENCES "profiles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+  }
 }

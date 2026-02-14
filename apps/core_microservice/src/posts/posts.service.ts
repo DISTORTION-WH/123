@@ -145,7 +145,6 @@ export class PostsService {
       skip: (page - 1) * limit,
     });
 
-
     const enrichedPosts = await Promise.all(
       posts.map((post) => this.enrichPostWithLikeStatus(post, currentUserId)),
     );
@@ -274,6 +273,46 @@ export class PostsService {
       likesCount,
       commentsCount,
       isLiked,
+    };
+  }
+
+  // --- SEARCH ---
+  async searchPosts(
+    query: string,
+    userId: string | undefined,
+    page: number = 1,
+    limit: number = 20,
+  ) {
+    const skip = (page - 1) * limit;
+
+    // Search posts by content
+    const [posts, total] = await this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.profile', 'profile')
+      .leftJoinAndSelect('post.assets', 'assets')
+      .leftJoinAndSelect('assets.asset', 'asset')
+      .where('post.content ILIKE :query', { query: `%${query}%` })
+      .orWhere('profile.displayName ILIKE :query', { query: `%${query}%` })
+      .orWhere('profile.username ILIKE :query', { query: `%${query}%` })
+      .orWhere('profile.bio ILIKE :query', { query: `%${query}%` })
+      .orderBy('post.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    // Enrich with likes and comments count
+    const enrichedPosts = await Promise.all(
+      posts.map((post) => this.enrichPostWithLikeStatus(post, userId)),
+    );
+
+    return {
+      data: enrichedPosts,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }

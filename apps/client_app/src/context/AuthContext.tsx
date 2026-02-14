@@ -75,17 +75,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       try {
         const response = await api.post('/auth/login', { email, password });
-        const { accessToken } = response.data;
+        const { accessToken, refreshTokenId } = response.data;
 
         if (!accessToken) {
           throw new Error('No access token in response');
         }
 
         localStorage.setItem('accessToken', accessToken);
+        if (refreshTokenId) {
+          localStorage.setItem('refreshTokenId', refreshTokenId);
+        }
         await getCurrentUser();
       } catch (error) {
         console.error('Login error:', error);
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshTokenId');
         setUser(null);
         setProfile(null);
         throw error;
@@ -101,17 +105,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       try {
         const response = await api.post('/auth/signup', data);
-        const { accessToken } = response.data;
+        const { accessToken, refreshTokenId } = response.data;
 
         if (!accessToken) {
           throw new Error('No access token in response');
         }
 
         localStorage.setItem('accessToken', accessToken);
+        if (refreshTokenId) {
+          localStorage.setItem('refreshTokenId', refreshTokenId);
+        }
         await getCurrentUser();
       } catch (error) {
         console.error('Signup error:', error);
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshTokenId');
         setUser(null);
         setProfile(null);
         throw error;
@@ -127,6 +135,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await api.post('/auth/logout');
     } finally {
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshTokenId');
       setUser(null);
       setProfile(null);
     }

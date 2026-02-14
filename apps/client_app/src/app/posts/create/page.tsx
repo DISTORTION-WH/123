@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { CreatePostWidget } from '@/components/feed/CreatePostWidget';
+import { ExploreBar } from '@/components/ExploreBar';
 import { useAuth } from '@/context/AuthContext';
 
 export default function CreatePostPage() {
@@ -15,7 +16,8 @@ export default function CreatePostPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
+      <ExploreBar />
+      <main className="max-w-2xl mx-auto px-4 pb-16">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Create Post</h1>
           <p style={{ color: 'var(--text-secondary)' }}>

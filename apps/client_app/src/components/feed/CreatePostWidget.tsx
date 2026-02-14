@@ -98,11 +98,13 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
 
           fileIds = [uploadResponse.data.id];
           console.log('File uploaded successfully:', uploadResponse.data.id);
-        } catch (uploadError: any) {
+        } catch (uploadError) {
           console.error('Failed to upload file', uploadError);
-          const errorMsg =
-            uploadError.response?.data?.message ||
-            'Failed to upload image. Please try again.';
+          let errorMsg = 'Failed to upload image. Please try again.';
+          if (uploadError instanceof Error && 'response' in uploadError) {
+            const err = uploadError as { response?: { data?: { message?: string } } };
+            errorMsg = err.response?.data?.message || errorMsg;
+          }
           setError(errorMsg);
           setIsLoading(false);
           return;
@@ -127,11 +129,13 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
       if (textareaRef.current) textareaRef.current.focus();
 
       onPostCreated();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to create post:', err);
-      const errorMsg =
-        err.response?.data?.message ||
-        'Failed to create post. Please try again.';
+      let errorMsg = 'Failed to create post. Please try again.';
+      if (err instanceof Error && 'response' in err) {
+        const error = err as { response?: { data?: { message?: string } } };
+        errorMsg = error.response?.data?.message || errorMsg;
+      }
       setError(errorMsg);
     } finally {
       setIsLoading(false);

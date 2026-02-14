@@ -6,6 +6,7 @@ import { useSocket } from '@/hooks/useSocket';
 import { Chat, Profile } from '@/types';
 import { ChatList } from '@/components/chat/ChatList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
+import { ExploreBar } from '@/components/ExploreBar';
 import Link from 'next/link';
 
 export default function ChatPage() {
@@ -48,6 +49,7 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
+      <ExploreBar />
       <div className="max-w-7xl mx-auto h-[calc(100vh-96px)] flex flex-col md:flex-row">
         {/* Left Sidebar - Chat List */}
         <div className="w-full md:w-80 border-r border-[var(--border)] flex flex-col bg-[var(--bg-secondary)]">

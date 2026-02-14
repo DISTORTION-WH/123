@@ -1,34 +1,67 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { PostCard } from '@/components/feed/PostCard';
-import { Post } from '@/types';
+import { ExploreBar } from '@/components/ExploreBar';
+import { Post, PaginationMeta } from '@/types';
 import { api } from '@/lib/axios';
 
 export default function ExplorePage() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const limit = 10;
 
-  useEffect(() => {
-    // Fetch popular posts
-    const fetchPosts = async () => {
-      try {
+  const fetchPosts = useCallback(
+    async (pageNum: number, append = false) => {
+      if (append) {
+        setLoadingMore(true);
+      } else {
         setLoading(true);
-        const res = await api.get('/posts/feed?page=1&limit=20');
-        setPosts(res.data.data || []);
+      }
+      try {
+        const res = await api.get('/posts', {
+          params: { page: pageNum, limit },
+        });
+        const { data, meta: responseMeta } = res.data as {
+          data: Post[];
+          meta: PaginationMeta;
+        };
+        setPosts((prev) => (append ? [...prev, ...data] : data));
+        setMeta(responseMeta);
+        setPage(pageNum);
       } catch (error) {
-        console.error('Failed to fetch posts:', error);
+        console.error('Failed to fetch explore posts', error);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [limit],
+  );
+
+  useEffect(() => {
+    fetchPosts(1);
+  }, [fetchPosts]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || !meta || page >= meta.totalPages) return;
+      const scrolledToBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 300;
+      if (scrolledToBottom) {
+        fetchPosts(page + 1, true);
       }
     };
 
-    fetchPosts();
-  }, []);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadingMore, meta, page, fetchPosts]);
 
   const handleLikeToggle = (postId: string, newStatus: boolean) => {
     setPosts((currentPosts) =>
@@ -53,7 +86,7 @@ export default function ExplorePage() {
     );
   };
 
-  const handlePostUpdate = (updatedPost: any) => {
+  const handlePostUpdate = (updatedPost: Post) => {
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
         post.id === updatedPost.id ? updatedPost : post
@@ -61,79 +94,13 @@ export default function ExplorePage() {
     );
   };
 
+  const hasMore = meta ? page < meta.totalPages : false;
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" style={{ color: 'var(--text-primary)' }}>
-      <main className="max-w-2xl mx-auto pt-6 px-4 pb-16">
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search posts, people, hashtags..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 rounded-full text-sm focus:outline-none"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
-              }}
-            />
-            <svg
-              className="absolute right-4 top-1/2 -translate-y-1/2"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Trending Tags */}
-        <div className="mb-8">
-          <h2 className="text-lg font-bold mb-4">Trending</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { tag: '#Viral', count: '1.2M' },
-              { tag: '#Trending', count: '890K' },
-              { tag: '#Music', count: '2.5M' },
-              { tag: '#Dance', count: '3.1M' },
-              { tag: '#Comedy', count: '2.8M' },
-              { tag: '#Creative', count: '1.9M' },
-            ].map((item) => (
-              <button
-                key={item.tag}
-                className="p-4 rounded-lg transition-all hover:opacity-80"
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <p className="font-bold" style={{ color: 'var(--accent)' }}>
-                  {item.tag}
-                </p>
-                <p
-                  className="text-xs"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  {item.count} views
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Posts Grid */}
-        <div className="mb-8">
-          <h2 className="text-lg font-bold mb-4">Discover</h2>
-
-          {loading ? (
+      <ExploreBar />
+      <main className="max-w-2xl mx-auto px-4 pb-16">
+        {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div
                 className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
@@ -143,36 +110,7 @@ export default function ExplorePage() {
                 className="mt-4 text-sm"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                Loading posts...
-              </p>
-            </div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-20">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="mx-auto mb-4"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="m21 15-5-5L5 21" />
-              </svg>
-              <p
-                className="text-lg font-semibold mb-1"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                No posts found
-              </p>
-              <p
-                className="text-sm"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                Check back later for new content
+                Loading explore posts...
               </p>
             </div>
           ) : (
@@ -187,9 +125,82 @@ export default function ExplorePage() {
                   isAuthor={user?.id === post.profile.userId}
                 />
               ))}
+
+              {posts.length === 0 && (
+                <div className="text-center py-20">
+                  <div className="text-5xl mb-4">
+                    <svg
+                      width="48"
+                      height="48"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      className="mx-auto"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="m21 15-5-5L5 21" />
+                    </svg>
+                  </div>
+                  <p
+                    className="text-lg font-semibold mb-1"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    No posts yet
+                  </p>
+                  <p
+                    className="text-sm"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Be the first to share something!
+                  </p>
+                </div>
+              )}
+
+              {hasMore && (
+                <div className="flex justify-center py-6">
+                  <button
+                    onClick={() => fetchPosts(page + 1, true)}
+                    disabled={loadingMore}
+                    className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all"
+                    style={{
+                      background: loadingMore
+                        ? 'var(--bg-elevated)'
+                        : 'var(--accent)',
+                      color: 'var(--text-primary)',
+                      opacity: loadingMore ? 0.7 : 1,
+                    }}
+                  >
+                    {loadingMore ? (
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin inline-block"
+                          style={{
+                            borderColor: 'var(--text-primary)',
+                            borderTopColor: 'transparent',
+                          }}
+                        />
+                        Loading...
+                      </span>
+                    ) : (
+                      'Load more'
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {loadingMore && !hasMore && (
+                <p
+                  className="text-center py-4 text-sm"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  You have seen all posts
+                </p>
+              )}
             </div>
           )}
-        </div>
       </main>
     </div>
   );

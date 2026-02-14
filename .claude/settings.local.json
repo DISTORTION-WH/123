@@ -11,7 +11,10 @@
       "Bash(findstr:*)",
       "Bash(Get-Process -Id 18124)",
       "Bash(Stop-Process -Force)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(__NEW_LINE_cc18ce588fdad557__ cd \"e:\\\\1work — копия\")",
+      "Bash(psql:*)",
+      "Bash(npm run lint:*)"
     ]
   }
 }

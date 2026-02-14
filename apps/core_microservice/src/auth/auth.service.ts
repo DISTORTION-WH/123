@@ -236,16 +236,23 @@ export class AuthService {
 
   async validateToken(accessToken: string): Promise<ValidateTokenResponse> {
     try {
+      this.logger.debug(
+        `Validating token at ${this.authServiceUrl}/internal/auth/validate`,
+      );
       const { data } = await lastValueFrom(
         this.httpService.post<ValidateTokenResponse>(
           `${this.authServiceUrl}/internal/auth/validate`,
           { accessToken },
         ),
       );
+      this.logger.debug(`Token validation response:`, data);
       return data;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error: any) {
-      this.logger.error(`Token validation failed`);
+      this.logger.error(
+        `Token validation failed: ${error.message}`,
+        error.response?.data || error.response?.status,
+      );
       throw new UnauthorizedException('Token validation failed');
     }
   }

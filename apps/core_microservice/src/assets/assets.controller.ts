@@ -39,10 +39,7 @@ export class AssetsController {
 
   @Get(':filename')
   @ApiOperation({ summary: 'Download uploaded file' })
-  async getFile(
-    @Param('filename') filename: string,
-    @Res() res: Response,
-  ) {
+  async getFile(@Param('filename') filename: string, @Res() res: Response) {
     try {
       const filePath = join(__dirname, '..', '..', 'uploads', filename);
 
@@ -53,7 +50,8 @@ export class AssetsController {
       else if (filename.endsWith('.mov')) contentType = 'video/quicktime';
       else if (filename.endsWith('.avi')) contentType = 'video/x-msvideo';
       else if (filename.endsWith('.mkv')) contentType = 'video/x-matroska';
-      else if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) contentType = 'image/jpeg';
+      else if (filename.endsWith('.jpg') || filename.endsWith('.jpeg'))
+        contentType = 'image/jpeg';
       else if (filename.endsWith('.png')) contentType = 'image/png';
       else if (filename.endsWith('.gif')) contentType = 'image/gif';
       else if (filename.endsWith('.webp')) contentType = 'image/webp';

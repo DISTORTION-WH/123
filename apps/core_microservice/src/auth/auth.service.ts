@@ -123,12 +123,16 @@ export class AuthService {
 
   async handleLogin(credentials: LoginDto): Promise<AuthResponse> {
     try {
+      this.logger.debug(
+        `Logging in user: ${credentials.email}`,
+      );
       const { data } = await lastValueFrom(
         this.httpService.post<AuthResponse>(
           `${this.authServiceUrl}/internal/auth/login`,
           credentials,
         ),
       );
+      this.logger.debug(`Login successful, received user: ${data.user.id}`);
 
       let user = await this.userRepository.findOne({
         where: { id: data.user.id },
@@ -291,7 +295,10 @@ export class AuthService {
 
   private handleHttpError(error: unknown): never {
     const axiosError = error as AxiosError<{ error: string; message?: string }>;
-    this.logger.error(`Auth Service Error: ${axiosError.message}`);
+    this.logger.error(`Auth Service Error: ${axiosError.message}`, {
+      status: axiosError.response?.status,
+      data: axiosError.response?.data,
+    });
 
     if (axiosError.response) {
       const { status, data } = axiosError.response;

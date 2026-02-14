@@ -24,7 +24,11 @@ export class AuthController {
   ) {
     const result = await this.authService.handleSignUp(signUpDto);
     this.setAuthCookies(res, result.accessToken, result.refreshTokenId);
-    return { user: result.user, accessToken: result.accessToken };
+    return {
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshTokenId: result.refreshTokenId,
+    };
   }
   @Post('login')
   async login(
@@ -33,7 +37,11 @@ export class AuthController {
   ) {
     const result = await this.authService.handleLogin(loginDto);
     this.setAuthCookies(res, result.accessToken, result.refreshTokenId);
-    return { user: result.user, accessToken: result.accessToken };
+    return {
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshTokenId: result.refreshTokenId,
+    };
   }
   @Post('logout')
   logout(@Res({ passthrough: true }) res: express.Response) {

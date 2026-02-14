@@ -40,11 +40,14 @@ router
 
     .post('/login', async (req: Request, res: Response) => {
   try {
+    console.log('[Login] Received credentials:', { email: req.body.email });
     const dto = LoginEntity.validate(req.body);
+    console.log('[Login] Validation passed');
     const result = await authService.authenticateUser(dto);
+    console.log('[Login] Authentication successful for:', dto.email);
     return res.status(200).json(result);
   } catch (error: any) {
-    
+    console.log('[Login] Error:', error.message);
     if (error instanceof ZodError) return handleControllerError(res, error);
     return res.status(401).json({ error: error.message || 'Invalid credentials' });
   }

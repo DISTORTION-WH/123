@@ -68,15 +68,20 @@ export class AuthService {
   }
 
   async authenticateUser(credentials: { email: string; password: string }) {
+    console.log('[AuthService] Looking for user with email:', credentials.email);
     const user = await this.userRepository.findByEmail(credentials.email);
 
     if (!user) {
+      console.log('[AuthService] User not found:', credentials.email);
       throw new Error('Invalid credentials');
     }
+    console.log('[AuthService] User found, verifying password');
     const isMatch = await comparePassword(credentials.password, user.passwordHash);
     if (!isMatch) {
+      console.log('[AuthService] Password mismatch');
       throw new Error('Invalid credentials');
     }
+    console.log('[AuthService] Generating tokens for user:', user._id);
     return this.generateTokens(user._id.toString(), user.role, user.email, user.username);
   }
 

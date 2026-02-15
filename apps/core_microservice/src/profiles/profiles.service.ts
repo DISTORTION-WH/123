@@ -4,18 +4,28 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Like, Repository } from 'typeorm';
 import { Profile } from '../database/entities/profile.entity';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { ProfileBlock } from '../database/entities/profile-block.entity';
+import { Chat, ChatType } from '../database/entities/chat.entity';
+import {
+  ChatParticipant,
+  ChatRole,
+} from '../database/entities/chat-participant.entity';
 import { User } from '../database/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { Like } from 'typeorm';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../database/entities/notification.entity';
+
 @Injectable()
 export class ProfilesService {
+  private readonly logger = new Logger(ProfilesService.name);
+
   constructor(
     @InjectRepository(Profile)
     private readonly profileRepository: Repository<Profile>,
@@ -23,6 +33,12 @@ export class ProfilesService {
     private readonly followRepository: Repository<ProfileFollow>,
     @InjectRepository(ProfileBlock)
     private readonly blockRepository: Repository<ProfileBlock>,
+    @InjectRepository(Chat)
+    private readonly chatRepository: Repository<Chat>,
+    @InjectRepository(ChatParticipant)
+    private readonly chatParticipantRepository: Repository<ChatParticipant>,
+    private readonly dataSource: DataSource,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async createProfile(user: User): Promise<Profile> {
@@ -145,7 +161,48 @@ export class ProfilesService {
       createdBy: userId,
     });
 
-    return this.followRepository.save(follow);
+    const savedFollow = await this.followRepository.save(follow);
+
+    // Send notification
+    if (savedFollow.accepted === true) {
+      // Public account: instant follow
+      void this.notificationsService.create({
+        type: NotificationType.FOLLOW,
+        title: 'New follower',
+        message: `@${myProfile.username} started following you`,
+        targetUserId: targetProfile.userId,
+        createdBy: userId,
+        data: {
+          actorName: myProfile.displayName || myProfile.username,
+          actorUsername: myProfile.username,
+          actorAvatar: myProfile.avatarUrl,
+          link: `/profile/${myProfile.username}`,
+        },
+      });
+
+      const isMutual = await this.checkIsFriend(myProfile.id, targetProfile.id);
+      if (isMutual) {
+        await this.ensurePrivateChat(myProfile, targetProfile, userId);
+      }
+    } else {
+      // Private account: follow request
+      void this.notificationsService.create({
+        type: NotificationType.FOLLOW,
+        title: 'Follow request',
+        message: `@${myProfile.username} requested to follow you`,
+        targetUserId: targetProfile.userId,
+        createdBy: userId,
+        data: {
+          actorName: myProfile.displayName || myProfile.username,
+          actorUsername: myProfile.username,
+          actorAvatar: myProfile.avatarUrl,
+          link: `/profile/${myProfile.username}`,
+          isRequest: true,
+        },
+      });
+    }
+
+    return savedFollow;
   }
 
   async unfollowUser(userId: string, targetUsername: string) {
@@ -266,7 +323,33 @@ export class ProfilesService {
 
     follow.accepted = true;
     follow.updatedBy = userId;
-    return this.followRepository.save(follow);
+    const savedFollow = await this.followRepository.save(follow);
+
+    // Notify the follower that their request was accepted
+    void this.notificationsService.create({
+      type: NotificationType.FOLLOW,
+      title: 'Follow request accepted',
+      message: `@${myProfile.username} accepted your follow request`,
+      targetUserId: followerProfile.userId,
+      createdBy: userId,
+      data: {
+        actorName: myProfile.displayName || myProfile.username,
+        actorUsername: myProfile.username,
+        actorAvatar: myProfile.avatarUrl,
+        link: `/profile/${myProfile.username}`,
+      },
+    });
+
+    // Check if this creates a mutual follow -> auto-create chat
+    const isMutual = await this.checkIsFriend(
+      myProfile.id,
+      followerProfile.id,
+    );
+    if (isMutual) {
+      await this.ensurePrivateChat(myProfile, followerProfile, userId);
+    }
+
+    return savedFollow;
   }
 
   async rejectFollowRequest(userId: string, followerUsername: string) {
@@ -361,6 +444,79 @@ export class ProfilesService {
 
     await this.blockRepository.remove(block);
     return { message: `User ${targetUsername} unblocked` };
+  }
+
+  async getBlockedUsers(userId: string) {
+    const profile = await this.getProfileByUserId(userId);
+    const blocks = await this.blockRepository.find({
+      where: { blockerId: profile.id },
+      relations: ['blocked'],
+    });
+    return blocks.map((b) => b.blocked);
+  }
+
+  // --- Auto-create private chat on mutual follow ---
+
+  private async ensurePrivateChat(
+    profileA: Profile,
+    profileB: Profile,
+    createdByUserId: string,
+  ): Promise<void> {
+    try {
+      // Check if private chat already exists between these two
+      const existingChat = await this.chatRepository
+        .createQueryBuilder('chat')
+        .innerJoin('chat.participants', 'p1')
+        .innerJoin('chat.participants', 'p2')
+        .where('chat.type = :type', { type: ChatType.PRIVATE })
+        .andWhere('p1.profileId = :aId', { aId: profileA.id })
+        .andWhere('p2.profileId = :bId', { bId: profileB.id })
+        .select('chat.id')
+        .getOne();
+
+      if (existingChat) return; // Chat already exists
+
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        const chat = this.chatRepository.create({
+          type: ChatType.PRIVATE,
+          createdBy: createdByUserId,
+          updatedBy: createdByUserId,
+        });
+        const savedChat = await queryRunner.manager.save(Chat, chat);
+
+        const part1 = this.chatParticipantRepository.create({
+          chatId: savedChat.id,
+          profileId: profileA.id,
+          role: ChatRole.MEMBER,
+          createdBy: createdByUserId,
+        });
+        const part2 = this.chatParticipantRepository.create({
+          chatId: savedChat.id,
+          profileId: profileB.id,
+          role: ChatRole.MEMBER,
+          createdBy: createdByUserId,
+        });
+
+        await queryRunner.manager.save(ChatParticipant, [part1, part2]);
+        await queryRunner.commitTransaction();
+
+        this.logger.log(
+          `Auto-created private chat between ${profileA.username} and ${profileB.username}`,
+        );
+      } catch (err) {
+        await queryRunner.rollbackTransaction();
+        this.logger.error('Failed to auto-create chat', err);
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (err) {
+      // Non-critical: don't break the follow flow if chat creation fails
+      this.logger.error('ensurePrivateChat error', err);
+    }
   }
 
   // --- Helpers for Checks ---

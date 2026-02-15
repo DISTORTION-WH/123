@@ -12,7 +12,9 @@ import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { User } from '../database/entities/user.entity';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
 import { AuthModule } from '../auth/auth.module';
-import { ProfilesModule } from '../profiles/profiles.module'; // <-- Импортируем модуль
+import { ProfilesModule } from '../profiles/profiles.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -26,6 +28,7 @@ import { ProfilesModule } from '../profiles/profiles.module'; // <-- Импор�
     ]),
     ProfilesModule,
     AuthModule,
+    NotificationsModule,
     ClientsModule.register([
       {
         name: NOTIFICATIONS_SERVICE,

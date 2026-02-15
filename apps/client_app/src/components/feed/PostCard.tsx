@@ -8,6 +8,7 @@ import { api } from '@/lib/axios';
 import { getAssetUrl } from '@/lib/url-helper';
 import { CommentSection } from './CommentSection';
 import { EditPostModal } from './EditPostModal';
+import { SharePostModal } from './SharePostModal';
 
 interface PostCardProps {
   post: Post;
@@ -21,6 +22,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
   const [showComments, setShowComments] = useState(false);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const lastTapRef = useRef<number>(0);
 
   const assetUrl = getAssetUrl(
@@ -53,18 +55,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
   }, [post.isLiked, handleLike]);
 
   const handleShare = useCallback(() => {
-    if (navigator.share) {
-      navigator.share({
-        title: `Post by ${post.profile.username}`,
-        text: post.content,
-        url: `${window.location.origin}/posts/${post.id}`,
-      }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(
-        `${window.location.origin}/posts/${post.id}`,
-      );
-    }
-  }, [post.id, post.content, post.profile.username]);
+    setShowShareModal(true);
+  }, []);
 
   const formatCount = (count: number): string => {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
@@ -495,6 +487,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
         onSave={(updatedPost) => {
           if (onUpdate) onUpdate(updatedPost);
         }}
+      />
+
+      <SharePostModal
+        postId={post.id}
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
       />
     </div>
   );

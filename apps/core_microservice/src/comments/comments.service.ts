@@ -15,6 +15,8 @@ import { Post } from '../database/entities/post.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../database/entities/notification.entity';
 
 @Injectable()
 export class CommentsService {
@@ -28,6 +30,7 @@ export class CommentsService {
     private readonly profilesService: ProfilesService,
     @Inject(NOTIFICATIONS_SERVICE)
     private readonly notificationsClient: ClientProxy,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, dto: CreateCommentDto) {
@@ -85,6 +88,23 @@ export class CommentsService {
         type: 'COMMENT_ON_POST',
         timestamp: new Date().toISOString(),
       });
+
+      void this.notificationsService.create({
+        type: NotificationType.COMMENT,
+        title: 'New comment',
+        message: `@${profile.username} commented on your post`,
+        targetUserId: post.profile.userId,
+        createdBy: userId,
+        data: {
+          actorName: profile.displayName || profile.username,
+          actorUsername: profile.username,
+          actorAvatar: profile.avatarUrl,
+          postId: post.id,
+          commentId: savedComment.id,
+          commentText: dto.content.substring(0, 100),
+          link: `/feed?postId=${post.id}`,
+        },
+      });
     }
 
     // Б) Уведомление автору родительского комментария
@@ -98,6 +118,23 @@ export class CommentsService {
           commentId: savedComment.id,
           type: 'REPLY_TO_COMMENT',
           timestamp: new Date().toISOString(),
+        });
+
+        void this.notificationsService.create({
+          type: NotificationType.COMMENT,
+          title: 'New reply',
+          message: `@${profile.username} replied to your comment`,
+          targetUserId: parentComment.profile.userId,
+          createdBy: userId,
+          data: {
+            actorName: profile.displayName || profile.username,
+            actorUsername: profile.username,
+            actorAvatar: profile.avatarUrl,
+            postId: post.id,
+            commentId: savedComment.id,
+            commentText: dto.content.substring(0, 100),
+            link: `/feed?postId=${post.id}`,
+          },
         });
       }
     }

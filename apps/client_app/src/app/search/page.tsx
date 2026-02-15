@@ -7,7 +7,7 @@ import { api } from '@/lib/axios';
 import { Post, Profile } from '@/types';
 import Link from 'next/link';
 import { PostCard } from '@/components/feed/PostCard';
-import { getAvatarUrl } from '@/lib/url-helper';
+import { Avatar } from '@/components/ui/Avatar';
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
@@ -195,13 +195,11 @@ function SearchPageContent() {
                         href={`/profile/${profile.username}`}
                         className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
                       >
-                        <img
-                          src={getAvatarUrl(profile.avatarUrl) || ''}
+                        <Avatar
+                          src={profile.avatarUrl}
                           alt={profile.username}
-                          className="w-12 h-12 rounded-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23999"><circle cx="12" cy="12" r="12"/><path fill="white" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle fill="white" cx="12" cy="7" r="4"/></svg>`;
-                          }}
+                          size="lg"
+                          className="w-12 h-12"
                         />
                         <div>
                           <p className="font-semibold text-[var(--text-primary)]">

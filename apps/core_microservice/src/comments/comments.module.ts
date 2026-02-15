@@ -6,15 +6,17 @@ import { Comment } from '../database/entities/comment.entity';
 import { CommentLike } from '../database/entities/comment-like.entity';
 import { Post } from '../database/entities/post.entity';
 import { ProfilesModule } from '../profiles/profiles.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
-import { AuthModule } from '../auth/auth.module'; // 1. Импортируем AuthModule
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Comment, CommentLike, Post]),
     ProfilesModule,
-    AuthModule, // 2. Добавляем в imports
+    AuthModule,
+    NotificationsModule,
     ClientsModule.register([
       {
         name: NOTIFICATIONS_SERVICE,
@@ -25,7 +27,7 @@ import { AuthModule } from '../auth/auth.module'; // 1. Импортируем A
           ],
           queue: 'notifications_queue',
           queueOptions: {
-            durable: false,
+            durable: true,
           },
         },
       },

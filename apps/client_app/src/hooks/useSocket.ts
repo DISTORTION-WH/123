@@ -1,16 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    socketRef.current = io(`${SOCKET_URL}/chats`, {
+    const s = io(`${SOCKET_URL}/chats`, {
       transportOptions: {
         polling: {
           extraHeaders: {
@@ -23,20 +24,23 @@ export const useSocket = () => {
       },
     });
 
-    socketRef.current.on('connect', () => {
-      console.log('Socket connected:', socketRef.current?.id);
+    socketRef.current = s;
+
+    s.on('connect', () => {
+      console.log('Socket connected:', s.id);
+      setSocket(s);
     });
 
-    socketRef.current.on('connect_error', (err) => {
+    s.on('connect_error', (err) => {
       console.error('Socket connection error:', err);
     });
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      s.disconnect();
+      socketRef.current = null;
+      setSocket(null);
     };
   }, []);
 
-  return socketRef.current;
+  return socket;
 };

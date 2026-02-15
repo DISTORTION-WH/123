@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
@@ -29,25 +29,52 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [messageLoading, setMessageLoading] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const avatarUrl = getAvatarUrl(profile.avatarUrl);
+
+  // Check if this user is blocked
+  useEffect(() => {
+    if (isMyProfile) return;
+    const checkBlocked = async () => {
+      try {
+        const res = await api.get('/profiles/me/blocked');
+        const blockedList: Profile[] = res.data || [];
+        setIsBlocked(blockedList.some((b) => b.id === profile.id));
+      } catch {
+        // ignore
+      }
+    };
+    checkBlocked();
+  }, [profile.id, isMyProfile]);
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const handleMessageClick = async () => {
     if (messageLoading) return;
     setMessageLoading(true);
     try {
-      // Try to create or get existing chat
       const response = await api.post('/chats', {
         type: 'private',
         targetUsername: profile.username,
       });
-      // Redirect to the chat
       router.push(`/chat?chatId=${response.data.id}`);
     } catch (error: any) {
-      // If error, show message or redirect to chat creation page
-      const errorMessage = error.response?.data?.message || 'Cannot start chat';
+      const errorMessage =
+        error.response?.data?.message || 'Cannot start chat';
       alert(errorMessage);
-      // Still redirect to chat page so user can try creating group chat
       router.push('/chat');
     } finally {
       setMessageLoading(false);
@@ -68,6 +95,31 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       console.error('Follow action failed:', err);
     } finally {
       setFollowLoading(false);
+    }
+  };
+
+  const handleBlockToggle = async () => {
+    if (blockLoading) return;
+    setBlockLoading(true);
+    setShowMenu(false);
+    try {
+      if (isBlocked) {
+        await api.delete(`/profiles/${profile.username}/block`);
+        setIsBlocked(false);
+      } else {
+        if (!confirm(`Block @${profile.username}? This will also remove any follow connections.`)) {
+          setBlockLoading(false);
+          return;
+        }
+        await api.post(`/profiles/${profile.username}/block`);
+        setIsBlocked(true);
+        if (onProfileUpdate) onProfileUpdate();
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Action failed';
+      alert(msg);
+    } finally {
+      setBlockLoading(false);
     }
   };
 
@@ -155,52 +207,123 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               </Link>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={handleFollowAction}
-                disabled={followLoading}
-                className="px-6 py-1.5 rounded-lg font-semibold text-sm transition-colors disabled:opacity-60"
-                style={{
-                  background: isFollowing
-                    ? 'var(--bg-elevated)'
-                    : 'var(--accent)',
-                  color: isFollowing
-                    ? 'var(--text-primary)'
-                    : '#fff',
-                  border: isFollowing
-                    ? '1px solid var(--border)'
-                    : 'none',
-                }}
-              >
-                {followLoading ? (
-                  <div
-                    className="w-4 h-4 border-2 rounded-full animate-spin mx-auto"
+            <div className="flex gap-2 items-center">
+              {!isBlocked && (
+                <>
+                  <button
+                    onClick={handleFollowAction}
+                    disabled={followLoading}
+                    className="px-6 py-1.5 rounded-lg font-semibold text-sm transition-colors disabled:opacity-60"
                     style={{
-                      borderColor: 'transparent',
-                      borderTopColor: 'currentColor',
+                      background: isFollowing
+                        ? 'var(--bg-elevated)'
+                        : 'var(--accent)',
+                      color: isFollowing
+                        ? 'var(--text-primary)'
+                        : '#fff',
+                      border: isFollowing
+                        ? '1px solid var(--border)'
+                        : 'none',
                     }}
-                  />
-                ) : isFollowing ? (
-                  'Following'
-                ) : (
-                  'Follow'
+                  >
+                    {followLoading ? (
+                      <div
+                        className="w-4 h-4 border-2 rounded-full animate-spin mx-auto"
+                        style={{
+                          borderColor: 'transparent',
+                          borderTopColor: 'currentColor',
+                        }}
+                      />
+                    ) : isFollowing ? (
+                      'Following'
+                    ) : (
+                      'Follow'
+                    )}
+                  </button>
+                  <button
+                    onClick={handleMessageClick}
+                    disabled={messageLoading}
+                    className="px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors disabled:opacity-60"
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    {messageLoading ? 'Loading...' : 'Message'}
+                  </button>
+                </>
+              )}
+
+              {/* More options menu */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-1.5 rounded-lg transition-colors"
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="5" r="1" />
+                    <circle cx="12" cy="12" r="1" />
+                    <circle cx="12" cy="19" r="1" />
+                  </svg>
+                </button>
+
+                {showMenu && (
+                  <div
+                    className="absolute right-0 top-full mt-2 w-48 rounded-lg shadow-lg z-50 overflow-hidden"
+                    style={{
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    <button
+                      onClick={handleBlockToggle}
+                      disabled={blockLoading}
+                      className="w-full text-left px-4 py-3 text-sm font-semibold transition-colors hover:opacity-80 disabled:opacity-50"
+                      style={{
+                        color: isBlocked
+                          ? 'var(--text-primary)'
+                          : '#ef4444',
+                      }}
+                    >
+                      {blockLoading
+                        ? 'Loading...'
+                        : isBlocked
+                          ? 'Unblock user'
+                          : 'Block user'}
+                    </button>
+                  </div>
                 )}
-              </button>
-              <button
-                onClick={handleMessageClick}
-                disabled={messageLoading}
-                className="px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors disabled:opacity-60"
-                style={{
-                  background: 'var(--bg-elevated)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                {messageLoading ? 'Loading...' : 'Message'}
-              </button>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Blocked banner */}
+        {isBlocked && !isMyProfile && (
+          <div
+            className="w-full mb-4 px-4 py-2 rounded-lg text-sm font-semibold text-center"
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              color: '#ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+            }}
+          >
+            You have blocked this user
+          </div>
+        )}
 
         {/* Stats */}
         <div className="flex gap-8 mb-4 text-sm md:text-base">

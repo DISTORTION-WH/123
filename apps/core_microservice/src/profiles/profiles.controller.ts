@@ -183,6 +183,14 @@ export class ProfilesController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Get('me/blocked')
+  @ApiOperation({ summary: 'Get list of blocked users' })
+  async getBlockedUsers(@CurrentUser() user: CurrentUserData) {
+    return await this.profilesService.getBlockedUsers(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post(':username/block')
   @ApiOperation({ summary: 'Block a user' })
   async blockUser(

@@ -15,7 +15,9 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-}) as unknown as RequestHandler; 
+  // Skip rate limiting for internal service-to-service calls (validate, etc.)
+  skip: (req) => req.path.startsWith('/internal/'),
+}) as unknown as RequestHandler;
 
 app
   .use(cors())

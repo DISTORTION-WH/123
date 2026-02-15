@@ -25,7 +25,8 @@ export default function ChatPage() {
         setMyProfile(profileRes.data);
 
         const chatsRes = await api.get('/chats');
-        const loadedChats = chatsRes.data.data || [];
+        const raw = chatsRes.data;
+        const loadedChats = Array.isArray(raw) ? raw : (raw.data || []);
         setChats(loadedChats);
 
         // If chatId is in URL, find and set it as active
@@ -60,110 +61,157 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-200px)] flex flex-col md:flex-row">
-        {/* Left Sidebar - Chat List */}
-        <div className="w-full md:w-80 border-r border-[var(--border)] flex flex-col bg-[var(--bg-secondary)]">
-          <div className="p-6 border-b border-[var(--border)]">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">
-                Messages
-              </h2>
-              <Link
-                href="/chat/create"
-                className="p-2 rounded-full hover:bg-[var(--bg-elevated)] transition-colors"
-                title="Create new chat"
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="text-[var(--accent)]"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              </Link>
-            </div>
-
-            {/* Search */}
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              className="w-full px-4 py-2 rounded-full bg-[var(--bg-input)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none transition-colors"
-            />
-          </div>
-
-          {/* Chats List */}
-          <div className="flex-1 overflow-y-auto">
-            {chats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  className="mb-4"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                </svg>
-                <p className="text-[var(--text-secondary)] mb-4">
-                  No conversations yet
-                </p>
-                <Link
-                  href="/chat/create"
-                  className="px-6 py-2 bg-[var(--accent)] text-white rounded-full font-semibold hover:bg-[var(--accent-hover)] transition-colors"
-                >
-                  Start a chat
-                </Link>
-              </div>
-            ) : (
-              <ChatList
-                chats={chats}
-                activeChatId={activeChat?.id || null}
-                onSelectChat={handleSelectChat}
-                currentUserId={myProfile?.userId || ''}
-              />
-            )}
-          </div>
+    <div
+      className="flex overflow-hidden rounded-xl border"
+      style={{
+        borderColor: 'var(--border)',
+        background: 'var(--bg-card)',
+        height: 'calc(100vh - 120px)',
+      }}
+    >
+      {/* Left Sidebar - Chat List */}
+      <div
+        className="w-80 flex-shrink-0 flex flex-col border-r"
+        style={{
+          borderColor: 'var(--border)',
+          background: 'var(--bg-secondary)',
+        }}
+      >
+        {/* Header */}
+        <div
+          className="px-5 py-4 border-b flex items-center justify-between"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <h2
+            className="text-lg font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Messages
+          </h2>
+          <Link
+            href="/chat/create"
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            style={{ color: 'var(--accent)' }}
+            title="New chat"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-elevated)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </Link>
         </div>
 
-        {/* Right Side - Chat Window */}
-        <div className="hidden md:flex flex-1 flex-col">
-          {activeChat && myProfile ? (
-            <ChatWindow
-              chat={activeChat}
-              currentUserId={myProfile.userId}
-              socket={socket}
-            />
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
+        {/* Search */}
+        <div
+          className="px-4 py-3 border-b"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            style={{
+              background: 'var(--bg-input)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border)',
+            }}
+          />
+        </div>
+
+        {/* Chats */}
+        <div className="flex-1 overflow-y-auto">
+          {chats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-6">
               <svg
-                width="64"
-                height="64"
+                width="40"
+                height="40"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
-                className="mb-4"
+                className="mb-3"
                 style={{ color: 'var(--text-muted)' }}
               >
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
               </svg>
-              <h3 className="text-xl font-semibold text-[var(--text-secondary)] mb-2">
-                Select a conversation
-              </h3>
-              <p className="text-[var(--text-muted)]">
-                Choose a chat to start messaging
+              <p
+                className="text-sm mb-3"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                No conversations yet
               </p>
+              <Link
+                href="/chat/create"
+                className="px-5 py-2 text-white rounded-full text-sm font-semibold transition-colors"
+                style={{ background: 'var(--accent)' }}
+              >
+                Start a chat
+              </Link>
             </div>
+          ) : (
+            <ChatList
+              chats={chats}
+              activeChatId={activeChat?.id || null}
+              onSelectChat={handleSelectChat}
+              currentUserId={myProfile?.userId || ''}
+            />
           )}
         </div>
       </div>
+
+      {/* Right Side - Chat Window */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {activeChat && myProfile ? (
+          <ChatWindow
+            chat={activeChat}
+            currentUserId={myProfile.userId}
+            socket={socket}
+          />
+        ) : (
+          <div
+            className="flex-1 flex flex-col items-center justify-center text-center"
+            style={{ background: 'var(--bg-primary)' }}
+          >
+            <svg
+              width="56"
+              height="56"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="mb-4"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+            </svg>
+            <h3
+              className="text-lg font-semibold mb-1"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Select a conversation
+            </h3>
+            <p
+              className="text-sm"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Choose a chat to start messaging
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

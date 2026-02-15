@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar } from '@/components/ui/Avatar';
+import { api } from '@/lib/axios';
 
 const navItems = [
   { href: '/feed', label: 'Home', icon: 'home' },
@@ -18,6 +19,22 @@ export const TikTokNavbar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await api.get('/notifications/unread-count');
+        setUnreadCount(res.data.count || 0);
+      } catch {
+        // ignore
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [pathname]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,14 +152,21 @@ export const TikTokNavbar = () => {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-4 px-4 py-3 rounded-full transition-all ${
+              className={`flex items-center gap-4 px-4 py-3 rounded-full transition-all relative ${
                 isActive(item.href)
                   ? 'bg-[var(--accent)] text-white'
                   : 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
               }`}
               title={item.label}
             >
-              {getIcon(item.icon)}
+              <div className="relative">
+                {getIcon(item.icon)}
+                {item.icon === 'bell' && unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#ef4444] text-white text-[9px] font-bold flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </div>
               <span className="hidden lg:inline text-base font-semibold">
                 {item.label}
               </span>

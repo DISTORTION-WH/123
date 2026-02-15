@@ -41,6 +41,13 @@ export class AuthService {
   private readonly authServiceUrl: string;
   private readonly logger = new Logger(AuthService.name);
 
+  // In-memory cache for validated tokens (token -> { result, expiresAt })
+  private readonly tokenCache = new Map<
+    string,
+    { result: ValidateTokenResponse; expiresAt: number }
+  >();
+  private readonly TOKEN_CACHE_TTL = 60_000; // 1 minute cache
+
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
@@ -52,6 +59,18 @@ export class AuthService {
     this.authServiceUrl =
       this.configService.get<string>('AUTH_SERVICE_URL') ||
       'http://auth_microservice:3002';
+
+    // Periodically clean expired cache entries every 5 minutes
+    setInterval(() => this.cleanTokenCache(), 5 * 60_000);
+  }
+
+  private cleanTokenCache() {
+    const now = Date.now();
+    for (const [key, value] of this.tokenCache) {
+      if (value.expiresAt <= now) {
+        this.tokenCache.delete(key);
+      }
+    }
   }
 
   async handleSignUp(signUpDto: SignUpDto): Promise<AuthResponse> {
@@ -239,6 +258,12 @@ export class AuthService {
   }
 
   async validateToken(accessToken: string): Promise<ValidateTokenResponse> {
+    // Check cache first
+    const cached = this.tokenCache.get(accessToken);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.result;
+    }
+
     try {
       this.logger.debug(
         `Validating token at ${this.authServiceUrl}/internal/auth/validate`,
@@ -249,9 +274,16 @@ export class AuthService {
           { accessToken },
         ),
       );
-      this.logger.debug(`Token validation response:`, data);
+
+      // Cache valid tokens
+      if (data.isValid) {
+        this.tokenCache.set(accessToken, {
+          result: data,
+          expiresAt: Date.now() + this.TOKEN_CACHE_TTL,
+        });
+      }
+
       return data;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error: any) {
       this.logger.error(
         `Token validation failed: ${error.message}`,

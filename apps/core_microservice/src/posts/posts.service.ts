@@ -17,6 +17,8 @@ import { PostLike } from '../database/entities/post-like.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileFollow } from '../database/entities/profile-follow.entity';
 import { NOTIFICATIONS_SERVICE } from '../constants/services';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../database/entities/notification.entity';
 
 @Injectable()
 export class PostsService {
@@ -37,6 +39,7 @@ export class PostsService {
     private readonly profilesService: ProfilesService,
     @Inject(NOTIFICATIONS_SERVICE)
     private readonly notificationsClient: ClientProxy,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // --- CREATE ---
@@ -235,9 +238,25 @@ export class PostsService {
         this.notificationsClient.emit('post_liked', {
           actorId: userId,
           targetUserId: post.profile.userId,
-          targetUserEmail: post.profile.user.email, // Добавляем Email!
+          targetUserEmail: post.profile.user.email,
           postId: postId,
           timestamp: new Date().toISOString(),
+        });
+
+        // Save notification to DB (non-blocking)
+        void this.notificationsService.create({
+          type: NotificationType.LIKE,
+          title: 'New like',
+          message: `@${profile.username} liked your post`,
+          targetUserId: post.profile.userId,
+          createdBy: userId,
+          data: {
+            actorName: profile.displayName || profile.username,
+            actorUsername: profile.username,
+            actorAvatar: profile.avatarUrl,
+            postId: postId,
+            link: `/feed?postId=${postId}`,
+          },
         });
       }
 

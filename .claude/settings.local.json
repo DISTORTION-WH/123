@@ -23,7 +23,9 @@
       "Bash(else)",
       "Bash(fi:*)",
       "Bash(done)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx next build)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

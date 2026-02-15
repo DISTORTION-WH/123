@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Chat, ChatType } from '@/types';
+import { format, isToday, isYesterday } from 'date-fns';
+import { getAvatarUrl } from '@/lib/url-helper';
 
 interface ChatListProps {
   chats: Chat[];
@@ -16,38 +18,125 @@ export const ChatList: React.FC<ChatListProps> = ({
   onSelectChat,
   currentUserId,
 }) => {
-  // Хелпер для получения названия чата
   const getChatName = (chat: Chat) => {
-    if (chat.type === ChatType.GROUP) return chat.name;
-    // Для приватного чата ищем собеседника
-    const otherMember = chat.participants.find((p) => p.profile.userId !== currentUserId);
-    return otherMember ? (otherMember.profile.displayName || otherMember.profile.username) : 'Unknown';
+    if (chat.type === ChatType.GROUP) return chat.name || 'Group Chat';
+    const otherMember = chat.participants?.find(
+      (p) => p.profile?.userId !== currentUserId,
+    );
+    return (
+      otherMember?.profile?.displayName ||
+      otherMember?.profile?.username ||
+      'Unknown'
+    );
+  };
+
+  const getChatAvatar = (chat: Chat) => {
+    if (chat.type === ChatType.GROUP) return null;
+    const otherMember = chat.participants?.find(
+      (p) => p.profile?.userId !== currentUserId,
+    );
+    return getAvatarUrl(otherMember?.profile?.avatarUrl);
+  };
+
+  const formatTime = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isToday(date)) return format(date, 'HH:mm');
+    if (isYesterday(date)) return 'Yesterday';
+    return format(date, 'dd.MM.yy');
+  };
+
+  const getLastMessagePreview = (chat: Chat) => {
+    if (!chat.lastMessage) return 'No messages yet';
+    if (chat.lastMessage.sharedPost) return 'Shared a post';
+    return chat.lastMessage.content || 'Attachment';
   };
 
   return (
-    <div className="w-1/3 border-r h-full overflow-y-auto bg-white">
-      <div className="p-4 border-b">
-        <h2 className="text-xl font-bold">Chats</h2>
-      </div>
-      <ul>
-        {chats.map((chat) => (
-          <li
+    <div className="flex flex-col h-full">
+      {chats.map((chat) => {
+        const isActive = activeChatId === chat.id;
+        const avatarUrl = getChatAvatar(chat);
+
+        return (
+          <div
             key={chat.id}
             onClick={() => onSelectChat(chat.id)}
-            className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b ${
-              activeChatId === chat.id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
-            }`}
+            className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors"
+            style={{
+              background: isActive
+                ? 'var(--bg-elevated)'
+                : 'transparent',
+              borderLeft: isActive
+                ? '3px solid var(--accent)'
+                : '3px solid transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.background = 'var(--bg-elevated)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.background = 'transparent';
+              }
+            }}
           >
-            <div className="font-semibold">{getChatName(chat)}</div>
-            <div className="text-sm text-gray-500 truncate">
-              {chat.lastMessage ? chat.lastMessage.content : 'No messages yet'}
+            {/* Avatar */}
+            <div
+              className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg overflow-hidden"
+              style={{
+                background: avatarUrl ? 'transparent' : 'var(--accent)',
+              }}
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                getChatName(chat).charAt(0).toUpperCase()
+              )}
             </div>
-          </li>
-        ))}
-        {chats.length === 0 && (
-            <div className="p-4 text-center text-gray-500">No chats yet</div>
-        )}
-      </ul>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span
+                  className="font-semibold text-sm truncate"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {getChatName(chat)}
+                </span>
+                <span
+                  className="text-[11px] flex-shrink-0 ml-2"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {formatTime(
+                    chat.lastMessage?.createdAt || chat.updatedAt,
+                  )}
+                </span>
+              </div>
+              <p
+                className="text-xs truncate mt-0.5"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {getLastMessagePreview(chat)}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+
+      {chats.length === 0 && (
+        <div
+          className="flex flex-col items-center justify-center h-full text-center p-6"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <p className="text-sm">No chats yet</p>
+        </div>
+      )}
     </div>
   );
 };

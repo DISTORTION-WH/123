@@ -71,10 +71,10 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     // Теперь client.data.user типизирован, и линтер не будет ругаться
-    client.broadcast.to(`chat_${data.chatId}`).emit('userTyping', {
+    client.broadcast.to(`chat_${data.chatId}`).emit('typing', {
       chatId: data.chatId,
       userId: client.data.user?.id,
-      isTyping: true,
+      username: client.data.user?.username,
     });
   }
 
@@ -82,13 +82,12 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('typingStop')
   handleTypingStop(
     @MessageBody() data: { chatId: string },
-    // Используем AuthenticatedSocket вместо Socket
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    client.broadcast.to(`chat_${data.chatId}`).emit('userTyping', {
+    client.broadcast.to(`chat_${data.chatId}`).emit('typingStop', {
       chatId: data.chatId,
       userId: client.data.user?.id,
-      isTyping: false,
+      username: client.data.user?.username,
     });
   }
 
@@ -145,7 +144,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // --- PUBLIC METHODS FOR SERVICE ---
 
   broadcastMessage(chatId: string, message: any) {
-    this.server.to(`chat_${chatId}`).emit('new_message', message);
+    this.server.to(`chat_${chatId}`).emit('receiveMessage', message);
   }
 
   broadcastMessageUpdated(chatId: string, message: any) {

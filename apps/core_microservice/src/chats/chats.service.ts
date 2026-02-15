@@ -53,6 +53,10 @@ export class ChatsService {
     const target =
       await this.profilesService.getProfileByUsername(targetUsername);
 
+    if (!target) {
+      throw new NotFoundException('User not found');
+    }
+
     if (me.id === target.id) {
       throw new BadRequestException('Cannot chat with yourself');
     }
@@ -424,8 +428,9 @@ export class ChatsService {
         'assets.asset',
         'replyTo',
         'reactions',
-        'sharedPost', // <-- Подгружаем сам пост
-        'sharedPost.assets', // <-- Подгружаем ассеты поста (чтобы показать картинку)
+        'sharedPost',
+        'sharedPost.profile',
+        'sharedPost.assets',
         'sharedPost.assets.asset',
       ],
       order: { createdAt: 'ASC' },
@@ -511,7 +516,8 @@ export class ChatsService {
           'assets',
           'assets.asset',
           'replyTo',
-          'sharedPost', // <-- Возвращаем с постом
+          'sharedPost',
+          'sharedPost.profile',
           'sharedPost.assets',
           'sharedPost.assets.asset',
         ],

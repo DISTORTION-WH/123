@@ -23,7 +23,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
 import { MessageReaction } from '../database/entities/message-reaction.entity';
-import { Post } from '../database/entities/post.entity'; // <-- Импорт
+import { Post } from '../database/entities/post.entity';
 @Injectable()
 export class ChatsService {
   private readonly logger = new Logger(ChatsService.name);
@@ -70,7 +70,7 @@ export class ChatsService {
       target.id,
     );
     if (isBlocked) {
-      throw new ForbiddenException('Cannot start chat: blocked user');
+      throw new ForbiddenException('Cannot start chat - blocked user');
     }
 
     const existingChatId = await this.chatsRepository

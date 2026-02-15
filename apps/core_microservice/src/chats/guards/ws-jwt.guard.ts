@@ -62,7 +62,7 @@ export class WsJwtGuard implements CanActivate {
 
       client['user'] = user;
     } catch (err) {
-      console.error('WS Auth failed:', err);
+      console.error('WS Auth failed', err);
       throw new UnauthorizedException();
     }
     return true;

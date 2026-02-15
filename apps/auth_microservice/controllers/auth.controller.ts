@@ -42,15 +42,15 @@ router
 
     .post('/login', async (req: Request, res: Response) => {
   try {
-    console.log('[Login] Received credentials:', { email: req.body.email });
+    console.log('LOGIN Received credentials:', { email: req.body.email });
     const dto = LoginEntity.validate(req.body);
-    console.log('[Login] Validation passed');
+    console.log('LOGIN Validation passed');
     const result = await authService.authenticateUser(dto);
-    console.log('[Login] Authentication successful for:', dto.email);
+    console.log('LOGIN Authentication successful for:', dto.email);
     return res.status(200).json(result);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Invalid credentials';
-    console.log('[Login] Error:', message);
+    console.log('LOGIN Error:', message);
     if (error instanceof ZodError) return handleControllerError(res, error);
     return res.status(401).json({ error: message });
   }
@@ -76,7 +76,7 @@ router
     const payload = await authService.validateToken(accessToken);
 
     if (!payload) {
-      console.log('[Validate] Invalid or expired token');
+      console.log('VALIDATE Invalid or expired token');
       return res.status(200).json({
         isValid: false,
         valid: false,
@@ -84,7 +84,7 @@ router
       });
     }
 
-    console.log('[Validate] Token valid for user:', payload.userId);
+    console.log('VALIDATE Token valid for user:', payload.userId);
     return res.status(200).json({
         isValid: true,
         valid: true,
@@ -94,7 +94,7 @@ router
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.log('[Validate] Error:', message);
+    console.log('VALIDATE Error:', message);
     if (error instanceof ZodError) return handleControllerError(res, error);
     return res.status(500).json({ error: 'Internal server error' });
   }

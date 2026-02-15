@@ -20,10 +20,10 @@ export class AppService {
       // Generating HTML content for the email
       const html = `
         <h1>Welcome, ${name}!</h1>
-        <p>Thank you for joining <b>Innogram</b>.</p>
+        <p>Thank you for joining <b>Innotok</b>.</p>
         <p>We are excited to have you on board.</p>
         <br/>
-        <p>Best regards,<br/>The Innogram Team</p>
+        <p>Best regards,<br/>The Innotok Team</p>
       `;
 
       await this.mailerService.sendMail({

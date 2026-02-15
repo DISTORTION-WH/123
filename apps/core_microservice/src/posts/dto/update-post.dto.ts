@@ -22,7 +22,7 @@ export class UpdatePostDto {
   isArchived?: boolean;
 
   @ApiPropertyOptional({
-    description: 'New list of asset IDs (replaces old ones)',
+    description: 'New list of asset IDs',
   })
   @IsOptional()
   @IsArray()

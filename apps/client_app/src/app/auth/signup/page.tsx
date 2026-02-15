@@ -22,7 +22,7 @@ const signupSchema = z.object({
   birthday: z.string().min(1, 'Birthday is required'),
   bio: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Passwords dont match",
   path: ['confirmPassword'],
 });
 

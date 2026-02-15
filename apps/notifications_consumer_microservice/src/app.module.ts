@@ -25,7 +25,7 @@ import { NotificationsService } from './notifications.service';
           },
         },
         defaults: {
-          from: '"Innogram" <noreply@innogram.com>',
+          from: '"Innotok" <noreply@innogram.com>',
         },
       }),
       inject: [ConfigService],

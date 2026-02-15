@@ -25,11 +25,10 @@ export class NotificationsController {
   private readonly logger = new Logger(NotificationsController.name); // Initialize the logger with the context of the current class
 
   constructor(private readonly notificationsService: NotificationsService) {}
-  // Subscribe to a message with the 'post_liked' pattern from the RabbitMQ queue
   @EventPattern('post_liked')
   handlePostLiked(@Payload() data: PostLikedEvent) {
     this.logger.log(
-      `[RabbitMQ] Event 'post_liked' received. User ${data.actorId} liked post ${data.postId}`,
+      `RabbitMQ event 'post_liked' received. User ${data.actorId} liked post ${data.postId}`,
     );
 
     const email = data.targetUserEmail || 'test@example.com';
@@ -44,7 +43,7 @@ export class NotificationsController {
   @EventPattern('comment_created')
   handleCommentCreated(@Payload() data: CommentCreatedEvent) {
     this.logger.log(
-      `[RabbitMQ] Event 'comment_created' received. Type: ${data.type}`,
+      `RabbitMQ event 'comment_created' received. Type: ${data.type}`,
     );
   }
 }

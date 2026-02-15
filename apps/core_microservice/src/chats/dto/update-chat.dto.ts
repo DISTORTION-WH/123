@@ -9,7 +9,7 @@ export class UpdateChatDto {
   name?: string;
 
   @ApiPropertyOptional({
-    example: 'Description...',
+    example: 'Description',
     description: 'Chat description',
   })
   @IsOptional()

@@ -1,5 +1,3 @@
-// apps/core_microservice/src/database/entities/message-reaction.entity.ts
-
 import {
   Entity,
   PrimaryGeneratedColumn,

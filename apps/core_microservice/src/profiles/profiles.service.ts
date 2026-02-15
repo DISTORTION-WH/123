@@ -130,9 +130,7 @@ export class ProfilesService {
 
     const isBlocked = await this.checkIsBlocked(myProfile.id, targetProfile.id);
     if (isBlocked) {
-      throw new BadRequestException(
-        'You cannot follow this user (block active)',
-      );
+      throw new BadRequestException('You cannot follow this user');
     }
 
     const existing = await this.followRepository.findOne({

@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 
 export class UpdateProfileDto {
-  @ApiPropertyOptional({ example: 'johndoe', description: 'Unique username' })
+  @ApiPropertyOptional({ example: 'gleb', description: 'Unique username' })
   @IsOptional()
   @IsString()
   @MaxLength(30)
@@ -18,14 +18,17 @@ export class UpdateProfileDto {
   })
   username?: string;
 
-  @ApiPropertyOptional({ example: 'John Doe', description: 'Display name' })
+  @ApiPropertyOptional({
+    example: 'Gleb Shaternik',
+    description: 'Display name',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(50)
   displayName?: string;
 
   @ApiPropertyOptional({
-    example: 'Software Engineer',
+    example: 'Full Stack Developer',
     description: 'Bio info',
   })
   @IsOptional()

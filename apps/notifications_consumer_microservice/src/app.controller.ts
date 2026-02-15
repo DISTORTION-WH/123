@@ -11,7 +11,7 @@ export class AppController {
 
   @EventPattern('user_created')
   async handleUserCreated(@Payload() data: UserCreatedDto) {
-    this.logger.log(`Received event: user_created for ${data.email}`);
+    this.logger.log(`Received event user_created for ${data.email}`);
 
     if (data && data.email) {
       await this.appService.sendWelcomeEmail({

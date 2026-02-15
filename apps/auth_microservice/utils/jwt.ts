@@ -37,7 +37,7 @@ export const verifyAccessToken = (token: string): AccessTokenPayload | null => {
 
     return result as AccessTokenPayload;
   } catch {
-    console.log('[JWT Error] Verification failed.');
+    console.log('JWT ERROR verification failed.');
     return null;
   }
 };

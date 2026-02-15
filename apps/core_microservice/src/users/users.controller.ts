@@ -39,7 +39,7 @@ export class UsersController {
 
   @EventPattern()
   async handleUserCreated(@Payload() data: unknown) {
-    console.log('[UsersController] Received user sync event:', data);
+    console.log('UsersController received user sync event:', data);
 
     let userData: UserSyncDto;
 

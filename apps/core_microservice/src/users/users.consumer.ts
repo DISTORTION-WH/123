@@ -14,7 +14,7 @@ export class UsersConsumer {
   @EventPattern('user_created')
   handleUserCreated(@Payload() data: UserEventData) {
     this.logger.debug(
-      `[RabbitMQ] Event 'user_created' received for ${data.email}. Handled synchronously via HTTP.`,
+      `RabbitMQ event 'user_created' received for ${data.email}. Handled synchronously via HTTP.`,
     );
   }
 

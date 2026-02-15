@@ -63,9 +63,7 @@ export class UsersService {
           } catch (createError: unknown) {
             const dbErr = createError as { code?: string };
             if (dbErr.code === '23505') {
-              this.logger.warn(
-                `Profile for user ${data.id} already exists (concurrent creation).`,
-              );
+              this.logger.warn(`Profile for user ${data.id} already exists`);
             } else {
               throw createError;
             }
@@ -74,7 +72,7 @@ export class UsersService {
           const dbErr = error as { code?: string };
           if (dbErr.code === '23505') {
             this.logger.warn(
-              `User ${data.id} was created concurrently. Skipping insert.`,
+              `User ${data.id} was created concurrently. Skipping insert`,
             );
             currentUser = await this.userRepository.findOne({
               where: { id: data.id },

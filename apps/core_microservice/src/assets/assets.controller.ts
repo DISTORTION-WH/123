@@ -62,7 +62,7 @@ export class AssetsController {
 
       const stream = createReadStream(filePath);
 
-      stream.pipe(res);
+      stream.pipe(res); // Перенаправление потока данных напрямую в HTTP-ответ
 
       stream.on('error', () => {
         res.status(404).json({ error: 'File not found' });

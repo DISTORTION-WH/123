@@ -7,7 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 const requiredEnvVars = ['MONGO_URI', 'REDIS_HOST', 'JWT_ACCESS_SECRET'];
 requiredEnvVars.forEach((key) => {
   if (!process.env[key]) {
-    console.warn(`WARNING: Environment variable ${key} is missing!`);
+    console.warn(`WARNING Environment variable ${key} is missing!`);
   }
 });
 

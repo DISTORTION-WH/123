@@ -1,16 +1,20 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { Request } from 'express';
 import { extname } from 'path';
 
+type FileFilterCallback = (error: Error | null, acceptFile: boolean) => void;
+
+type DiskStorageCallback = (error: Error | null, filename: string) => void;
+
 export const imageAndVideoFileFilter = (
-  _req: Request,
+  req: unknown,
   file: Express.Multer.File,
-  callback: (error: Error | null, acceptFile: boolean) => void,
+  callback: FileFilterCallback,
 ) => {
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif|mp4|mov|avi|mkv)$/)) {
+    // Regular expression for checking valid file formats
     return callback(
       new HttpException(
-        'Only image and video files are allowed!',
+        'Only image and video files are allowed',
         HttpStatus.BAD_REQUEST,
       ),
       false,
@@ -18,11 +22,11 @@ export const imageAndVideoFileFilter = (
   }
   callback(null, true);
 };
-
+// Function to generate a unique file name before saving it to the server
 export const editFileName = (
-  _req: Request,
+  req: unknown,
   file: Express.Multer.File,
-  callback: (error: Error | null, filename: string) => void,
+  callback: DiskStorageCallback,
 ) => {
   const fileExtName = extname(file.originalname);
   const randomName = Array(32)

@@ -26,8 +26,8 @@ export class AssetsService {
     outputPath: string,
   ): Promise<boolean> {
     try {
-      console.log(`Generating thumbnail for: ${videoPath}`);
-      console.log(`Output path: ${outputPath}`);
+      console.log(`Generating thumbnail for ${videoPath}`);
+      console.log(`Output path ${outputPath}`);
       // Generating ffmpeg command: extract 1 frame at 1 second and save to file
       const command = `ffmpeg -i "${videoPath}" -ss 00:00:01 -vframes 1 "${outputPath}" -y 2>&1`;
       await execAsync(command);
@@ -38,7 +38,7 @@ export class AssetsService {
       );
       return exists;
     } catch (error) {
-      console.warn('Failed to generate thumbnail (non-critical):', error);
+      console.warn('Failed to generate thumbnail:', error);
       return false;
     }
   }

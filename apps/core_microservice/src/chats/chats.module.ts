@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt'; // Добавлен импорт
+import { JwtModule } from '@nestjs/jwt';
 
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
@@ -13,8 +13,8 @@ import { Message } from '../database/entities/message.entity';
 import { MessageAsset } from '../database/entities/message-asset.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ProfilesModule } from '../profiles/profiles.module';
-import { MessageReaction } from '../database/entities/message-reaction.entity'; // <-- Добавлено
-import { Post } from '../database/entities/post.entity'; // <-- Импорт
+import { MessageReaction } from '../database/entities/message-reaction.entity';
+import { Post } from '../database/entities/post.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([

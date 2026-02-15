@@ -9,8 +9,8 @@ import {
 
 export class CreateCommentDto {
   @ApiProperty({
-    example: 'Great post!',
-    description: 'Content of the comment',
+    example: 'awesome post',
+    description: 'content of the comment',
   })
   @IsString()
   @IsNotEmpty()

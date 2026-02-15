@@ -45,7 +45,7 @@ export class AuthService {
     });
 
     try {
-      console.log(`[AuthService] Publishing user_created event for ${userId}...`);
+      console.log(`AuthService publishing user_created event for ${userId}...`);
       
  // Send an event. Core can also listen for it,
 // but most importantly, the Notifications Service listens for it to send email.
@@ -61,28 +61,28 @@ export class AuthService {
       
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error('[AuthService] WARNING: Failed to publish RabbitMQ event:', message);
+      console.error('AuthService WARNING failed to publish RabbitMQ event:', message);
     }
 // Automatic login after registration: token generation
     return this.generateTokens(newUser._id.toString(), newUser.role, newUser.email, newUser.username);
   }
 
   async authenticateUser(credentials: { email: string; password: string }) {
-    console.log('[AuthService] Looking for user with email:', credentials.email);
+    console.log('AuthService looking for user with email:', credentials.email);
     const user = await this.userRepository.findByEmail(credentials.email);
 
     if (!user) {
-      console.log('[AuthService] User not found:', credentials.email);
+      console.log('AuthService user not found:', credentials.email);
       throw new Error('Invalid credentials');
     }
-    console.log('[AuthService] User found, verifying password');
+    console.log('AuthService user found, verifying password');
     // Check the hash of the entered password with the one stored in the database
     const isMatch = await comparePassword(credentials.password, user.passwordHash);
     if (!isMatch) {
-      console.log('[AuthService] Password mismatch');
+      console.log('AuthService password mismatch');
       throw new Error('Invalid credentials');
     }
-    console.log('[AuthService] Generating tokens for user:', user._id);
+    console.log('AuthService generating tokens for user:', user._id);
     // Successful authentication: return a pair of tokens
     return this.generateTokens(user._id.toString(), user.role, user.email, user.username);
   }
@@ -115,7 +115,7 @@ export class AuthService {
         const isBlacklisted = await this.redisRepository.isTokenBlacklisted(payload.jti, 'access');
         if (isBlacklisted) return null;
     } catch (err) {
-        console.error('[Auth Service] REDIS ERROR:', err);
+        console.error('AuthService REDIS ERROR:', err);
         return null; 
     }
 
@@ -163,7 +163,7 @@ export class AuthService {
     await this.redisRepository.setResetToken(resetToken, user._id.toString());
 
     const resetLink = `/auth/reset-password?token=${resetToken}`;
-    console.log(`[MOCK EMAIL] Reset link for ${email}: ${resetLink}`);
+    console.log(`Reset link for ${email}: ${resetLink}`);
   }
 
   async resetPassword(token: string, newPassword: string) {

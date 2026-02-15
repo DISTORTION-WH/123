@@ -41,10 +41,10 @@ async function generateMissingThumbnails() {
           thumbnailFilename,
         );
 
-        console.log(`Generating thumbnail for: ${filename}`);
+        console.log(`Generating thumbnail for ${filename}`);
 
         if (!existsSync(videoPath)) {
-          console.warn(`Video file not found: ${videoPath}`);
+          console.warn(`Video file not found ${videoPath}`);
           continue;
         }
 
@@ -54,19 +54,19 @@ async function generateMissingThumbnails() {
         if (existsSync(outputPath)) {
           asset.thumbnailPath = `/uploads/${thumbnailFilename}`;
           await assetRepo.save(asset);
-          console.log(`✓ Thumbnail generated for: ${filename}`);
+          console.log(`Thumbnail generated for ${filename}`);
         } else {
-          console.warn(`Thumbnail generation failed for: ${filename}`);
+          console.warn(`Thumbnail generation failed for ${filename}`);
         }
       } catch (error) {
-        console.error(`Error processing ${asset.fileName}:`, error);
+        console.error(`Error processing ${asset.fileName}`, error);
       }
     }
 
-    console.log('Done!');
+    console.log('Done');
     await AppDataSource.destroy();
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error', error);
     process.exit(1);
   }
 }

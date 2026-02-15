@@ -20,7 +20,7 @@ export class AuthController {
   @Post('signup')
   async signUp(
     @Body() signUpDto: SignUpDto,
-    @Res({ passthrough: true }) res: express.Response, // passthrough allows you to manage cookies but return JSON in the standard way
+    @Res({ passthrough: true }) res: express.Response, // passthrough allows manage cookies but return JSON in the standard way
   ) {
     const result = await this.authService.handleSignUp(signUpDto);
     this.setAuthCookies(res, result.accessToken, result.refreshTokenId);

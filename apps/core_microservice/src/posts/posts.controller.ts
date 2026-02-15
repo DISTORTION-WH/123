@@ -63,7 +63,7 @@ export class PostsController {
   @Get('feed')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get global feed (subscriptions + own posts)' })
+  @ApiOperation({ summary: 'Get global feed' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getFeed(

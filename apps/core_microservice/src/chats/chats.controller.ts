@@ -54,7 +54,7 @@ export class ChatsController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update group chat info (Admin only)' })
+  @ApiOperation({ summary: 'Update group chat info' })
   async updateChat(
     @Param('id') chatId: string,
     @CurrentUser() user: CurrentUserData,
@@ -64,7 +64,7 @@ export class ChatsController {
   }
 
   @Post(':id/participants')
-  @ApiOperation({ summary: 'Add participant to group (Admin only)' })
+  @ApiOperation({ summary: 'Add participant to group' })
   async addParticipant(
     @Param('id') chatId: string,
     @CurrentUser() user: CurrentUserData,
@@ -74,7 +74,7 @@ export class ChatsController {
   }
 
   @Delete(':id/participants/:profileId')
-  @ApiOperation({ summary: 'Remove participant from group (Admin only)' })
+  @ApiOperation({ summary: 'Remove participant from group' })
   async removeParticipant(
     @Param('id') chatId: string,
     @Param('profileId') profileId: string,

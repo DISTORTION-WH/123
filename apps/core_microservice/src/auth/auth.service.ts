@@ -207,7 +207,7 @@ export class AuthService {
         }),
       );
     } catch {
-      this.logger.warn('Logout warning: Auth service might be unavailable');
+      this.logger.warn('Logout warning auth service might be unavailable');
     }
   }
 
@@ -282,14 +282,14 @@ export class AuthService {
 
   private handleHttpError(error: unknown): never {
     const axiosError = error as AxiosError<{ error: string; message?: string }>;
-    this.logger.error(`Auth Service Error: ${axiosError.message}`, {
+    this.logger.error(`Auth Service error: ${axiosError.message}`, {
       status: axiosError.response?.status,
       data: axiosError.response?.data,
     });
 
     if (axiosError.response) {
       const { status, data } = axiosError.response;
-      const message = data.error || data.message || 'Auth Service Error';
+      const message = data.error || data.message || 'Auth Service error';
 
       if (status === 400) throw new BadRequestException(message);
       if (status === 401) throw new UnauthorizedException(message);

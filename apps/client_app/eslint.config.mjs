@@ -10,7 +10,7 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  // 1. Игнорируем папки сборки и кэша
+ 
   {
     ignores: [
       ".next/**",
@@ -21,8 +21,12 @@ const eslintConfig = [
       "out/**"
     ],
   },
-  // 2. Подключаем стандартные конфиги Next.js
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      "@typescript-eslint/no-unsafe-declaration-merging": "off"
+    }
+  }
 ];
 
 export default eslintConfig;

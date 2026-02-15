@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { ToggleReactionDto } from './dto/toggle-reaction.dto';
 import {
   CurrentUser,
-  CurrentUserData, // Импортируем интерфейс, а не делаем алиас на декоратор
+  CurrentUserData,
 } from '../decorators/current-user.decorator';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -34,7 +34,7 @@ export class ChatsController {
   @Post()
   @ApiOperation({ summary: 'Create private or group chat' })
   async createChat(
-    @CurrentUser() user: CurrentUserData, // Используем правильный тип
+    @CurrentUser() user: CurrentUserData,
     @Body() dto: CreateChatDto,
   ) {
     if (dto.type === ChatType.GROUP) {
@@ -110,8 +110,6 @@ export class ChatsController {
   ) {
     return this.chatsService.sendMessage(chatId, user.id, dto);
   }
-
-  // --- Новые эндпоинты ---
 
   @Put('messages/:messageId')
   @ApiOperation({ summary: 'Edit a message' })

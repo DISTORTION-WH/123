@@ -10,7 +10,7 @@ import {
 import { HTTP_STATUS } from '../constants/error-messages';
 import {
   CurrentUser,
-  CurrentUserData, // Используем интерфейс
+  CurrentUserData,
 } from '../decorators/current-user.decorator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UsersService, UserSyncDto } from './users.service';
@@ -34,7 +34,6 @@ export class UsersController {
   })
   @ApiResponse({ status: HTTP_STATUS.NOT_FOUND, description: 'User not found' })
   async getCurrentUser(@CurrentUser() user: CurrentUserData) {
-    // Исправлен тип
     return await this.usersService.getCurrentUser(user.id);
   }
 
@@ -44,7 +43,6 @@ export class UsersController {
 
     let userData: UserSyncDto;
 
-    // Безопасный парсинг данных
     if (Buffer.isBuffer(data)) {
       const parsed = JSON.parse(data.toString()) as UserSyncDto;
       userData = parsed;

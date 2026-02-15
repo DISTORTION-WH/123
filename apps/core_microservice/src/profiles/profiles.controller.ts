@@ -1,5 +1,3 @@
-// apps/core_microservice/src/profiles/profiles.controller.ts
-
 import {
   BadRequestException,
   Body,
@@ -89,8 +87,6 @@ export class ProfilesController {
     return this.profilesService.updateAvatar(user.id, avatarUrl);
   }
 
-  // --- Follows ---
-
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('me/followers')
@@ -179,8 +175,6 @@ export class ProfilesController {
     return await this.profilesService.rejectFollowRequest(user.id, username);
   }
 
-  // --- Blocking ---
-
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('me/blocked')
@@ -210,8 +204,6 @@ export class ProfilesController {
   ) {
     return await this.profilesService.unblockUser(user.id, username);
   }
-
-  // --- Profile Management ---
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

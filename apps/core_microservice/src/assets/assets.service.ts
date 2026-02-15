@@ -21,14 +21,14 @@ export class AssetsService {
   }
 
   private async generateVideoThumbnail(
+    // Private method for generating a preview from a video file
     videoPath: string,
     outputPath: string,
   ): Promise<boolean> {
     try {
       console.log(`Generating thumbnail for: ${videoPath}`);
       console.log(`Output path: ${outputPath}`);
-
-      // Try to generate thumbnail - be more lenient with command
+      // Generating ffmpeg command: extract 1 frame at 1 second and save to file
       const command = `ffmpeg -i "${videoPath}" -ss 00:00:01 -vframes 1 "${outputPath}" -y 2>&1`;
       await execAsync(command);
 
@@ -39,17 +39,14 @@ export class AssetsService {
       return exists;
     } catch (error) {
       console.warn('Failed to generate thumbnail (non-critical):', error);
-      // Return false but don't throw - video upload should still work
       return false;
     }
   }
 
   async createAsset(file: Express.Multer.File, userId: string): Promise<Asset> {
-    // Store just the filename, not the full path
     const filePath = `/uploads/${file.filename}`;
     let thumbnailPath: string | undefined;
 
-    // Generate thumbnail for videos
     if (this.isVideoFile(file.mimetype)) {
       const ext = file.filename.split('.').pop();
       const thumbnailFilename = `${file.filename.replace(`.${ext}`, '')}_thumb.jpg`;

@@ -17,7 +17,6 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const socket = useSocket();
 
-  // Load chats data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -29,7 +28,6 @@ export default function ChatPage() {
         const loadedChats = Array.isArray(raw) ? raw : (raw.data || []);
         setChats(loadedChats);
 
-        // If chatId is in URL, find and set it as active
         const chatId = searchParams.get('chatId');
         if (chatId) {
           const chat = loadedChats.find((c: Chat) => c.id === chatId);
@@ -69,7 +67,6 @@ export default function ChatPage() {
         height: 'calc(100vh - 120px)',
       }}
     >
-      {/* Left Sidebar - Chat List */}
       <div
         className="w-80 flex-shrink-0 flex flex-col border-r"
         style={{
@@ -77,7 +74,6 @@ export default function ChatPage() {
           background: 'var(--bg-secondary)',
         }}
       >
-        {/* Header */}
         <div
           className="px-5 py-4 border-b flex items-center justify-between"
           style={{ borderColor: 'var(--border)' }}
@@ -114,7 +110,6 @@ export default function ChatPage() {
           </Link>
         </div>
 
-        {/* Search */}
         <div
           className="px-4 py-3 border-b"
           style={{ borderColor: 'var(--border)' }}
@@ -131,7 +126,6 @@ export default function ChatPage() {
           />
         </div>
 
-        {/* Chats */}
         <div className="flex-1 overflow-y-auto">
           {chats.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-6">
@@ -172,7 +166,6 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Right Side - Chat Window */}
       <div className="flex-1 flex flex-col min-w-0">
         {activeChat && myProfile ? (
           <ChatWindow

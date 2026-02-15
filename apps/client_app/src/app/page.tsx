@@ -27,7 +27,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[var(--bg-primary)] via-[#0a0a0a] to-[var(--bg-primary)] relative overflow-hidden">
-      {/* Decorative gradient orbs */}
       <div className="absolute top-20 left-1/4 w-72 h-72 bg-[var(--accent)] opacity-10 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-[var(--link)] opacity-5 rounded-full blur-3xl" />
 

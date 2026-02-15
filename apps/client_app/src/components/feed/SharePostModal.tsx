@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/axios';
+import { AxiosError } from 'axios';
 import { Profile, Chat } from '@/types';
 import { Avatar } from '@/components/ui/Avatar';
 
@@ -30,7 +31,6 @@ export const SharePostModal: React.FC<SharePostModalProps> = ({
         const res = await api.get('/profiles/me/friends');
         setFriends(res.data || []);
       } catch {
-        // ignore
       } finally {
         setLoading(false);
       }
@@ -55,20 +55,19 @@ export const SharePostModal: React.FC<SharePostModalProps> = ({
     if (sending || sent.includes(friend.id)) return;
     setSending(friend.id);
     try {
-      // Create or get existing private chat
       const chatRes = await api.post<Chat>('/chats', {
         type: 'private',
         targetUsername: friend.username,
       });
 
-      // Send post as a message
       await api.post(`/chats/${chatRes.data.id}/messages`, {
         postId: postId,
       });
 
       setSent((prev) => [...prev, friend.id]);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to send';
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message: string }>;
+      const msg = axiosError.response?.data?.message || 'Failed to send';
       alert(msg);
     } finally {
       setSending(null);
@@ -87,16 +86,13 @@ export const SharePostModal: React.FC<SharePostModalProps> = ({
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
       onClick={onClose}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" />
 
-      {/* Modal */}
       <div
         className="relative w-full max-w-md max-h-[80vh] rounded-t-2xl md:rounded-2xl overflow-hidden flex flex-col"
         style={{ background: 'var(--bg-card)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div
           className="flex items-center justify-between p-4 border-b"
           style={{ borderColor: 'var(--border)' }}
@@ -126,7 +122,6 @@ export const SharePostModal: React.FC<SharePostModalProps> = ({
           </button>
         </div>
 
-        {/* Search */}
         <div className="p-4 pb-2">
           <input
             type="text"
@@ -142,7 +137,6 @@ export const SharePostModal: React.FC<SharePostModalProps> = ({
           />
         </div>
 
-        {/* Friends list */}
         <div className="flex-1 overflow-y-auto p-4 pt-2">
           {loading ? (
             <div className="flex items-center justify-center py-8">
@@ -208,7 +202,6 @@ export const SharePostModal: React.FC<SharePostModalProps> = ({
           )}
         </div>
 
-        {/* Footer - Copy link */}
         <div
           className="p-4 border-t"
           style={{ borderColor: 'var(--border)' }}

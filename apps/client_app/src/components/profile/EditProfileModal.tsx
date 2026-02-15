@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { AxiosError } from 'axios';
 import { api } from '@/lib/axios';
 import { getAvatarUrl } from '@/lib/url-helper';
@@ -60,7 +61,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setError(null);
 
     try {
-      // Upload avatar if a new file was selected
       if (selectedFile) {
         const formData = new FormData();
         formData.append('file', selectedFile);
@@ -72,7 +72,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         console.log('Avatar URL from response:', avatarRes.data.avatarUrl);
       }
 
-      // Update profile data
       const updateData: UpdateProfileDto = {
         displayName,
         bio,
@@ -84,7 +83,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       console.log('Profile update response:', profileRes.data);
       console.log('Updated avatarUrl:', profileRes.data.avatarUrl);
 
-      // Important: Call onUpdate to refresh the profile in parent component
       onUpdate();
       onClose();
     } catch (err) {
@@ -114,7 +112,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           border: '1px solid var(--border)',
         }}
       >
-        {/* Header */}
         <div
           className="flex justify-between items-center p-4"
           style={{ borderBottom: '1px solid var(--border)' }}
@@ -142,9 +139,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-5">
-          {/* Avatar section */}
           <div className="flex flex-col items-center gap-3">
             <div
               className="relative w-24 h-24 rounded-full overflow-hidden cursor-pointer group"
@@ -155,10 +150,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               onClick={() => fileInputRef.current?.click()}
             >
               {previewUrl ? (
-                <img
+                <Image
                   src={previewUrl}
                   alt="Avatar preview"
-                  className="w-full h-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
               ) : (
                 <div
@@ -168,7 +165,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   {profile.username?.charAt(0).toUpperCase() || '?'}
                 </div>
               )}
-              {/* Hover overlay */}
               <div
                 className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{ background: 'rgba(0, 0, 0, 0.5)' }}
@@ -203,7 +199,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </button>
           </div>
 
-          {/* Display Name */}
           <div className="flex flex-col gap-1.5">
             <label
               className="text-xs font-semibold uppercase tracking-wider"
@@ -226,7 +221,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             />
           </div>
 
-          {/* Bio */}
           <div className="flex flex-col gap-1.5">
             <label
               className="text-xs font-semibold uppercase tracking-wider"
@@ -254,7 +248,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Public toggle */}
           <div
             className="flex items-center justify-between p-3 rounded-lg"
             style={{
@@ -298,7 +291,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </button>
           </div>
 
-          {/* Error */}
           {error && (
             <div
               className="p-3 text-sm rounded-lg"
@@ -312,7 +304,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
           )}
 
-          {/* Submit button */}
           <button
             type="submit"
             className="w-full py-3 rounded-lg font-bold text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2"

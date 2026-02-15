@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { api } from '@/lib/axios';
 import { getAssetUrl } from '@/lib/url-helper';
 
@@ -42,7 +43,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
       return;
     }
 
-    // Validate file type (images and videos)
     const isImage = selectedFile.type.match(/image\/(jpg|jpeg|png|gif|webp)/);
     const isVideo = selectedFile.type.match(/video\/(mp4|quicktime|x-msvideo|x-matroska)/);
 
@@ -51,7 +51,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
       return;
     }
 
-    // Validate file size (max 500MB for videos, 50MB for images)
     const maxSize = isVideo ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
     if (selectedFile.size > maxSize) {
       const maxSizeMB = maxSize / (1024 * 1024);
@@ -62,7 +61,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
     setFile(selectedFile);
     setError(null);
 
-    // Create preview
     const reader = new FileReader();
     reader.onload = (e) => {
       setPreview(e.target?.result as string);
@@ -84,7 +82,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
     try {
       let fileIds: string[] = [];
 
-      // Upload file if selected
       if (file) {
         const formData = new FormData();
         formData.append('file', file);
@@ -111,7 +108,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
         }
       }
 
-      // Create post with optional file IDs
       const postData = {
         content: content.trim(),
         ...(fileIds.length > 0 && { fileIds }),
@@ -120,7 +116,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
       const response = await api.post('/posts', postData);
       console.log('Post created successfully:', response.data);
 
-      // Reset form
       setContent('');
       setFile(null);
       setPreview(null);
@@ -150,15 +145,16 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
     >
       <form onSubmit={handleSubmit} className="flex flex-col">
-        {/* Top section with avatar and textarea */}
         <div className="p-5 flex gap-4">
-          {/* Avatar */}
           <div className="shrink-0">
             {avatarUrl ? (
-              <img
+              <Image
                 src={avatarUrl}
                 alt={userName}
-                className="w-12 h-12 rounded-full object-cover"
+                width={48}
+                height={48}
+                unoptimized
+                className="rounded-full object-cover"
               />
             ) : (
               <div
@@ -170,7 +166,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
             )}
           </div>
 
-          {/* Input area */}
           <div className="flex-1">
             <textarea
               ref={textareaRef}
@@ -191,13 +186,15 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
           </div>
         </div>
 
-        {/* Image preview */}
         {preview && (
           <div className="px-5 pb-4">
             <div className="relative rounded-lg overflow-hidden bg-black/5">
-              <img
+              <Image
                 src={preview}
                 alt="Preview"
+                width={600}
+                height={400}
+                unoptimized
                 className="w-full h-auto max-h-96 object-cover"
               />
               <button
@@ -222,7 +219,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
           </div>
         )}
 
-        {/* Error message */}
         {error && (
           <div
             className="mx-5 p-3 rounded-lg text-sm"
@@ -236,7 +232,6 @@ export const CreatePostWidget: React.FC<CreatePostWidgetProps> = ({
           </div>
         )}
 
-        {/* Actions */}
         <div
           className="px-5 py-4 flex items-center justify-between border-t"
           style={{ borderColor: 'var(--border)' }}

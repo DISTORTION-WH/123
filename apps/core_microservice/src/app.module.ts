@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { NotificationsModule } from './notifications/notifications.module'; // <-- Добавлено
+import { NotificationsModule } from './notifications/notifications.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProfilesModule } from './profiles/profiles.module';
@@ -43,8 +43,8 @@ import { ChatsModule } from './chats/chats.module';
     AssetsModule,
     CommentsModule,
     ChatsModule,
-    CommentsModule, // <-- Добавлено
-    NotificationsModule, // <-- Добавлено
+    CommentsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

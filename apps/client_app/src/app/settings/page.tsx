@@ -3,8 +3,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/axios';
+import { AxiosError } from 'axios';
 import { Profile } from '@/types';
 import { getAvatarUrl } from '@/lib/url-helper';
 
@@ -13,7 +15,6 @@ export default function SettingsPage() {
   const { user, logout, getCurrentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Profile editing state
   const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -25,21 +26,17 @@ export default function SettingsPage() {
     text: string;
   } | null>(null);
 
-  // Avatar
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  // Blocked users
   const [blockedUsers, setBlockedUsers] = useState<Profile[]>([]);
   const [blockedLoading, setBlockedLoading] = useState(false);
   const [unblockLoading, setUnblockLoading] = useState<string | null>(null);
 
-  // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Load profile data
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -58,7 +55,6 @@ export default function SettingsPage() {
     fetchProfile();
   }, []);
 
-  // Load blocked users
   useEffect(() => {
     const fetchBlocked = async () => {
       setBlockedLoading(true);
@@ -92,7 +88,6 @@ export default function SettingsPage() {
     setSaving(true);
     setSaveMessage(null);
     try {
-      // Upload avatar first if pending
       if (avatarFile) {
         const formData = new FormData();
         formData.append('file', avatarFile);
@@ -108,7 +103,6 @@ export default function SettingsPage() {
         isPublic,
       };
 
-      // Only send username if changed
       if (username !== profile?.username) {
         updateData.username = username;
       }
@@ -121,13 +115,13 @@ export default function SettingsPage() {
       });
       await getCurrentUser();
 
-      // If username changed, redirect to new profile
       if (username !== profile?.username && res.data.username) {
         router.replace(`/profile/${res.data.username}`);
       }
-    } catch (err: any) {
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message: string | string[] }>;
       const msg =
-        err.response?.data?.message || 'Failed to update profile';
+        axiosError.response?.data?.message || 'Failed to update profile';
       setSaveMessage({
         type: 'error',
         text: Array.isArray(msg) ? msg[0] : msg,
@@ -183,7 +177,6 @@ export default function SettingsPage() {
       className="max-w-2xl mx-auto"
       style={{ color: 'var(--text-primary)' }}
     >
-      {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <button
           onClick={() => router.back()}
@@ -212,7 +205,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Status message */}
       {saveMessage && (
         <div
           className="mb-6 p-3 rounded-lg text-sm font-medium"
@@ -235,7 +227,6 @@ export default function SettingsPage() {
       )}
 
       <div className="space-y-6">
-        {/* Profile Section */}
         <div
           className="rounded-xl overflow-hidden"
           style={{
@@ -251,7 +242,6 @@ export default function SettingsPage() {
           </div>
 
           <div className="p-6 space-y-5">
-            {/* Avatar */}
             <div className="flex items-center gap-4">
               <div
                 className="relative w-20 h-20 rounded-full overflow-hidden cursor-pointer group flex-shrink-0"
@@ -262,10 +252,12 @@ export default function SettingsPage() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 {avatarPreview ? (
-                  <img
+                  <Image
                     src={avatarPreview}
                     alt="Avatar"
-                    className="w-full h-full object-cover"
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
                 ) : (
                   <div
@@ -318,7 +310,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Username */}
             <div className="flex flex-col gap-1.5">
               <label
                 className="text-xs font-semibold uppercase tracking-wider"
@@ -340,7 +331,6 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* Display Name */}
             <div className="flex flex-col gap-1.5">
               <label
                 className="text-xs font-semibold uppercase tracking-wider"
@@ -362,7 +352,6 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* Bio */}
             <div className="flex flex-col gap-1.5">
               <label
                 className="text-xs font-semibold uppercase tracking-wider"
@@ -390,7 +379,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Email (read-only) */}
             <div className="flex flex-col gap-1.5">
               <label
                 className="text-xs font-semibold uppercase tracking-wider"
@@ -411,7 +399,6 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* Save button */}
             <button
               onClick={handleSaveProfile}
               disabled={saving}
@@ -435,7 +422,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Privacy & Safety */}
         <div
           className="rounded-xl overflow-hidden"
           style={{
@@ -454,7 +440,6 @@ export default function SettingsPage() {
             className="divide-y"
             style={{ borderColor: 'var(--border)' }}
           >
-            {/* Private Account Toggle */}
             <div className="px-6 py-4 flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">Private Account</p>
@@ -486,7 +471,6 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            {/* Blocked Users */}
             <div className="px-6 py-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -508,7 +492,7 @@ export default function SettingsPage() {
                   className="text-xs py-2"
                   style={{ color: 'var(--text-muted)' }}
                 >
-                  You haven't blocked anyone
+                  You havent blocked anyone
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -524,7 +508,7 @@ export default function SettingsPage() {
                       >
                         <Link
                           href={`/profile/${blockedUser.username}`}
-                          className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                          className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
                           style={{
                             background: bAvatarUrl
                               ? 'transparent'
@@ -532,10 +516,12 @@ export default function SettingsPage() {
                           }}
                         >
                           {bAvatarUrl ? (
-                            <img
+                            <Image
                               src={bAvatarUrl}
                               alt=""
-                              className="w-full h-full object-cover"
+                              fill
+                              unoptimized
+                              className="object-cover"
                             />
                           ) : (
                             <span className="text-white text-xs font-bold">
@@ -574,7 +560,6 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* Manage Followers link */}
             {profile && (
               <Link
                 href={`/profile/${profile.username}/followers`}
@@ -607,7 +592,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Account Section */}
         <div
           className="rounded-xl overflow-hidden"
           style={{
@@ -626,7 +610,6 @@ export default function SettingsPage() {
             className="divide-y"
             style={{ borderColor: 'var(--border)' }}
           >
-            {/* Friends page link */}
             <Link
               href="/friends"
               className="px-6 py-4 flex items-center justify-between hover:bg-[var(--bg-elevated)] transition-colors"
@@ -661,7 +644,6 @@ export default function SettingsPage() {
               </svg>
             </Link>
 
-            {/* Notifications link */}
             <Link
               href="/notifications"
               className="px-6 py-4 flex items-center justify-between hover:bg-[var(--bg-elevated)] transition-colors"
@@ -696,7 +678,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Danger Zone */}
         <div
           className="rounded-xl overflow-hidden"
           style={{
@@ -764,7 +745,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Logout Button */}
         <button
           onClick={handleLogout}
           disabled={isLoading}
@@ -778,7 +758,6 @@ export default function SettingsPage() {
           {isLoading ? 'Logging out...' : 'Log Out'}
         </button>
 
-        {/* Version Info */}
         <div
           className="text-center text-xs pb-4"
           style={{ color: 'var(--text-muted)' }}

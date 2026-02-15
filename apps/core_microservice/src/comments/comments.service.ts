@@ -1,5 +1,3 @@
-// apps/core_microservice/src/comments/comments.service.ts
-
 import {
   Inject,
   Injectable,
@@ -22,11 +20,11 @@ import { NotificationType } from '../database/entities/notification.entity';
 export class CommentsService {
   constructor(
     @InjectRepository(Comment)
-    private readonly commentsRepository: Repository<Comment>, // <-- Имя репозитория
+    private readonly commentsRepository: Repository<Comment>,
     @InjectRepository(CommentLike)
     private readonly commentLikesRepository: Repository<CommentLike>,
     @InjectRepository(Post)
-    private readonly postsRepository: Repository<Post>, // <-- Имя репозитория
+    private readonly postsRepository: Repository<Post>,
     private readonly profilesService: ProfilesService,
     @Inject(NOTIFICATIONS_SERVICE)
     private readonly notificationsClient: ClientProxy,
@@ -36,9 +34,7 @@ export class CommentsService {
   async create(userId: string, dto: CreateCommentDto) {
     const profile = await this.profilesService.getProfileByUserId(userId);
 
-    // 1. Проверяем пост
     const post = await this.postsRepository.findOne({
-      // <-- Исправлено на postsRepository
       where: { id: dto.postId },
       relations: ['profile', 'profile.user'],
     });
@@ -47,11 +43,9 @@ export class CommentsService {
       throw new NotFoundException('Post not found');
     }
 
-    // 2. Проверяем родительский комментарий
     let parentComment: Comment | null = null;
     if (dto.parentId) {
       parentComment = await this.commentsRepository.findOne({
-        // <-- Исправлено на commentsRepository
         where: { id: dto.parentId },
         relations: ['profile', 'profile.user'],
       });
@@ -63,9 +57,7 @@ export class CommentsService {
       }
     }
 
-    // 3. Создаем
     const comment = this.commentsRepository.create({
-      // <-- Исправлено на commentsRepository
       content: dto.content,
       postId: dto.postId,
       profileId: profile.id,
@@ -74,10 +66,8 @@ export class CommentsService {
       updatedBy: userId,
     });
 
-    const savedComment = await this.commentsRepository.save(comment); // <-- Исправлено на commentsRepository
+    const savedComment = await this.commentsRepository.save(comment);
 
-    // 4. Отправляем уведомления
-    // А) Уведомление автору поста
     if (post.createdBy !== userId) {
       this.notificationsClient.emit('comment_created', {
         actorId: userId,
@@ -107,7 +97,6 @@ export class CommentsService {
       });
     }
 
-    // Б) Уведомление автору родительского комментария
     if (parentComment && parentComment.createdBy !== userId) {
       if (parentComment.createdBy !== post.createdBy) {
         this.notificationsClient.emit('comment_created', {
@@ -139,7 +128,7 @@ export class CommentsService {
       }
     }
 
-    return this.getOne(savedComment.id); // <-- Исправлено с this.findOne на this.getOne
+    return this.getOne(savedComment.id);
   }
 
   async getCommentsByPost(
@@ -166,7 +155,6 @@ export class CommentsService {
     };
   }
 
-  // --- Public Get One ---
   async getOne(id: string, currentUserId?: string) {
     const comment = await this.commentsRepository.findOne({
       where: { id },
@@ -184,7 +172,6 @@ export class CommentsService {
 
     if (comment.profileId !== userProfile.id) {
       const post = await this.postsRepository.findOne({
-        // <-- Исправлено
         where: { id: comment.postId },
       });
       if (post && post.profileId !== userProfile.id) {

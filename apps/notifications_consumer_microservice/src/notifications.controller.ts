@@ -1,5 +1,3 @@
-// apps/notifications_consumer_microservice/src/notifications.controller.ts
-
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { NotificationsService } from './notifications.service';
@@ -12,7 +10,6 @@ interface PostLikedEvent {
   timestamp: string;
 }
 
-// Интерфейс для события комментария
 interface CommentCreatedEvent {
   actorId: string;
   targetUserId: string;
@@ -25,10 +22,10 @@ interface CommentCreatedEvent {
 
 @Controller()
 export class NotificationsController {
-  private readonly logger = new Logger(NotificationsController.name);
+  private readonly logger = new Logger(NotificationsController.name); // Initialize the logger with the context of the current class
 
   constructor(private readonly notificationsService: NotificationsService) {}
-
+  // Subscribe to a message with the 'post_liked' pattern from the RabbitMQ queue
   @EventPattern('post_liked')
   handlePostLiked(@Payload() data: PostLikedEvent) {
     this.logger.log(
@@ -43,15 +40,11 @@ export class NotificationsController {
       data.postId,
     );
   }
-
-  // Добавляем обработчик для комментариев (раз мы их эмитим в CommentsService)
+  // Subscribe to a message with the 'comment_created' pattern
   @EventPattern('comment_created')
   handleCommentCreated(@Payload() data: CommentCreatedEvent) {
     this.logger.log(
       `[RabbitMQ] Event 'comment_created' received. Type: ${data.type}`,
     );
-
-    // Здесь можно добавить вызов метода сервиса для отправки email о комментарии
-    // this.notificationsService.sendCommentNotification(...)
   }
 }

@@ -3,7 +3,7 @@ import * as amqp from 'amqplib';
 class RabbitMQService {
   private connection: amqp.Connection | null = null;
   private channel: amqp.Channel | null = null;
-  private readonly queue = 'user_sync_queue';
+  private readonly queue = 'user_sync_queue';// Queue name for synchronizing users between Auth and Core/Notifications services
 
   async connect() {
     try {
@@ -11,7 +11,7 @@ class RabbitMQService {
 
       console.log(`[RabbitMQ] Connecting to ${url}...`);
 
-      this.connection = await amqp.connect(url);
+      this.connection = await amqp.connect(url);// Establishing a connection to the message broker
 
       if (!this.connection) {
         throw new Error('Connection failed to initialize');
@@ -22,7 +22,7 @@ class RabbitMQService {
       if (!this.channel) {
         throw new Error('Channel failed to initialize');
       }
-
+// Declare a queue: durable=true means the queue will persist after a RabbitMQ reboot
       await this.channel.assertQueue(this.queue, { durable: true });
 
       console.log('[RabbitMQ] Connected and queue asserted.');
@@ -40,7 +40,7 @@ class RabbitMQService {
     if (this.channel) {
       const message = JSON.stringify(user);
       this.channel.sendToQueue(this.queue, Buffer.from(message), {
-        persistent: true,
+        persistent: true,// persistent=true ensures that the message will be written to disk and will not be lost if the broker fails
       });
       console.log(`[RabbitMQ] Sent user_created event for user: ${String(user.email)}`);
     } else {

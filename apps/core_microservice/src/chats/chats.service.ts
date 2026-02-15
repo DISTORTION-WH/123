@@ -1,5 +1,3 @@
-// apps/core_microservice/src/chats/chats.service.ts
-
 import {
   BadRequestException,
   ForbiddenException,
@@ -40,13 +38,12 @@ export class ChatsService {
     @InjectRepository(MessageReaction)
     private reactionsRepository: Repository<MessageReaction>,
     @InjectRepository(Post)
-    private postsRepository: Repository<Post>, // <-- Инжектим репозиторий постов
+    private postsRepository: Repository<Post>,
     private profilesService: ProfilesService,
     private dataSource: DataSource,
     @Inject(forwardRef(() => ChatsGateway))
     private readonly chatsGateway: ChatsGateway,
   ) {}
-  // --- CHAT MANAGEMENT ---
 
   async createPrivateChat(currentUserId: string, targetUsername: string) {
     const me = await this.profilesService.getProfileByUserId(currentUserId);
@@ -61,7 +58,6 @@ export class ChatsService {
       throw new BadRequestException('Cannot chat with yourself');
     }
 
-    // --- REQUIREMENT: Check mutual follow (Friendship) ---
     const isFriend = await this.profilesService.checkIsFriend(me.id, target.id);
     if (!isFriend) {
       throw new ForbiddenException(
@@ -69,7 +65,6 @@ export class ChatsService {
       );
     }
 
-    // Check if blocked
     const isBlocked = await this.profilesService.checkIsBlocked(
       me.id,
       target.id,
@@ -139,15 +134,13 @@ export class ChatsService {
 
     const profile = await this.profilesService.getProfileByUserId(userId);
 
-    // Находим все НЕпрочитанные сообщения в этом чате, которые отправлены НЕ мной
-    // (потому что свои сообщения я читать не могу)
     const unreadMessages = await this.messagesRepository.find({
       where: {
         chatId: chatId,
-        profileId: Not(profile.id), // Не мои сообщения
+        profileId: Not(profile.id),
         isRead: false,
       },
-      select: ['id'], // Нам нужны только ID для обновления
+      select: ['id'],
     });
 
     if (unreadMessages.length === 0) {
@@ -156,17 +149,14 @@ export class ChatsService {
 
     const unreadIds = unreadMessages.map((m) => m.id);
 
-    // Массовое обновление
     await this.messagesRepository.update(
       { id: In(unreadIds) },
       { isRead: true, readAt: new Date() },
     );
 
-    // Отправляем событие в сокет: "В чате X пользователь Y прочитал сообщения"
-    // Это нужно, чтобы у собеседника галочки стали цветными
     this.chatsGateway.broadcastMessagesRead(chatId, {
       profileId: profile.id,
-      messageIds: unreadIds, // Список ID, которые стали прочитанными
+      messageIds: unreadIds,
     });
 
     return { success: true, readCount: unreadIds.length };
@@ -255,7 +245,6 @@ export class ChatsService {
     const targetProfile =
       await this.profilesService.getProfileByUsername(targetUsername);
 
-    // Optional: Check block status before adding
     const me = await this.profilesService.getProfileByUserId(currentUserId);
     const isBlocked = await this.profilesService.checkIsBlocked(
       me.id,
@@ -350,9 +339,7 @@ export class ChatsService {
 
     const chats = participants.map((p) => p.chat);
 
-    // --- REQUIREMENT: Primitive Blocking (Don't show if blocked) ---
-    // We need to filter out private chats where the other user is blocked/blocker
-    const validChats = [];
+    const validChats: Chat[] = [];
 
     for (const chat of chats) {
       if (chat.type === ChatType.PRIVATE) {
@@ -365,7 +352,7 @@ export class ChatsService {
             otherParticipant.profileId,
           );
           if (isBlocked) {
-            continue; // Skip this chat (Hidden)
+            continue;
           }
         }
       }
@@ -375,13 +362,11 @@ export class ChatsService {
     const result = await Promise.all(
       validChats.map(async (chat) => {
         const lastMessage = await this.messagesRepository.findOne({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
           where: { chatId: chat.id },
           order: { createdAt: 'DESC' },
           relations: ['profile'],
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return {
           ...chat,
           lastMessage,
@@ -389,16 +374,12 @@ export class ChatsService {
       }),
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return result;
   }
-
-  // --- MESSAGES LOGIC ---
 
   async getChatMessages(chatId: string, userId: string) {
     await this.validateParticipant(chatId, userId);
 
-    // ... (логика проверки блокировки остается такой же) ...
     const profile = await this.profilesService.getProfileByUserId(userId);
     const chat = await this.chatsRepository.findOne({
       where: { id: chatId },
@@ -441,13 +422,11 @@ export class ChatsService {
     await this.validateParticipant(chatId, userId);
     const profile = await this.profilesService.getProfileByUserId(userId);
 
-    // ... (проверка блокировки остается) ...
     const chat = await this.chatsRepository.findOne({
       where: { id: chatId },
       relations: ['participants'],
     });
     if (chat.type === ChatType.PRIVATE) {
-      // ... (код проверки блокировки)
       const otherParticipant = chat.participants.find(
         (p) => p.profileId !== profile.id,
       );
@@ -462,7 +441,6 @@ export class ChatsService {
       }
     }
 
-    // --- SHARED POST LOGIC ---
     if (dto.postId) {
       const post = await this.postsRepository.findOne({
         where: { id: dto.postId },
@@ -470,8 +448,6 @@ export class ChatsService {
       if (!post) {
         throw new NotFoundException('Shared post not found');
       }
-      // Тут можно добавить логику проверки приватности поста, если нужно.
-      // Пока считаем: если есть ID, значит можно пошарить.
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -486,7 +462,7 @@ export class ChatsService {
         profileId: profile.id,
         content: dto.content,
         replyToMessageId: dto.replyToMessageId,
-        sharedPostId: dto.postId || null, // <-- Сохраняем ID поста
+        sharedPostId: dto.postId || null,
         createdBy: userId,
         updatedBy: userId,
       });
@@ -598,8 +574,6 @@ export class ChatsService {
     return { message: 'Message deleted' };
   }
 
-  // --- HELPERS ---
-
   public async validateParticipant(chatId: string, userId: string) {
     const profile = await this.profilesService.getProfileByUserId(userId);
     const participant = await this.participantsRepository.findOne({
@@ -618,7 +592,6 @@ export class ChatsService {
       throw new NotFoundException('Message not found');
     }
 
-    // Проверяем доступ к чату
     await this.validateParticipant(message.chatId, userId);
 
     const profile = await this.profilesService.getProfileByUserId(userId);
@@ -634,17 +607,14 @@ export class ChatsService {
 
     if (existingReaction) {
       if (existingReaction.reaction === reaction) {
-        // Если та же эмодзи — удаляем (toggle off)
         await this.reactionsRepository.remove(existingReaction);
         action = 'removed';
       } else {
-        // Если другая — обновляем
         existingReaction.reaction = reaction;
         await this.reactionsRepository.save(existingReaction);
         action = 'updated';
       }
     } else {
-      // Если нет — создаем
       const newReaction = this.reactionsRepository.create({
         messageId,
         profileId: profile.id,
@@ -653,8 +623,6 @@ export class ChatsService {
       await this.reactionsRepository.save(newReaction);
       action = 'added';
     }
-
-    // Отправляем событие в WebSocket
 
     this.chatsGateway.broadcastReactionUpdate(message.chatId, {
       messageId,

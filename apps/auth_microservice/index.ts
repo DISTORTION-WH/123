@@ -8,14 +8,14 @@ import { env } from './config/env';
 import { rabbitMQService } from './services/rabbitmq.service';
 
 const app = express();
-
+// Rate Limiter Configuration
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-  limit: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),// Time window 15 minutes
+  limit: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),// Maximum 100 requests from one IP
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting for internal service-to-service calls (validate, etc.)
+// Bypass rate limiting for internal requests from other microservices
   skip: (req) => req.path.startsWith('/internal/'),
 }) as unknown as RequestHandler;
 
@@ -35,7 +35,7 @@ app
     res.status(200).json({ status: 'OK', service: 'Auth Microservice' });
   })
   .use('/internal/auth', authController)
-  .use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  .use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error('Unhandled Error:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   })

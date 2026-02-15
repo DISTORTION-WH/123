@@ -8,7 +8,7 @@ const redisClient = new Redis({
   lazyConnect: true,
 });
 
-redisClient.on('error', (err: any) => {
+redisClient.on('error', (err: Error) => {
   console.error('Redis connection error:', err);
 });
 

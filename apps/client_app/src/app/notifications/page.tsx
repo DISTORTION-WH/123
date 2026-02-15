@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/axios';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Notification } from '@/types';
 import { getAvatarUrl } from '@/lib/url-helper';
 
@@ -131,7 +132,6 @@ export default function NotificationsPage() {
       className="max-w-2xl mx-auto"
       style={{ color: 'var(--text-primary)' }}
     >
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Notifications</h1>
@@ -224,14 +224,15 @@ export default function NotificationsPage() {
                   if (!notif.isRead) handleMarkAsRead(notif.id);
                 }}
               >
-                {/* Actor avatar or type icon */}
                 <div className="flex-shrink-0 relative">
                   {actorAvatar ? (
-                    <div className="w-10 h-10 rounded-full overflow-hidden">
-                      <img
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                      <Image
                         src={actorAvatar}
                         alt=""
-                        className="w-full h-full object-cover"
+                        fill
+                        unoptimized
+                        className="object-cover"
                       />
                     </div>
                   ) : (
@@ -242,13 +243,11 @@ export default function NotificationsPage() {
                       {actorInitial}
                     </div>
                   )}
-                  {/* Type icon badge */}
                   <div className="absolute -bottom-1 -right-1">
                     {getIconBadge(notif.type)}
                   </div>
                 </div>
 
-                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm leading-snug">
                     {notif.message}
@@ -278,7 +277,6 @@ export default function NotificationsPage() {
                   </p>
                 </div>
 
-                {/* Unread dot + arrow */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {!notif.isRead && (
                     <div

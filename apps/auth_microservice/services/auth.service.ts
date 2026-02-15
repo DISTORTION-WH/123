@@ -10,6 +10,7 @@ export class AuthService {
   private userRepository: UserRepository;
 
   constructor() {
+    // Initializing repositories for working with Redis and MongoDB
     this.redisRepository = new RedisAuthRepository();
     this.userRepository = new UserRepository();
   }
@@ -22,15 +23,16 @@ export class AuthService {
     birthday?: string;
     bio?: string;
   }) {
+    // Check the uniqueness of the email and username before creating an account
     const existingUser = await this.userRepository.findByEmailOrUsername(data.email, data.username);
 
     if (existingUser) {
       throw new Error('User with this email or username already exists');
     }
-
+// Hashing the password for secure storage in the database
     const passwordHash = await hashPassword(data.password);
     const userId = uuidv4();
-
+// Create and save a user document in MongoDB
     const newUser = await this.userRepository.create({
       _id: userId,
       email: data.email,
@@ -42,12 +44,11 @@ export class AuthService {
       role: 'User',
     });
 
-    // --- RABBITMQ EVENT ---
     try {
       console.log(`[AuthService] Publishing user_created event for ${userId}...`);
       
-      // Отправляем событие. Core его тоже может слушать (для логов), 
-      // но главное - его слушает Notifications Service для отправки Email.
+ // Send an event. Core can also listen for it,
+// but most importantly, the Notifications Service listens for it to send email.
       await rabbitMQService.publishUserCreated({
         id: userId,
         email: data.email,
@@ -58,12 +59,11 @@ export class AuthService {
         role: 'User'
       });
       
-    } catch (error: any) {
-      console.error('[AuthService] WARNING: Failed to publish RabbitMQ event:', error.message);
-      // Не прерываем регистрацию, если очередь упала
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[AuthService] WARNING: Failed to publish RabbitMQ event:', message);
     }
-    // ---------------------
-
+// Automatic login after registration: token generation
     return this.generateTokens(newUser._id.toString(), newUser.role, newUser.email, newUser.username);
   }
 
@@ -76,16 +76,19 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
     console.log('[AuthService] User found, verifying password');
+    // Check the hash of the entered password with the one stored in the database
     const isMatch = await comparePassword(credentials.password, user.passwordHash);
     if (!isMatch) {
       console.log('[AuthService] Password mismatch');
       throw new Error('Invalid credentials');
     }
     console.log('[AuthService] Generating tokens for user:', user._id);
+    // Successful authentication: return a pair of tokens
     return this.generateTokens(user._id.toString(), user.role, user.email, user.username);
   }
 
   async refreshTokens(oldRefreshTokenId: string) {
+    // Checking the existence of a session in Redis using the refresh token ID
     const sessionData = await this.redisRepository.findSessionByTokenId(oldRefreshTokenId);
 
     if (!sessionData) {
@@ -99,7 +102,7 @@ export class AuthService {
       await this.redisRepository.deleteSession(oldRefreshTokenId);
       throw new Error('User not found');
     }
-
+// If the user is deleted, clear his session
     await this.redisRepository.deleteSession(oldRefreshTokenId);
     return this.generateTokens(user._id.toString(), user.role, user.email, user.username);
   }
@@ -125,10 +128,10 @@ export class AuthService {
   }
 
   async logout(refreshTokenId: string, accessToken?: string) {
-    if (refreshTokenId) {
+    if (refreshTokenId) {// Remove session refresh token from Redis
       await this.redisRepository.deleteSession(refreshTokenId);
     }
-    if (accessToken) {
+    if (accessToken) {// Adding an access token to the blacklist before its lifetime expires
       const payload = verifyAccessToken(accessToken);
       if (payload && payload.jti && payload.exp) {
         const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
@@ -138,10 +141,11 @@ export class AuthService {
       }
     }
   }
-
+// Private method for generating access and refresh tokens
   private async generateTokens(userId: string, role: string, email: string, username: string) {
     const { token: accessToken } = generateAccessToken({ userId, role, email });
     const refreshTokenId = generateRefreshTokenId();
+    // Store the refresh token binding to the user in Redis
     await this.redisRepository.storeRefreshTokenId(refreshTokenId, JSON.stringify({ userId }));
 
     return {
@@ -154,11 +158,10 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.userRepository.findByEmail(email);
     if (!user) return;
-
+// Generate a temporary reset token
     const resetToken = uuidv4();
     await this.redisRepository.setResetToken(resetToken, user._id.toString());
 
-    // Здесь в будущем тоже лучше отправлять событие в RabbitMQ (forgot_password_requested)
     const resetLink = `/auth/reset-password?token=${resetToken}`;
     console.log(`[MOCK EMAIL] Reset link for ${email}: ${resetLink}`);
   }

@@ -10,7 +10,7 @@ import {
 export class SendMessageDto {
   @ApiProperty({ example: 'Hello world!', description: 'Message content' })
   @IsString()
-  @IsOptional() // Optional if sending only files
+  @IsOptional()
   @MaxLength(5000)
   content?: string;
 

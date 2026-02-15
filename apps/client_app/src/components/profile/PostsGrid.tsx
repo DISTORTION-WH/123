@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
 import { getAssetUrl } from '@/lib/url-helper';
@@ -93,20 +94,16 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
         style={{ borderTop: '1px solid var(--border)' }}
       >
         {posts.map((post) => {
-          // Get asset from post assets array
           let assetUrl: string | null = null;
           let isVideo = false;
 
-          if (post.assets && Array.isArray(post.assets) && post.assets.length > 0) {
+          if (post.assets && post.assets.length > 0) {
             const firstAssetItem = post.assets[0];
-            // Asset is nested as { id, orderIndex, asset: { filePath, url, ... } }
-            if (firstAssetItem && typeof firstAssetItem === 'object' && 'asset' in firstAssetItem) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const asset = (firstAssetItem as any).asset;
+            if (firstAssetItem) {
+              const asset = firstAssetItem.asset;
               if (asset && (asset.filePath || asset.url)) {
-                const assetPath = asset.filePath || asset.url;
+                const assetPath = asset.filePath ?? asset.url ?? '';
                 assetUrl = getAssetUrl(assetPath);
-                // Check if it's a video file
                 isVideo = /\.(mp4|webm|mov|avi|mkv)$/i.test(assetPath);
               }
             }
@@ -122,12 +119,14 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
                 onClick={() => router.push(`/posts/${post.id}`)}
               >
                 {!isVideo && assetUrl ? (
-                  <img
+                  <Image
                     src={assetUrl}
                     alt="Post"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error(`Failed to load image: ${assetUrl}`, e);
+                    fill
+                    unoptimized
+                    className="object-cover"
+                    onError={() => {
+                      console.error(`Failed to load image: ${assetUrl}`);
                     }}
                   />
                 ) : isVideo && assetUrl ? (
@@ -179,11 +178,7 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
                   </div>
                 )}
                 
-                {/* FIX: Removed onClick={(e) => e.stopPropagation()} from the stats overlay.
-                  Now clicking on the stats/overlay will bubble up to the parent div
-                  and trigger the router.push logic.
-                */}
-                {/* Hover overlay with stats */}
+              
                 <div
                   className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-5"
                   style={{ background: 'rgba(0, 0, 0, 0.5)' }}
@@ -214,7 +209,6 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
                   </span>
                 </div>
 
-                {/* Action buttons for authors */}
                 {isAuthor && (
                   <div
                     className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -274,7 +268,6 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
                   </div>
                 )}
 
-                {/* Share button for all users */}
                 <div
                   className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={(e) => e.stopPropagation()}
@@ -312,7 +305,6 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
         })}
       </div>
 
-      {/* Edit modal */}
       {selectedPost && (
         <EditPostModal
           post={selectedPost}

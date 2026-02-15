@@ -28,7 +28,6 @@ import { Post } from '../database/entities/post.entity'; // <-- Импорт
     AuthModule,
     ProfilesModule,
     ConfigModule,
-    // Добавлена регистрация JwtModule для WsJwtGuard
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -1,5 +1,3 @@
-// apps/core_microservice/src/chats/chats.gateway.ts
-
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -14,22 +12,19 @@ import { UseGuards, Inject, forwardRef } from '@nestjs/common';
 import { WsJwtGuard } from './guards/ws-jwt.guard';
 import { ChatsService } from './chats.service';
 import { SendMessageDto } from './dto/send-message.dto';
+import { Message } from '../database/entities/message.entity';
 
-// Описываем структуру данных пользователя
 interface ChatUser {
   sub: string;
   email?: string;
   username: string;
-  id: string; // Добавлено, так как используется в коде
+  id: string;
 }
 
-// Расширяем стандартный сокет
 interface AuthenticatedSocket extends Socket {
-  // Стандартное место хранения данных в Socket.IO v4
   data: {
     user?: ChatUser;
   };
-  // Твой кастомный проперти (легаси)
   user: ChatUser;
 }
 
@@ -67,10 +62,8 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('typingStart')
   handleTypingStart(
     @MessageBody() data: { chatId: string },
-    // Используем AuthenticatedSocket вместо Socket для типизации
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    // Теперь client.data.user типизирован, и линтер не будет ругаться
     client.broadcast.to(`chat_${data.chatId}`).emit('typing', {
       chatId: data.chatId,
       userId: client.data.user?.id,
@@ -97,7 +90,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { chatId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    await client.join(`chat_${data.chatId}`); // Исправлено: лучше добавлять префикс, чтобы не было коллизий
+    await client.join(`chat_${data.chatId}`);
     console.log(`User ${client.user.sub} joined chat ${data.chatId}`);
     return { event: 'joined_chat', data: { chatId: data.chatId } };
   }
@@ -108,7 +101,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { chatId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    await client.leave(`chat_${data.chatId}`); // Исправлено: префикс
+    await client.leave(`chat_${data.chatId}`);
     return { event: 'left_chat', data: { chatId: data.chatId } };
   }
 
@@ -132,7 +125,6 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { chatId: string; isTyping: boolean },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    // client.to(...) отправляет всем кроме отправителя
     client.to(`chat_${data.chatId}`).emit('typing_status', {
       userId: client.user.sub,
       username: client.user.username,
@@ -141,13 +133,11 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  // --- PUBLIC METHODS FOR SERVICE ---
-
-  broadcastMessage(chatId: string, message: any) {
+  broadcastMessage(chatId: string, message: Message) {
     this.server.to(`chat_${chatId}`).emit('receiveMessage', message);
   }
 
-  broadcastMessageUpdated(chatId: string, message: any) {
+  broadcastMessageUpdated(chatId: string, message: Message | null) {
     this.server.to(`chat_${chatId}`).emit('message_updated', message);
   }
 

@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
+import { AxiosError } from 'axios';
 import { getAvatarUrl } from '@/lib/url-helper';
 import { Profile } from '@/types';
 import { EditProfileModal } from './EditProfileModal';
@@ -36,7 +38,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   const avatarUrl = getAvatarUrl(profile.avatarUrl);
 
-  // Check if this user is blocked
   useEffect(() => {
     if (isMyProfile) return;
     const checkBlocked = async () => {
@@ -45,13 +46,11 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         const blockedList: Profile[] = res.data || [];
         setIsBlocked(blockedList.some((b) => b.id === profile.id));
       } catch {
-        // ignore
       }
     };
     checkBlocked();
   }, [profile.id, isMyProfile]);
 
-  // Close menu on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -71,9 +70,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         targetUsername: profile.username,
       });
       router.push(`/chat?chatId=${response.data.id}`);
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
       const errorMessage =
-        error.response?.data?.message || 'Cannot start chat';
+        axiosError.response?.data?.message || 'Cannot start chat';
       alert(errorMessage);
       router.push('/chat');
     } finally {
@@ -115,8 +115,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         setIsBlocked(true);
         if (onProfileUpdate) onProfileUpdate();
       }
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Action failed';
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message: string }>;
+      const msg = axiosError.response?.data?.message || 'Action failed';
       alert(msg);
     } finally {
       setBlockLoading(false);
@@ -128,7 +129,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       className="flex flex-col md:flex-row items-center gap-8 mb-8 p-6 rounded-2xl animate-fade-in"
       style={{ background: 'var(--bg-card)' }}
     >
-      {/* Avatar */}
       <div
         className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden shrink-0"
         style={{
@@ -137,10 +137,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         }}
       >
         {avatarUrl ? (
-          <img
+          <Image
             src={avatarUrl}
             alt={profile.username}
-            className="w-full h-full object-cover"
+            fill
+            unoptimized
+            className="object-cover"
           />
         ) : (
           <div
@@ -152,9 +154,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         )}
       </div>
 
-      {/* Info */}
       <div className="flex-1 flex flex-col items-center md:items-start">
-        {/* Username row */}
         <div className="flex items-center gap-3 mb-4 flex-wrap justify-center md:justify-start">
           <h2
             className="text-2xl font-semibold"
@@ -255,7 +255,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 </>
               )}
 
-              {/* More options menu */}
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowMenu(!showMenu)}
@@ -311,7 +310,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           )}
         </div>
 
-        {/* Blocked banner */}
         {isBlocked && !isMyProfile && (
           <div
             className="w-full mb-4 px-4 py-2 rounded-lg text-sm font-semibold text-center"
@@ -325,7 +323,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </div>
         )}
 
-        {/* Stats */}
         <div className="flex gap-8 mb-4 text-sm md:text-base">
           <div style={{ color: 'var(--text-primary)' }}>
             <span className="font-bold">{stats.posts}</span>{' '}
@@ -355,7 +352,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </Link>
         </div>
 
-        {/* Display name + bio */}
         <div className="text-sm md:text-left text-center">
           {profile.displayName && (
             <p
@@ -405,7 +401,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </div>
       </div>
 
-      {/* Edit modal */}
       {isEditModalOpen && (
         <EditProfileModal
           profile={profile}

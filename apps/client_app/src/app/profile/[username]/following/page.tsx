@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { api } from '@/lib/axios';
 import { Profile, ProfileFollow } from '@/types';
 import { getAvatarUrl } from '@/lib/url-helper';
@@ -68,7 +69,6 @@ export default function FollowingPage() {
           delete next[profile.id];
           return next;
         });
-        // If viewing own following list, remove from list
         if (isMyProfile) {
           setFollowing((prev) => prev.filter((f) => f.id !== profile.id));
         }
@@ -85,7 +85,6 @@ export default function FollowingPage() {
 
   return (
     <div className="max-w-2xl mx-auto" style={{ color: 'var(--text-primary)' }}>
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => router.back()}
@@ -111,7 +110,6 @@ export default function FollowingPage() {
         </div>
       </div>
 
-      {/* List */}
       <div
         className="rounded-xl overflow-hidden"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
@@ -153,19 +151,20 @@ export default function FollowingPage() {
                   key={profile.id}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-elevated)] transition-colors"
                 >
-                  {/* Avatar */}
                   <Link
                     href={`/profile/${profile.username}`}
-                    className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                    className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
                     style={{
                       background: avatarUrl ? 'transparent' : 'var(--accent)',
                     }}
                   >
                     {avatarUrl ? (
-                      <img
+                      <Image
                         src={avatarUrl}
                         alt=""
-                        className="w-full h-full object-cover"
+                        fill
+                        unoptimized
+                        className="object-cover"
                       />
                     ) : (
                       <span className="text-white font-bold text-sm">
@@ -174,7 +173,6 @@ export default function FollowingPage() {
                     )}
                   </Link>
 
-                  {/* User info */}
                   <Link
                     href={`/profile/${profile.username}`}
                     className="flex-1 min-w-0"
@@ -187,7 +185,6 @@ export default function FollowingPage() {
                     </p>
                   </Link>
 
-                  {/* Actions */}
                   {!isMe && (
                     <button
                       onClick={() => handleFollowToggle(profile)}

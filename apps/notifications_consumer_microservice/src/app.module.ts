@@ -32,6 +32,6 @@ import { NotificationsService } from './notifications.service';
     }),
   ],
   controllers: [AppController, NotificationsController],
-  providers: [AppService, NotificationsService], // Добавили сервис в провайдеры
+  providers: [AppService, NotificationsService],
 })
 export class AppModule {}

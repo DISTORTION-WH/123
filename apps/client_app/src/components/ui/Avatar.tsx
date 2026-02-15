@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import clsx from 'clsx';
 import { getAvatarUrl } from '@/lib/url-helper';
 
@@ -29,17 +30,19 @@ export const Avatar = ({
   return (
     <div
       className={clsx(
-        'rounded-full overflow-hidden flex items-center justify-center flex-shrink-0',
+        'relative rounded-full overflow-hidden flex items-center justify-center flex-shrink-0',
         'bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)]',
         sizes[size],
         className,
       )}
     >
       {assetUrl ? (
-        <img
+        <Image
           src={assetUrl}
           alt={alt}
-          className="w-full h-full object-cover"
+          fill
+          unoptimized
+          className="object-cover"
         />
       ) : (
         <svg

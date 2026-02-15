@@ -1,8 +1,4 @@
-/**
- * Generate a thumbnail from a video URL using canvas
- * Extracts a frame from the video at the specified time
- * Maintains aspect ratio by center-cropping the video frame
- */
+
 export async function generateVideoThumbnail(
   videoUrl: string,
   timeInSeconds: number = 1,
@@ -42,8 +38,6 @@ export async function generateVideoThumbnail(
             return;
           }
 
-          // Calculate aspect-ratio aware crop
-          // Determine which dimension should be the limiting factor
           const videoAspect = videoWidth / videoHeight;
           const canvasAspect = width / height;
 
@@ -53,11 +47,9 @@ export async function generateVideoThumbnail(
           let sourceHeight = videoHeight;
 
           if (videoAspect > canvasAspect) {
-            // Video is wider: crop from left and right
             sourceWidth = Math.round(videoHeight * canvasAspect);
             sourceX = Math.round((videoWidth - sourceWidth) / 2);
           } else {
-            // Video is taller: crop from top and bottom
             sourceHeight = Math.round(videoWidth / canvasAspect);
             sourceY = Math.round((videoHeight - sourceHeight) / 2);
           }
@@ -99,22 +91,18 @@ export async function generateVideoThumbnail(
     video.src = videoUrl;
     video.load();
 
-    // Timeout after 10 seconds
     const timeoutId = setTimeout(() => {
       console.warn('Video thumbnail generation timeout:', videoUrl);
       resolve(null);
     }, 10000);
 
-    // Clean up timeout if video loads successfully
     video.addEventListener('seeked', () => {
       clearTimeout(timeoutId);
     }, { once: true });
   });
 }
 
-/**
- * Cache for generated thumbnails to avoid regenerating
- */
+
 const thumbnailCache = new Map<string, string>();
 
 export async function getVideoThumbnail(

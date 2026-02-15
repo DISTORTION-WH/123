@@ -1,8 +1,9 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { Request } from 'express';
 import { extname } from 'path';
 
 export const imageAndVideoFileFilter = (
-  req: any,
+  _req: Request,
   file: Express.Multer.File,
   callback: (error: Error | null, acceptFile: boolean) => void,
 ) => {
@@ -19,7 +20,7 @@ export const imageAndVideoFileFilter = (
 };
 
 export const editFileName = (
-  req: any,
+  _req: Request,
   file: Express.Multer.File,
   callback: (error: Error | null, filename: string) => void,
 ) => {

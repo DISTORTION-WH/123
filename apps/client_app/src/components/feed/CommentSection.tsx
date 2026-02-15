@@ -1,6 +1,5 @@
-// apps/client_app/src/components/feed/CommentSection.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/axios';
 import { Avatar } from '@/components/ui/Avatar';
 import { formatDistanceToNow } from 'date-fns';
@@ -24,18 +23,18 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const res = await api.get(`/comments/post/${postId}`);
       setComments(res.data.data);
     } catch (err) {
       console.error('Failed to load comments', err);
     }
-  };
+  }, [postId]);
 
   useEffect(() => {
     fetchComments();
-  }, [postId]);
+  }, [fetchComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +44,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     try {
       const res = await api.post('/comments', { postId, content: text });
       const newComment: Comment = res.data;
-      // Add new comment immediately from API response
       setComments((prev) => [...prev, newComment]);
       setText('');
     } catch (err) {
@@ -60,7 +58,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
       className="mt-3 pt-3 border-t"
       style={{ borderColor: 'var(--border)' }}
     >
-      {/* Comments list */}
       <div className="max-h-60 overflow-y-auto space-y-3 mb-3 pr-2 scrollbar-thin">
         {comments.length === 0 && (
           <p
@@ -101,7 +98,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         ))}
       </div>
 
-      {/* Input form */}
       <form onSubmit={handleSubmit} className="flex gap-2 items-center">
         <input
           type="text"

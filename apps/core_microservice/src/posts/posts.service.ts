@@ -42,7 +42,6 @@ export class PostsService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  // --- CREATE ---
   async create(userId: string, dto: CreatePostDto) {
     const profile = await this.profilesService.getProfileByUserId(userId);
 
@@ -84,7 +83,6 @@ export class PostsService {
     }
   }
 
-  // --- READ ---
   async findOne(id: string, currentUserId?: string) {
     const post = await this.postRepository.findOne({
       where: { id },
@@ -158,7 +156,6 @@ export class PostsService {
     };
   }
 
-  // --- UPDATE ---
   async update(postId: string, userId: string, dto: UpdatePostDto) {
     const post = await this.postRepository.findOne({ where: { id: postId } });
 
@@ -190,7 +187,6 @@ export class PostsService {
     return this.findOne(postId, userId);
   }
 
-  // --- DELETE ---
   async remove(postId: string, userId: string) {
     const post = await this.postRepository.findOne({ where: { id: postId } });
 
@@ -202,7 +198,6 @@ export class PostsService {
     return { message: 'Post deleted successfully', id: postId };
   }
 
-  // --- LIKES ---
   async toggleLike(userId: string, postId: string) {
     const post = await this.postRepository.findOne({
       where: { id: postId },
@@ -243,7 +238,6 @@ export class PostsService {
           timestamp: new Date().toISOString(),
         });
 
-        // Save notification to DB (non-blocking)
         void this.notificationsService.create({
           type: NotificationType.LIKE,
           title: 'New like',
@@ -285,7 +279,6 @@ export class PostsService {
       }
     }
 
-    // Ensure assets are included in the response
     return {
       ...post,
       assets: post.assets || [],
@@ -295,7 +288,6 @@ export class PostsService {
     };
   }
 
-  // --- SEARCH ---
   async searchPosts(
     query: string,
     userId: string | undefined,
@@ -304,7 +296,6 @@ export class PostsService {
   ) {
     const skip = (page - 1) * limit;
 
-    // Search posts by content
     const [posts, total] = await this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.profile', 'profile')
@@ -319,7 +310,6 @@ export class PostsService {
       .take(limit)
       .getManyAndCount();
 
-    // Enrich with likes and comments count
     const enrichedPosts = await Promise.all(
       posts.map((post) => this.enrichPostWithLikeStatus(post, userId)),
     );

@@ -36,28 +36,24 @@ export class Message {
   @Column({ type: 'text', nullable: true })
   content: string;
 
-  // --- Новые поля ---
   @Column({ name: 'is_edited', default: false })
   isEdited: boolean;
 
   @Column({ name: 'is_deleted', default: false })
   isDeleted: boolean;
-  // ------------------
-  // --- Start: Shared Post ---
+
   @Column({ name: 'shared_post_id', nullable: true })
   sharedPostId: string | null;
 
   @ManyToOne(() => Post, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'shared_post_id' })
   sharedPost: Post;
-  // --- End: Shared Post ---
-  // --- Start: Read Status ---
+
   @Column({ name: 'is_read', default: false })
   isRead: boolean;
 
   @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt: Date;
-  // --- End: Read Status ---
   @Column({ name: 'reply_to_message_id', nullable: true })
   replyToMessageId: string;
 

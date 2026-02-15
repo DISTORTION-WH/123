@@ -41,7 +41,6 @@ function SearchPageContent() {
 
         setResults({ posts, profiles });
 
-        // Check following status for profiles
         const statusMap: Record<string, boolean> = {};
         profiles.forEach((profile: Profile) => {
           statusMap[profile.id] = profile.isFollowing || false;
@@ -138,7 +137,6 @@ function SearchPageContent() {
           Results for &quot;{query}&quot;
         </h1>
 
-        {/* Tabs */}
         <div className="flex gap-4 mb-8 border-b border-[var(--border)]">
           <button
             onClick={() => setActiveTab('all')}
@@ -178,7 +176,6 @@ function SearchPageContent() {
           </div>
         ) : (
           <>
-            {/* People Results */}
             {(activeTab === 'all' || activeTab === 'people') && results.profiles.length > 0 && (
               <div className="mb-12">
                 <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
@@ -227,7 +224,6 @@ function SearchPageContent() {
               </div>
             )}
 
-            {/* Posts Results */}
             {(activeTab === 'all' || activeTab === 'posts') && results.posts.length > 0 && (
               <div className="mb-12">
                 {activeTab === 'all' && <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
@@ -248,7 +244,6 @@ function SearchPageContent() {
               </div>
             )}
 
-            {/* No Results */}
             {results.posts.length === 0 && results.profiles.length === 0 && (
               <div className="text-center py-20">
                 <svg

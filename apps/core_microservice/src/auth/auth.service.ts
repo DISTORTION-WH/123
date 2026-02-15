@@ -41,7 +41,7 @@ export class AuthService {
   private readonly authServiceUrl: string;
   private readonly logger = new Logger(AuthService.name);
 
-  // In-memory cache for validated tokens (token -> { result, expiresAt })
+  // In-memory cache for validated tokens (reduces load on Auth Microservice)
   private readonly tokenCache = new Map<
     string,
     { result: ValidateTokenResponse; expiresAt: number }
@@ -59,11 +59,10 @@ export class AuthService {
     this.authServiceUrl =
       this.configService.get<string>('AUTH_SERVICE_URL') ||
       'http://auth_microservice:3002';
-
-    // Periodically clean expired cache entries every 5 minutes
+    // Periodically clear expired entries from the cache every 5 minutes
     setInterval(() => this.cleanTokenCache(), 5 * 60_000);
   }
-
+  // Method for clearing memory from obsolete tokens
   private cleanTokenCache() {
     const now = Date.now();
     for (const [key, value] of this.tokenCache) {
@@ -74,9 +73,7 @@ export class AuthService {
   }
 
   async handleSignUp(signUpDto: SignUpDto): Promise<AuthResponse> {
-    // 1. Сначала делаем запрос к Auth Service.
-    // Если он упадет — мы сразу вернем ошибку, так как регистрации не произошло.
-    let authResponse: AuthResponse;
+    let authResponse: AuthResponse; // Send a registration request to the Auth Service
     try {
       const { data } = await lastValueFrom(
         this.httpService.post<AuthResponse>(
@@ -86,11 +83,8 @@ export class AuthService {
       );
       authResponse = data;
     } catch (error) {
-      this.handleHttpError(error);
+      this.handleHttpError(error); // If the Auth Service returns an error, terminate the process
     }
-
-    // 2. Теперь пытаемся сохранить пользователя локально.
-    // Оборачиваем в отдельный try/catch, чтобы ошибка БД не ломала ответ клиенту.
     try {
       const existingUser = await this.userRepository.findOne({
         where: { id: authResponse.user.id },
@@ -105,9 +99,8 @@ export class AuthService {
         });
 
         await this.userRepository.save(user);
-
-        // Используем displayName (согласно вашей последней миграции), а не first_name
-        const profileData: any = {
+        // Create a default profile for a new user
+        const profileData: Partial<Profile> = {
           userId: user.id,
           username: authResponse.user.username,
           displayName: signUpDto.displayName || signUpDto.username,
@@ -121,30 +114,23 @@ export class AuthService {
         await this.profileRepository.save(profile);
         this.logger.log(`User ${user.id} synced to Core DB synchronously.`);
       }
-    } catch (error: any) {
-      // Если ошибка "Duplicate key" (23505) — это НОРМАЛЬНО.
-      // Значит, RabbitMQ успел создать пользователя раньше нас.
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (error?.code === '23505') {
+    } catch (error) {
+      // Handling data race: if RabbitMQ managed to create a record faster than us
+      const dbError = error as { code?: string };
+      if (dbError.code === '23505') {
         this.logger.warn(
           `User duplicate detected during sync in Core (id: ${authResponse.user.id}), proceeding...`,
         );
       } else {
-        // Если другая ошибка БД — логируем, но не крашим запрос,
-        // так как пользователь фактически уже зарегистрирован.
         this.logger.error('Error syncing user to Core DB:', error);
       }
     }
-
-    // Возвращаем успешный ответ от Auth Service в любом случае
     return authResponse;
   }
 
   async handleLogin(credentials: LoginDto): Promise<AuthResponse> {
     try {
-      this.logger.debug(
-        `Logging in user: ${credentials.email}`,
-      );
+      this.logger.debug(`Logging in user: ${credentials.email}`);
       const { data } = await lastValueFrom(
         this.httpService.post<AuthResponse>(
           `${this.authServiceUrl}/internal/auth/login`,
@@ -159,6 +145,7 @@ export class AuthService {
       });
 
       if (!user) {
+        // Lazy Sync: If the user doesn't exist, we create it on the fly.
         this.logger.log(
           `User ${data.user.id} missing in Core. Lazy syncing...`,
         );
@@ -177,50 +164,17 @@ export class AuthService {
         });
 
         if (!existingProfile) {
-          // Исправление аналогично handleSignUp
-          const profileData: any = {
+          const profileData: Partial<Profile> = {
             userId: user.id,
             username: data.user.username,
-            first_name: data.user.username, // Замена firstName на first_name
+            displayName: data.user.username,
           };
 
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           const profile = this.profileRepository.create(profileData);
           await this.profileRepository.save(profile);
         }
       }
 
-      return data;
-    } catch (error) {
-      this.handleHttpError(error);
-    }
-  }
-
-  async handleOAuthInit(provider: string): Promise<{ url: string }> {
-    try {
-      const { data } = await lastValueFrom(
-        this.httpService.get<{ url: string }>(
-          `${this.authServiceUrl}/internal/auth/oauth/initiate`,
-          { params: { provider } },
-        ),
-      );
-      return data;
-    } catch (error) {
-      this.handleHttpError(error);
-    }
-  }
-
-  async handleOAuthCallback(
-    provider: string,
-    authorizationCode: string,
-  ): Promise<AuthResponse> {
-    try {
-      const { data } = await lastValueFrom(
-        this.httpService.post<AuthResponse>(
-          `${this.authServiceUrl}/internal/auth/oauth/exchange-code`,
-          { provider, code: authorizationCode },
-        ),
-      );
       return data;
     } catch (error) {
       this.handleHttpError(error);
@@ -284,10 +238,11 @@ export class AuthService {
       }
 
       return data;
-    } catch (error: any) {
+    } catch (error) {
+      const axiosErr = error as AxiosError;
       this.logger.error(
-        `Token validation failed: ${error.message}`,
-        error.response?.data || error.response?.status,
+        `Token validation failed: ${axiosErr.message}`,
+        axiosErr.response?.data || axiosErr.response?.status,
       );
       throw new UnauthorizedException('Token validation failed');
     }

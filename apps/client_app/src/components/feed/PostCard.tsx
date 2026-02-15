@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Post } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -80,7 +81,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
       className="rounded-xl overflow-hidden mb-4"
       style={{ background: 'var(--bg-card)' }}
     >
-      {/* Image/Video area with overlay */}
       <div
         className="relative w-full overflow-hidden"
         style={{
@@ -99,17 +99,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
                 style={{ maxHeight: '600px' }}
               />
             ) : (
-              <img
+              <Image
                 src={assetUrl}
                 alt="Post content"
-                className="w-full h-full object-cover"
+                fill
+                unoptimized
+                className="object-cover"
                 style={{ maxHeight: '600px' }}
               />
             )}
           </>
         )}
 
-        {/* Double-tap like animation */}
         {showLikeAnimation && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
             <svg
@@ -125,7 +126,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
           </div>
         )}
 
-        {/* Bottom overlay with username and content */}
         <div
           className="absolute bottom-0 left-0 right-16 p-4"
           style={{
@@ -138,14 +138,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
             className="flex items-center gap-2 mb-2"
           >
             <div
-              className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2"
+              className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2"
               style={{ borderColor: 'var(--accent)' }}
             >
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt={post.profile.username}
-                  className="w-full h-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
               ) : (
                 <div
@@ -181,9 +183,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
           )}
         </div>
 
-        {/* Right side vertical action bar */}
         <div className="absolute right-2 bottom-4 flex flex-col items-center gap-5">
-          {/* Like button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -217,7 +217,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
             </span>
           </button>
 
-          {/* Comment button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -251,7 +250,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
             </span>
           </button>
 
-          {/* Share button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -362,7 +360,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
         </div>
       </div>
 
-      {/* No-image fallback content */}
       {!assetUrl && post.content && (
         <div className="p-4">
           <Link
@@ -370,14 +367,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
             className="flex items-center gap-2 mb-3"
           >
             <div
-              className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2"
+              className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2"
               style={{ borderColor: 'var(--accent)' }}
             >
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt={post.profile.username}
-                  className="w-full h-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
               ) : (
                 <div
@@ -470,7 +469,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLikeToggle, onDelete
         </div>
       )}
 
-      {/* Comment section */}
       {showComments && (
         <div
           className="px-4 pb-4"

@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const getCurrentUser = useCallback(async () => {
     try {
       const response = await api.get('/users/current_user');
-      // Backend returns User entity directly with nested profile
       const userData = response.data;
       setUser({
         id: userData.id,
@@ -68,7 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [getCurrentUser]);
 
   const login = useCallback(
     async (email: string, password: string) => {

@@ -14,7 +14,6 @@ async function generateMissingThumbnails() {
 
     const assetRepo = AppDataSource.getRepository(Asset);
 
-    // Find all video assets without thumbnails
     const videoAssets = await assetRepo.find({
       where: [
         { fileType: 'video/mp4', thumbnailPath: null },
@@ -72,4 +71,4 @@ async function generateMissingThumbnails() {
   }
 }
 
-generateMissingThumbnails();
+void generateMissingThumbnails();

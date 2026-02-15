@@ -3,7 +3,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class AppService {
-  private readonly logger = new Logger(AppService.name);
+  private readonly logger = new Logger(AppService.name); // Initialize the logger to track the status of sending emails
 
   constructor(private readonly mailerService: MailerService) {}
 
@@ -15,9 +15,9 @@ export class AppService {
     this.logger.log(`Processing welcome email for: ${data.email}`);
 
     try {
-      const subject = 'Welcome to Innogram!';
+      const subject = 'Welcome to Innotok!';
       const name = data.displayName || data.username;
-
+      // Generating HTML content for the email
       const html = `
         <h1>Welcome, ${name}!</h1>
         <p>Thank you for joining <b>Innogram</b>.</p>

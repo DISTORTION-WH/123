@@ -1,5 +1,3 @@
-// apps/core_microservice/src/profiles/profiles.service.ts
-
 import {
   BadRequestException,
   ConflictException,
@@ -53,7 +51,6 @@ export class ProfilesService {
   async searchProfiles(query: string, currentUserId: string) {
     if (!query || !query.trim()) return [];
 
-    // Get current user's profile once
     const currentUserProfile = await this.getProfileByUserId(currentUserId);
 
     const lowerQuery = query.toLowerCase();
@@ -66,16 +63,14 @@ export class ProfilesService {
       take: 20,
     });
 
-    // Filter out current user and apply case-insensitive search
     const filtered = profiles.filter(
       (p) =>
         p.userId !== currentUserId &&
         (p.username.toLowerCase().includes(lowerQuery) ||
           (p.displayName && p.displayName.toLowerCase().includes(lowerQuery)) ||
-          (p.bio && p.bio.toLowerCase().includes(lowerQuery)))
+          (p.bio && p.bio.toLowerCase().includes(lowerQuery))),
     );
 
-    // Обогащаем данными: подписан ли я на них?
     const results = await Promise.all(
       filtered.map(async (profile) => {
         const isFollowing = await this.followRepository.findOne({
@@ -121,8 +116,6 @@ export class ProfilesService {
     return this.profileRepository.save(profile);
   }
 
-  // --- Follow Logic ---
-
   async followUser(userId: string, targetUsername: string) {
     const myProfile = await this.getProfileByUserId(userId);
     const targetProfile = await this.getProfileByUsername(targetUsername);
@@ -135,7 +128,6 @@ export class ProfilesService {
       throw new BadRequestException('You cannot follow yourself');
     }
 
-    // Check if blocked
     const isBlocked = await this.checkIsBlocked(myProfile.id, targetProfile.id);
     if (isBlocked) {
       throw new BadRequestException(
@@ -163,9 +155,7 @@ export class ProfilesService {
 
     const savedFollow = await this.followRepository.save(follow);
 
-    // Send notification
     if (savedFollow.accepted === true) {
-      // Public account: instant follow
       void this.notificationsService.create({
         type: NotificationType.FOLLOW,
         title: 'New follower',
@@ -185,7 +175,6 @@ export class ProfilesService {
         await this.ensurePrivateChat(myProfile, targetProfile, userId);
       }
     } else {
-      // Private account: follow request
       void this.notificationsService.create({
         type: NotificationType.FOLLOW,
         title: 'Follow request',
@@ -269,14 +258,12 @@ export class ProfilesService {
 
   async getFriends(userId: string) {
     const profile = await this.getProfileByUserId(userId);
-    // Get mutual follows - where both A→B and B→A exist with accepted: true
     const friendsAsFollowing = await this.followRepository.find({
       where: { followerId: profile.id, accepted: true },
       relations: ['following'],
     });
 
-    // Filter to only those who also follow back
-    const friendProfiles = [];
+    const friendProfiles: Profile[] = [];
     for (const follow of friendsAsFollowing) {
       const mutualFollow = await this.followRepository.findOne({
         where: {
@@ -325,7 +312,6 @@ export class ProfilesService {
     follow.updatedBy = userId;
     const savedFollow = await this.followRepository.save(follow);
 
-    // Notify the follower that their request was accepted
     void this.notificationsService.create({
       type: NotificationType.FOLLOW,
       title: 'Follow request accepted',
@@ -340,11 +326,7 @@ export class ProfilesService {
       },
     });
 
-    // Check if this creates a mutual follow -> auto-create chat
-    const isMutual = await this.checkIsFriend(
-      myProfile.id,
-      followerProfile.id,
-    );
+    const isMutual = await this.checkIsFriend(myProfile.id, followerProfile.id);
     if (isMutual) {
       await this.ensurePrivateChat(myProfile, followerProfile, userId);
     }
@@ -376,8 +358,6 @@ export class ProfilesService {
     return { message: 'Follow request rejected' };
   }
 
-  // --- Block Logic ---
-
   async blockUser(userId: string, targetUsername: string) {
     const myProfile = await this.getProfileByUserId(userId);
     const targetProfile = await this.getProfileByUsername(targetUsername);
@@ -401,7 +381,6 @@ export class ProfilesService {
       throw new ConflictException('User is already blocked');
     }
 
-    // Create block
     const block = this.blockRepository.create({
       blockerId: myProfile.id,
       blockedId: targetProfile.id,
@@ -409,7 +388,6 @@ export class ProfilesService {
 
     await this.blockRepository.save(block);
 
-    // Remove mutual follows/requests if exist (hard break of friendship)
     await this.followRepository.delete({
       followerId: myProfile.id,
       followingId: targetProfile.id,
@@ -455,15 +433,12 @@ export class ProfilesService {
     return blocks.map((b) => b.blocked);
   }
 
-  // --- Auto-create private chat on mutual follow ---
-
   private async ensurePrivateChat(
     profileA: Profile,
     profileB: Profile,
     createdByUserId: string,
   ): Promise<void> {
     try {
-      // Check if private chat already exists between these two
       const existingChat = await this.chatRepository
         .createQueryBuilder('chat')
         .innerJoin('chat.participants', 'p1')
@@ -474,7 +449,7 @@ export class ProfilesService {
         .select('chat.id')
         .getOne();
 
-      if (existingChat) return; // Chat already exists
+      if (existingChat) return;
 
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
@@ -514,16 +489,10 @@ export class ProfilesService {
         await queryRunner.release();
       }
     } catch (err) {
-      // Non-critical: don't break the follow flow if chat creation fails
       this.logger.error('ensurePrivateChat error', err);
     }
   }
 
-  // --- Helpers for Checks ---
-
-  /**
-   * Checks if two profiles are friends (mutual follow with accepted=true)
-   */
   async checkIsFriend(
     profileIdA: string,
     profileIdB: string,
@@ -547,9 +516,6 @@ export class ProfilesService {
     return !!(followAtoB && followBtoA);
   }
 
-  /**
-   * Checks if ANY block exists between two profiles (A blocked B OR B blocked A)
-   */
   async checkIsBlocked(
     profileIdA: string,
     profileIdB: string,
@@ -562,8 +528,6 @@ export class ProfilesService {
     });
     return !!block;
   }
-
-  // --- Soft Delete ---
 
   async softDeleteProfile(userId: string) {
     const profile = await this.getProfileByUserId(userId);
@@ -585,8 +549,6 @@ export class ProfilesService {
     profile.updatedBy = userId;
     return this.profileRepository.save(profile);
   }
-
-  // --- Public Getters ---
 
   async getFollowersByUsername(username: string) {
     const profile = await this.getProfileByUsername(username);

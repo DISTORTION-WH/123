@@ -19,12 +19,10 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isLoading, isAuthenticated, isPublicPage, router]);
 
-  // Public pages: no sidebar
   if (isPublicPage) {
     return <>{children}</>;
   }
 
-  // Loading state: show sidebar + spinner
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-[var(--bg-primary)]">
@@ -38,12 +36,10 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Not authenticated on protected page: show nothing (redirect in useEffect)
   if (!isAuthenticated) {
     return null;
   }
 
-  // Authenticated: show sidebar + content
   return (
     <div className="flex min-h-screen bg-[var(--bg-primary)]">
       <TikTokNavbar />

@@ -46,6 +46,6 @@ export class SignUpDto {
     required: false,
   })
   @IsString({ message: 'Bio must be a string' })
-  @IsOptional() // <--- Добавлено, чтобы поле стало действительно необязательным
+  @IsOptional()
   bio?: string;
 }

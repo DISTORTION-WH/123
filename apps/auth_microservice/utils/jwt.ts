@@ -1,7 +1,7 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'; 
 import { randomBytes, randomUUID } from 'crypto';
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret';
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret';// Secret key for signing Access tokens
 
 interface TokenPayload {
   userId: string;
@@ -14,7 +14,7 @@ export interface AccessTokenPayload extends JwtPayload, TokenPayload {
 }
 
 export const generateAccessToken = (payload: TokenPayload) => {
-  const jti = randomBytes(16).toString('hex');
+  const jti = randomBytes(16).toString('hex');// Generate a unique jti token identifier - needed for Blacklist implementation
   
   const token = jwt.sign({ ...payload, jti }, ACCESS_SECRET, {
     expiresIn: '15m', 

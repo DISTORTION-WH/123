@@ -13,7 +13,7 @@ import { Message } from './message.entity';
 import { Profile } from './profile.entity';
 
 @Entity('message_reactions')
-@Unique(['messageId', 'profileId']) // Один пользователь = одна реакция на сообщение
+@Unique(['messageId', 'profileId'])
 export class MessageReaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -24,7 +24,7 @@ export class MessageReaction {
   @Column({ name: 'profile_id', type: 'uuid' })
   profileId: string;
 
-  @Column({ type: 'varchar', length: 10 }) // Эмодзи обычно занимают мало места
+  @Column({ type: 'varchar', length: 10 })
   reaction: string;
 
   @CreateDateColumn({ name: 'created_at' })

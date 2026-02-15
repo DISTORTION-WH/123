@@ -1,5 +1,5 @@
 import User, { IUser } from '../models/User';
-
+// Pattern Repository
 export class UserRepository {
  
   async findById(id: string) {
@@ -13,7 +13,7 @@ export class UserRepository {
 
   async findByEmailOrUsername(email: string, username: string) {
     return await User.findOne({
-      $or: [{ email }, { username }],
+      $or: [{ email }, { username }],// The $or operator will return the document if at least one field matches
     });
   }
 
@@ -23,8 +23,7 @@ export class UserRepository {
     return await user.save();
   }
 
-
-  async save(user: any) { 
+  async save(user: IUser) {
     return await user.save();
   }
 }

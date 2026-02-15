@@ -47,7 +47,6 @@ export default function FriendsPage() {
         setRequests(requestsRes.data || []);
         setBlocked(blockedRes.data || []);
       } catch {
-        // Failed to load data
       } finally {
         setLoading(false);
       }
@@ -305,7 +304,6 @@ export default function FriendsPage() {
     <div className="max-w-4xl mx-auto" style={{ color: 'var(--text-primary)' }}>
       <h1 className="text-3xl font-bold mb-8">Friends</h1>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-8 border-b border-[var(--border)] overflow-x-auto">
         {tabs.map((tab) => (
           <button
@@ -327,7 +325,6 @@ export default function FriendsPage() {
         ))}
       </div>
 
-      {/* Content */}
       {activeTab === 'friends' && renderUserList(friends)}
       {activeTab === 'followers' && renderUserList(followers)}
       {activeTab === 'following' && renderUserList(following)}

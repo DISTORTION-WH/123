@@ -1,6 +1,6 @@
-// apps/client_app/src/components/chat/ChatWindow.tsx
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { api } from '@/lib/axios';
 import { Chat, Message } from '@/types';
 import { MessageBubble } from './MessageBubble';
@@ -46,7 +46,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUserId, soc
     };
   }, [chat.id, socket]);
 
-  // Listen for socket events
   useEffect(() => {
     if (!socket) return;
 
@@ -159,7 +158,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUserId, soc
     const messageText = inputText;
     setInputText('');
 
-    // Stop typing indicator
     if (isTypingRef.current) {
       isTypingRef.current = false;
       socket?.emit('typingStop', { chatId: chat.id });
@@ -170,8 +168,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUserId, soc
       const res = await api.post(`/chats/${chat.id}/messages`, {
         content: messageText,
       });
-      // Add the message from API response (gateway will also broadcast
-      // but we dedup by ID in handleNewMessage)
+     
       const sentMessage: Message = res.data;
       setMessages((prev) => {
         if (prev.find((m) => m.id === sentMessage.id)) return prev;
@@ -180,12 +177,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUserId, soc
       setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error('Failed to send', error);
-      // Restore input text on error
       setInputText(messageText);
     }
   };
 
-  // Compute chat display info for private chats
   const otherParticipant = chat.type === 'private'
     ? chat.participants?.find((p) => p.profile?.userId !== currentUserId)
     : null;
@@ -207,7 +202,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUserId, soc
       className="flex flex-col h-full flex-1"
       style={{ background: 'var(--bg-primary)' }}
     >
-      {/* Header */}
       <div
         className="px-5 py-3 border-b flex items-center gap-3"
         style={{
@@ -215,18 +209,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUserId, soc
           borderColor: 'var(--border)',
         }}
       >
-        {/* Avatar */}
         <div
-          className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold overflow-hidden"
+          className="relative w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold overflow-hidden"
           style={{
             background: chatAvatarUrl ? 'transparent' : 'var(--accent)',
           }}
         >
           {chatAvatarUrl ? (
-            <img
+            <Image
               src={chatAvatarUrl}
               alt=""
-              className="w-full h-full object-cover"
+              fill
+              unoptimized
+              className="object-cover"
             />
           ) : (
             chatDisplayName.charAt(0).toUpperCase()
@@ -261,7 +256,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUserId, soc
         </div>
       </div>
 
-      {/* Messages */}
       <div
         className="flex-1 overflow-y-auto px-4 pt-3 pb-5"
         style={{ background: 'var(--bg-primary)' }}
@@ -303,7 +297,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUserId, soc
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div
         className="px-4 py-3 border-t"
         style={{

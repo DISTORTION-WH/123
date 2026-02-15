@@ -5,7 +5,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  // IsUUID удален
 } from 'class-validator';
 import { ChatType } from '../../database/entities/chat.entity';
 

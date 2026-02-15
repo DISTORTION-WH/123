@@ -65,7 +65,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg-primary)]">
-      {/* Left side - Branding (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] items-center justify-center p-8">
         <div className="text-center text-white">
           <h1 className="text-5xl font-bold mb-4">Innogram</h1>
@@ -73,7 +72,6 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* Right side - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">

@@ -22,7 +22,6 @@ export const ExploreBar = () => {
   return (
     <div className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--border)]">
       <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-        {/* Search Bar */}
         <form onSubmit={handleSearch} className="flex-1">
           <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-[var(--bg-input)] border border-[var(--border)] focus-within:border-[var(--accent)] transition-colors">
             <svg
@@ -47,7 +46,6 @@ export const ExploreBar = () => {
           </div>
         </form>
 
-        {/* Explore Button */}
         <Link
           href="/explore"
           className={`px-6 py-2 rounded-full font-semibold transition-all whitespace-nowrap ${

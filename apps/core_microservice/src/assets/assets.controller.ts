@@ -29,7 +29,7 @@ import {
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import {
   CurrentUser,
-  CurrentUserData, // Используем интерфейс
+  CurrentUserData,
 } from '../decorators/current-user.decorator';
 
 @ApiTags('Assets')
@@ -39,11 +39,10 @@ export class AssetsController {
 
   @Get(':filename')
   @ApiOperation({ summary: 'Download uploaded file' })
-  async getFile(@Param('filename') filename: string, @Res() res: Response) {
+  getFile(@Param('filename') filename: string, @Res() res: Response) {
     try {
       const filePath = join(__dirname, '..', '..', 'uploads', filename);
 
-      // Determine content type based on file extension
       let contentType = 'application/octet-stream';
       if (filename.endsWith('.mp4')) contentType = 'video/mp4';
       else if (filename.endsWith('.webm')) contentType = 'video/webm';
@@ -62,11 +61,13 @@ export class AssetsController {
       res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
       const stream = createReadStream(filePath);
+
       stream.pipe(res);
+
       stream.on('error', () => {
         res.status(404).json({ error: 'File not found' });
       });
-    } catch (error) {
+    } catch {
       throw new NotFoundException('File not found');
     }
   }
@@ -94,12 +95,12 @@ export class AssetsController {
         filename: editFileName,
       }),
       fileFilter: imageAndVideoFileFilter,
-      limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+      limits: { fileSize: 50 * 1024 * 1024 },
     }),
   )
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() user: CurrentUserData, // Исправлен тип
+    @CurrentUser() user: CurrentUserData,
   ) {
     return await this.assetsService.createAsset(file, user.id);
   }

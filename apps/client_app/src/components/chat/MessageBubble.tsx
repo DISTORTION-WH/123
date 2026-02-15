@@ -1,6 +1,6 @@
-// apps/client_app/src/components/chat/MessageBubble.tsx
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Message } from '@/types';
 import { format } from 'date-fns';
@@ -57,10 +57,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       className={`flex flex-col group ${isMyMessage ? 'items-end' : 'items-start'}`}
       style={{ marginBottom: hasReactions ? '20px' : '8px' }}
     >
-      {/* Bubble wrapper - this allows reactions to visually extend below
-          without using overflow-hidden on the bubble itself */}
+      
       <div className="relative max-w-[70%]">
-        {/* The actual message bubble */}
         <div
           className={`${
             isMyMessage ? 'rounded-2xl rounded-br-sm' : 'rounded-2xl rounded-bl-sm'
@@ -70,21 +68,18 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             color: isMyMessage ? '#fff' : 'var(--text-primary)',
           }}
         >
-          {/* Author name (group chats / other person) */}
           {!isMyMessage && (
             <p className="text-[10px] font-bold opacity-70 px-3 pt-2">
               {message.profile?.displayName || message.profile?.username}
             </p>
           )}
 
-          {/* Message text */}
           {message.content && (
             <p className="whitespace-pre-wrap text-sm leading-relaxed px-3 py-1.5">
               {message.content}
             </p>
           )}
 
-          {/* Shared post preview - TikTok style */}
           {sharedPost && (
             <Link
               href={`/feed?postId=${sharedPost.id}`}
@@ -106,13 +101,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                       : '16px 16px 16px 4px',
                 }}
               >
-                {/* Post image */}
                 {sharedAssetUrl ? (
                   <div className="relative">
-                    <img
+                    <Image
                       src={sharedAssetUrl}
-                      className="w-full h-40 object-cover"
                       alt="Shared post"
+                      width={400}
+                      height={160}
+                      unoptimized
+                      className="w-full h-40 object-cover"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/10">
                       <div className="bg-black/40 rounded-full p-2">
@@ -147,13 +144,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                   </div>
                 )}
 
-                {/* Post info footer */}
                 <div className="px-3 py-2 flex items-center gap-2">
                   {sharedPostAuthorAvatar ? (
-                    <img
+                    <Image
                       src={sharedPostAuthorAvatar}
-                      className="w-5 h-5 rounded-full object-cover flex-shrink-0"
                       alt=""
+                      width={20}
+                      height={20}
+                      unoptimized
+                      className="rounded-full object-cover flex-shrink-0"
                     />
                   ) : (
                     <div
@@ -189,7 +188,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             </Link>
           )}
 
-          {/* Time and read status - inside bubble */}
           <div className="text-[9px] flex justify-end gap-1 opacity-60 px-3 pb-1.5 pt-0.5">
             {format(new Date(message.createdAt), 'HH:mm')}
             {isMyMessage && (
@@ -198,7 +196,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         </div>
 
-        {/* Reactions display - positioned outside the bubble overflow */}
         {hasReactions && (
           <div
             className={`absolute -bottom-3 flex gap-0.5 shadow-sm rounded-full px-1.5 py-0.5 border z-10 ${
@@ -229,7 +226,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
       </div>
 
-      {/* Quick reaction buttons (hover) */}
       <div className="flex gap-0.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-1">
         {['\u2764\ufe0f', '\ud83d\udc4d', '\ud83d\udd25', '\ud83d\ude02'].map(
           (emoji) => (

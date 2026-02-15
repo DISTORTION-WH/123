@@ -1,5 +1,3 @@
-// apps/core_microservice/src/notifications/notifications.controller.ts
-
 import {
   Controller,
   Get,

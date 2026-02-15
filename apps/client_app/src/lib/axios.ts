@@ -10,7 +10,6 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// Separate axios instance for refresh token (without interceptors)
 const refreshApi = axios.create({
   baseURL: API_URL,
   headers: {

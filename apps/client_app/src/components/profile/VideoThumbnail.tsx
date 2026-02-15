@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { getVideoThumbnail } from '@/lib/video-thumbnail';
 
 interface VideoThumbnailProps {
@@ -94,10 +95,14 @@ export const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
   }
 
   return (
-    <img
-      src={thumbnail}
-      alt={alt}
-      className={`w-full h-full object-cover ${className}`}
-    />
+    <div className="relative w-full h-full">
+      <Image
+        src={thumbnail}
+        alt={alt}
+        fill
+        unoptimized
+        className={`object-cover ${className}`}
+      />
+    </div>
   );
 };

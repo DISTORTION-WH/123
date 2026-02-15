@@ -49,7 +49,6 @@ export default function ProfilePage() {
       const postsData = Array.isArray(postsRes.data)
         ? postsRes.data
         : postsRes.data.data;
-      // Enrich posts with user ID from profile
       const enrichedPosts = postsData.map((post: Post) => ({
         ...post,
         profile: {

@@ -33,7 +33,6 @@ export default function LoginPage() {
     setErrorMsg('');
     try {
       await login(data.email, data.password);
-      // Small delay to ensure auth state updates before redirect
       await new Promise(resolve => setTimeout(resolve, 100));
       router.push('/feed');
     } catch (err: unknown) {
@@ -49,7 +48,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg-primary)]">
-      {/* Left side - Branding (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] items-center justify-center p-8">
         <div className="text-center text-white">
           <h1 className="text-5xl font-bold mb-4">Innogram</h1>
@@ -57,7 +55,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right side - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">

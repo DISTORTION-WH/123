@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/axios';
+import { AxiosError } from 'axios';
 import Link from 'next/link';
 
 interface SearchResult {
@@ -19,7 +20,6 @@ export default function CreateChatPage() {
   const [loading, setLoading] = useState(false);
   const [chatType, setChatType] = useState<'private' | 'group'>('private');
 
-  // Load friends on component mount
   useEffect(() => {
     const loadFriends = async () => {
       try {
@@ -35,7 +35,6 @@ export default function CreateChatPage() {
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (query.trim() === '') {
-      // Load all friends when search is empty
       try {
         const res = await api.get('/profiles/me/friends');
         setSearchResults(res.data || []);
@@ -47,7 +46,6 @@ export default function CreateChatPage() {
     }
 
     try {
-      // Search in friends only
       const res = await api.get('/profiles/me/friends');
       const allFriends = res.data || [];
 
@@ -100,11 +98,11 @@ export default function CreateChatPage() {
         });
       }
 
-      // Redirect to chat
       router.push(`/chat?chatId=${response.data.id}`);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Chat creation error:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create chat';
+      const axiosError = error as AxiosError<{ message: string }>;
+      const errorMessage = axiosError.response?.data?.message || axiosError.message || 'Failed to create chat';
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -129,7 +127,6 @@ export default function CreateChatPage() {
         >
           <h1 className="text-3xl font-bold mb-8">Start a Conversation</h1>
 
-          {/* Chat Type Selection */}
           <div className="mb-8">
             <label className="block text-sm font-semibold mb-4">Chat Type</label>
             <div className="flex gap-4">
@@ -163,7 +160,6 @@ export default function CreateChatPage() {
             </div>
           </div>
 
-          {/* Group Name Input */}
           {chatType === 'group' && (
             <div className="mb-8">
               <label className="block text-sm font-semibold mb-2">Group Name</label>
@@ -177,7 +173,6 @@ export default function CreateChatPage() {
             </div>
           )}
 
-          {/* Search Users */}
           <div className="mb-8">
             <label className="block text-sm font-semibold mb-2">
               {chatType === 'private' ? 'Select User' : 'Add Users'}
@@ -190,7 +185,6 @@ export default function CreateChatPage() {
               className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-input)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
             />
 
-            {/* Search Results */}
             {searchQuery && (
               <div className="mt-4 max-h-64 overflow-y-auto border border-[var(--border)] rounded-lg bg-[var(--bg-input)]">
                 {searchResults.length > 0 ? (
@@ -232,7 +226,6 @@ export default function CreateChatPage() {
             )}
           </div>
 
-          {/* Selected Users */}
           {selectedUsers.length > 0 && (
             <div className="mb-8">
               <label className="block text-sm font-semibold mb-2">
@@ -257,7 +250,6 @@ export default function CreateChatPage() {
             </div>
           )}
 
-          {/* Create Button */}
           <button
             onClick={handleCreateChat}
             disabled={loading || selectedUsers.length === 0}

@@ -1,5 +1,3 @@
-// apps/core_microservice/src/comments/dto/create-comment.dto.ts
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,

@@ -1,6 +1,6 @@
-// apps/client_app/src/components/chat/ChatList.tsx
 
 import React from 'react';
+import Image from 'next/image';
 import { Chat, ChatType } from '@/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { getAvatarUrl } from '@/lib/url-helper';
@@ -82,18 +82,19 @@ export const ChatList: React.FC<ChatListProps> = ({
               }
             }}
           >
-            {/* Avatar */}
             <div
-              className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg overflow-hidden"
+              className="relative w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg overflow-hidden"
               style={{
                 background: avatarUrl ? 'transparent' : 'var(--accent)',
               }}
             >
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt=""
-                  className="w-full h-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
               ) : (
                 getChatName(chat).charAt(0).toUpperCase()

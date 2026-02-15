@@ -21,14 +21,12 @@ export const TikTokNavbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch unread notification count
   useEffect(() => {
     const fetchUnread = async () => {
       try {
         const res = await api.get('/notifications/unread-count');
         setUnreadCount(res.data.count || 0);
       } catch {
-        // ignore
       }
     };
     fetchUnread();
@@ -119,9 +117,7 @@ export const TikTokNavbar = () => {
 
   return (
     <nav className="fixed left-0 top-0 h-screen w-24 lg:w-64 bg-[var(--bg-card)] border-r border-[var(--border)] flex flex-col justify-between p-4 lg:p-6 z-50">
-      {/* Top Navigation */}
       <div className="flex flex-col gap-4">
-        {/* Logo */}
         <Link
           href="/feed"
           className="text-2xl font-bold text-[var(--accent)] mb-8 hidden lg:block"
@@ -129,12 +125,11 @@ export const TikTokNavbar = () => {
           Innogram
         </Link>
 
-        {/* Search Bar */}
         <form onSubmit={handleSearch} className="hidden lg:block">
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-input)] border border-[var(--border)] focus-within:border-[var(--accent)] transition-colors">
             {React.cloneElement(
-              (getIcon('search') as React.ReactElement),
-              { width: 20, height: 20 } as any
+              getIcon('search') as React.ReactElement<React.SVGProps<SVGSVGElement>>,
+              { width: 20, height: 20 }
             )}
             <input
               type="text"
@@ -146,7 +141,6 @@ export const TikTokNavbar = () => {
           </div>
         </form>
 
-        {/* Nav Items */}
         <div className="flex lg:flex-col gap-4">
           {navItems.map((item) => (
             <Link
@@ -173,7 +167,6 @@ export const TikTokNavbar = () => {
             </Link>
           ))}
 
-          {/* Create Post */}
           <Link
             href="/posts/create"
             className={`flex items-center gap-4 px-4 py-3 rounded-full transition-all ${
@@ -191,7 +184,6 @@ export const TikTokNavbar = () => {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
       <div className="flex lg:flex-col gap-4">
         {profile && (
           <>

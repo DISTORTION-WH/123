@@ -8,7 +8,6 @@ describe('AppController', () => {
   let appService: AppService;
 
   beforeEach(async () => {
-    // Создаем мок для AppService
     const appServiceMock = {
       sendWelcomeEmail: jest.fn(),
     };

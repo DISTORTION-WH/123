@@ -33,7 +33,6 @@ export class RefreshTokenEntity {
   private static schema = z.object({
     refreshTokenId: z.string().uuid({ message: "Invalid refresh token format" }),
   });
-// Используется для поиска сессии в Redis при обновлении токенов
   static validate(data: unknown) {
     return this.schema.parse(data);
   }

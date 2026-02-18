@@ -44,7 +44,7 @@ export class RedisAuthRepository {
     const key = `reset_password:${token}`;
     const userId = await redisClient.get(key);
     if (userId) {
-      await redisClient.del(key); // Удаляем ключ, чтобы токен нельзя было использовать повторно
+      await redisClient.del(key);  
     }
     return userId;
   }

@@ -4,7 +4,6 @@ export class AddUserFields1766361070320 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('users');
 
-    // Добавляем колонку disabled, если её нет
     if (table && !table.findColumnByName('disabled')) {
       await queryRunner.addColumn(
         'users',
@@ -17,8 +16,6 @@ export class AddUserFields1766361070320 implements MigrationInterface {
       );
     }
 
-    // Добавляем колонку role, если её нет
-    // Предполагаем, что роль хранится как строка (или enum), default = 'User'
     if (table && !table.findColumnByName('role')) {
       await queryRunner.addColumn(
         'users',
